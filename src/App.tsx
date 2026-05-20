@@ -5,6 +5,7 @@ import { RecentActivity } from './components/Dashboard/RecentActivity';
 import { useUiStore } from './store/uiStore';
 import { KanbanBoard } from './components/Kanban/KanbanBoard';
 import { JobModal } from './components/Kanban/JobModal';
+import { Logs } from './pages/Logs';
 
 // Mock Page Components to render inside our Layout
 const DashboardPage: React.FC = () => (
@@ -86,66 +87,8 @@ const JobsPage: React.FC = () => (
 );
 
 const LogsPage: React.FC = () => (
-  <div className="space-y-6">
-    <div>
-      <h2 className="text-xl font-bold text-slate-100">Histórico de Auditoria</h2>
-      <p className="text-xs text-slate-400">Logs detalhados de tentativas de disparos de webhooks.</p>
-    </div>
-    
-    <div className="overflow-hidden rounded-2xl glass-panel border border-indigo-950/40">
-      <table className="w-full text-left text-xs border-collapse">
-        <thead>
-          <tr className="bg-indigo-950/20 border-b border-indigo-950/40 text-slate-400">
-            <th className="p-4 font-semibold uppercase tracking-wider">Job / ID</th>
-            <th className="p-4 font-semibold uppercase tracking-wider">Status</th>
-            <th className="p-4 font-semibold uppercase tracking-wider">Endpoint</th>
-            <th className="p-4 font-semibold uppercase tracking-wider">Data/Hora</th>
-            <th className="p-4 font-semibold uppercase tracking-wider">Duração</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-indigo-950/25">
-          <tr className="hover:bg-indigo-950/10 transition-colors">
-            <td className="p-4 font-medium text-slate-200">
-              Billing Sync <span className="text-[10px] text-slate-500 ml-1">#cf_821d</span>
-            </td>
-            <td className="p-4">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                200 OK
-              </span>
-            </td>
-            <td className="p-4 text-slate-400 font-mono">https://api.saas.sh/billing/sync</td>
-            <td className="p-4 text-slate-400">Hoje às 14:15</td>
-            <td className="p-4 text-slate-400 font-mono">142ms</td>
-          </tr>
-          <tr className="hover:bg-indigo-950/10 transition-colors">
-            <td className="p-4 font-medium text-slate-200">
-              Slack Alert <span className="text-[10px] text-slate-500 ml-1">#cf_259x</span>
-            </td>
-            <td className="p-4">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                204 OK
-              </span>
-            </td>
-            <td className="p-4 text-slate-400 font-mono">https://hooks.slack.com/services/...</td>
-            <td className="p-4 text-slate-400">Hoje às 14:00</td>
-            <td className="p-4 text-slate-400 font-mono">88ms</td>
-          </tr>
-          <tr className="hover:bg-indigo-950/10 transition-colors">
-            <td className="p-4 font-medium text-slate-200">
-              Daily Clean Up <span className="text-[10px] text-slate-500 ml-1">#cf_019a</span>
-            </td>
-            <td className="p-4">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
-                500 Error
-              </span>
-            </td>
-            <td className="p-4 text-slate-400 font-mono">https://api.saas.sh/db/cleanup</td>
-            <td className="p-4 text-slate-400">Ontem às 23:59</td>
-            <td className="p-4 text-slate-400 font-mono">1.2s</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <Logs />
   </div>
 );
 
