@@ -1,0 +1,60 @@
+import { create } from 'zustand';
+
+interface UiState {
+  theme: 'dark' | 'light';
+  sidebarOpen: boolean;
+  activeTab: string; // e.g., 'dashboard', 'jobs', 'logs', 'profile', 'settings'
+  isJobModalOpen: boolean;
+  isLogModalOpen: boolean;
+  selectedLogId: string | null;
+
+  // Actions
+  toggleTheme: () => void;
+  setTheme: (theme: 'dark' | 'light') => void;
+  toggleSidebar: () => void;
+  setSidebarOpen: (isOpen: boolean) => void;
+  setActiveTab: (tab: string) => void;
+  setJobModalOpen: (isOpen: boolean) => void;
+  setLogModalOpen: (isOpen: boolean, logId?: string | null) => void;
+}
+
+export const useUiStore = create<UiState>((set) => ({
+  theme: 'dark', // Defaulting to dark theme (premium glassmorphism/cyberpunk style)
+  sidebarOpen: true,
+  activeTab: 'dashboard',
+  isJobModalOpen: false,
+  isLogModalOpen: false,
+  selectedLogId: null,
+
+  toggleTheme: () =>
+    set((state) => {
+      const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
+      // Sync with index.html classList for Tailwind/Global CSS styling
+      if (nextTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      return { theme: nextTheme };
+    }),
+
+  setTheme: (theme) => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    set({ theme });
+  },
+
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+
+  setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
+
+  setActiveTab: (activeTab) => set({ activeTab }),
+
+  setJobModalOpen: (isJobModalOpen) => set({ isJobModalOpen }),
+
+  setLogModalOpen: (isLogModalOpen, selectedLogId = null) =>
+    set({ isLogModalOpen, selectedLogId }),
+}));
