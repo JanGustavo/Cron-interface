@@ -41,19 +41,15 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
     
     for (let i = 1; i <= currentAttempt; i++) {
       const isCurrent = i === currentAttempt;
-      let status: 'success' | 'failed' | 'timeout' = 'failed';
-      let httpStatus = 502;
-      let timeOffset = `-${(currentAttempt - i) * 5}m`;
-
-      if (isCurrent) {
-        status = log.status;
-        httpStatus = log.httpStatus || 500;
-        timeOffset = 'Agora';
-      } else {
-        // Previous failures leading up to this retry
-        status = i === 1 && currentAttempt === 3 ? 'timeout' : 'failed';
-        httpStatus = status === 'timeout' ? 504 : 502;
-      }
+      const status: 'success' | 'failed' | 'timeout' = isCurrent
+        ? log.status
+        : (i === 1 && currentAttempt === 3 ? 'timeout' : 'failed');
+      const httpStatus = isCurrent
+        ? (log.httpStatus || 500)
+        : (status === 'timeout' ? 504 : 502);
+      const timeOffset = isCurrent
+        ? 'Agora'
+        : `-${(currentAttempt - i) * 5}m`;
 
       list.push({
         attempt: i,

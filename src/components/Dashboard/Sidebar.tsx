@@ -63,21 +63,34 @@ export const Sidebar: React.FC = () => {
     >
       {/* Top Brand Logo Section */}
       <div>
-        <div className="flex items-center justify-between h-16 px-4 border-b border-indigo-950/30">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-500 text-white font-black text-lg shadow-lg neon-glow-primary flex-shrink-0">
-              CF
+        <div
+          className={`relative flex items-center h-16 px-4 border-b border-indigo-950/30 ${
+            sidebarOpen ? 'justify-between' : 'justify-center'
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => setActiveTab('dashboard')}
+            className={`group flex items-center overflow-hidden text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-0 ${
+              sidebarOpen ? 'gap-3' : 'w-10 justify-center mx-auto'
+            }`}
+            aria-label="Ir para a home"
+          >
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-950/40 border border-indigo-500/20 shadow-lg neon-glow-primary flex-shrink-0 overflow-hidden transition-colors duration-200 ease-out group-hover:border-indigo-400/40 group-hover:shadow-[0_0_18px_rgba(99,102,241,0.35)]">
+              <img src="/logo.svg" alt="Logo CronFlow" className="block w-full h-full object-contain p-1" />
             </div>
             {sidebarOpen && (
-              <span className="font-extrabold text-lg tracking-wider text-gradient-cyber select-none">
+              <span className="font-extrabold text-lg tracking-wider text-gradient-cyber select-none transition-opacity duration-200 ease-out group-hover:opacity-95">
                 CRONFLOW
               </span>
             )}
-          </div>
+          </button>
           
           <button
             onClick={toggleSidebar}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-indigo-950/30 transition-colors hidden md:block"
+            className={`absolute top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-indigo-950/30 transition-colors hidden md:block ${
+              sidebarOpen ? 'right-4' : 'right-3'
+            }`}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {sidebarOpen ? (

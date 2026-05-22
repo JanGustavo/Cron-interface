@@ -9,7 +9,7 @@ export interface ApiResponse<T> {
   error?: {
     message: string;
     code?: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
@@ -28,7 +28,7 @@ export interface PaginatedResponse<T> {
   error?: {
     message: string;
     code?: string;
-    details?: any;
+    details?: unknown;
   };
 }
 

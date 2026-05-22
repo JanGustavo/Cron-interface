@@ -49,7 +49,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, jobs }) =
   const styles = getHeaderStyles();
 
   return (
-    <div className={`flex flex-col min-w-[250px] md:min-w-[270px] flex-1 rounded-2xl glass-panel border border-indigo-950/30 overflow-hidden ${styles.border} select-none`}>
+    <div className={`flex flex-col min-w-[220px] md:min-w-[240px] flex-1 rounded-2xl glass-panel border border-indigo-950/30 overflow-hidden ${styles.border} select-none`}>
       {/* Column Title Header */}
       <div className="p-4 border-b border-indigo-950/20 flex justify-between items-center bg-indigo-950/5">
         <div className="flex items-center gap-2">

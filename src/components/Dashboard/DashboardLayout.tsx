@@ -25,7 +25,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         <TopNav />
 
         {/* Dynamic Panel Content Area */}
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+        <main className="flex-1 w-full px-4 py-6 md:px-6 md:py-8 xl:px-8 overflow-y-auto">
           {children}
         </main>
       </div>

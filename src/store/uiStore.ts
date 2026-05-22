@@ -6,6 +6,7 @@ interface UiState {
   activeTab: string; // e.g., 'dashboard', 'jobs', 'logs', 'profile', 'settings'
   isJobModalOpen: boolean;
   isLogModalOpen: boolean;
+  isCreateModalOpen: boolean;
   selectedLogId: string | null;
 
   // Actions
@@ -16,6 +17,7 @@ interface UiState {
   setActiveTab: (tab: string) => void;
   setJobModalOpen: (isOpen: boolean) => void;
   setLogModalOpen: (isOpen: boolean, logId?: string | null) => void;
+  setCreateModalOpen: (isOpen: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -24,6 +26,7 @@ export const useUiStore = create<UiState>((set) => ({
   activeTab: 'dashboard',
   isJobModalOpen: false,
   isLogModalOpen: false,
+  isCreateModalOpen: false,
   selectedLogId: null,
 
   toggleTheme: () =>
@@ -57,4 +60,6 @@ export const useUiStore = create<UiState>((set) => ({
 
   setLogModalOpen: (isLogModalOpen, selectedLogId = null) =>
     set({ isLogModalOpen, selectedLogId }),
+
+  setCreateModalOpen: (isCreateModalOpen) => set({ isCreateModalOpen }),
 }));

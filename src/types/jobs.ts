@@ -22,13 +22,14 @@ export interface Job {
   url: string;
   httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   headers?: Record<string, string>;
-  payload?: Record<string, any> | string;
+  payload?: Record<string, unknown> | string;
   status: JobStatus;
   kanbanStatus?: KanbanStatus; // Helper for frontend Kanban column state
   nextRunAt: string;
   lastRunAt?: string | null;
   consecutiveFailures: number;
   createdAt: string;
+  webhookAlertUrl?: string;
 }
 
 /**
