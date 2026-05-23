@@ -6,25 +6,32 @@ import { useAuthStore } from '../store/authStore';
 // ==========================================
 
 const pascalToCamel = (str: string): string => {
-  // Casos especiais de siglas que o Go renderiza totalmente em maiúsculo
-  if (str === 'ID') return 'id';
-  if (str === 'URL') return 'url';
-  if (str === 'HTTPMethod') return 'httpMethod';
-  if (str === 'ProjectID') return 'projectId';
-  if (str === 'NextRunAt') return 'nextRunAt';
-  if (str === 'LastRunAt') return 'lastRunAt';
-  if (str === 'ConsecutiveFailures') return 'consecutiveFailures';
-  if (str === 'WebhookAlertURL') return 'webhookAlertUrl';
-  if (str === 'CreatedAt') return 'createdAt';
-  if (str === 'UpdatedAt') return 'updatedAt';
-  if (str === 'JobID') return 'jobId';
-  if (str === 'TriggeredAt') return 'triggeredAt';
-  if (str === 'StartedAt') return 'startedAt';
-  if (str === 'FinishedAt') return 'finishedAt';
-  if (str === 'HTTPStatus') return 'httpStatus';
-  if (str === 'DurationMs') return 'durationMs';
-  if (str === 'ResponseBody') return 'responseBody';
-  if (str === 'AttemptNumber') return 'attemptNumber';
+  // Casos especiais de siglas que o Go renderiza totalmente em maiúsculo ou tags snake_case
+  if (str === 'ID' || str === 'id') return 'id';
+  if (str === 'URL' || str === 'url') return 'url';
+  if (str === 'HTTPMethod' || str === 'http_method') return 'httpMethod';
+  if (str === 'ProjectID' || str === 'project_id') return 'projectId';
+  if (str === 'NextRunAt' || str === 'next_run_at') return 'nextRunAt';
+  if (str === 'LastRunAt' || str === 'last_run_at') return 'lastRunAt';
+  if (str === 'ConsecutiveFailures' || str === 'consecutive_failures') return 'consecutiveFailures';
+  if (str === 'WebhookAlertURL' || str === 'webhook_alert_url') return 'webhookAlertUrl';
+  if (str === 'CreatedAt' || str === 'created_at') return 'createdAt';
+  if (str === 'UpdatedAt' || str === 'updated_at') return 'updatedAt';
+  if (str === 'JobID' || str === 'job_id') return 'jobId';
+  if (str === 'TriggeredAt' || str === 'triggered_at') return 'triggeredAt';
+  if (str === 'StartedAt' || str === 'started_at') return 'startedAt';
+  if (str === 'FinishedAt' || str === 'finished_at') return 'finishedAt';
+  if (str === 'HTTPStatus' || str === 'http_status') return 'httpStatus';
+  if (str === 'DurationMs' || str === 'duration_ms') return 'durationMs';
+  if (str === 'ResponseBody' || str === 'response_body') return 'responseBody';
+  if (str === 'AttemptNumber' || str === 'attempt_number') return 'attemptNumber';
+
+  // Se contiver snake_case, converte para camelCase
+  if (str.includes('_')) {
+    return str.replace(/([-_][a-z])/gi, ($1) => {
+      return $1.toUpperCase().replace('-', '').replace('_', '');
+    });
+  }
 
   return str.charAt(0).toLowerCase() + str.slice(1);
 };
@@ -59,7 +66,7 @@ const camelToPascal = (str: string): string => {
 export const keysToCamel = (obj: unknown): unknown => {
   if (Array.isArray(obj)) {
     return obj.map(v => keysToCamel(v));
-  } else if (obj !== null && typeof obj === 'object' && obj.constructor === Object) {
+  } else if (obj !== null && typeof obj === 'object') {
     const record = obj as Record<string, unknown>;
     return Object.keys(record).reduce<Record<string, unknown>>((result, key) => {
       const camelKey = pascalToCamel(key);
@@ -78,7 +85,7 @@ export const keysToCamel = (obj: unknown): unknown => {
 export const keysToPascal = (obj: unknown): unknown => {
   if (Array.isArray(obj)) {
     return obj.map(v => keysToPascal(v));
-  } else if (obj !== null && typeof obj === 'object' && obj.constructor === Object) {
+  } else if (obj !== null && typeof obj === 'object') {
     const record = obj as Record<string, unknown>;
     return Object.keys(record).reduce<Record<string, unknown>>((result, key) => {
       const pascalKey = camelToPascal(key);

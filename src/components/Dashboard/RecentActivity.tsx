@@ -79,12 +79,16 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
     },
   ] as LogEntry[];
 
-  const formatTime = (isoString: string) => {
+  const formatTime = (isoString?: string | null) => {
+    if (!isoString) return '-';
     try {
       const date = new Date(isoString);
+      if (isNaN(date.getTime())) {
+        return '-';
+      }
       return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     } catch {
-      return '';
+      return '-';
     }
   };
 

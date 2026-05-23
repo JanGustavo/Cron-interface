@@ -26,7 +26,46 @@ const formatDate = (value?: string | null) => {
 const DashboardPage: React.FC = () => {
   const { setCreateModalOpen } = useUiStore();
   const { jobs } = useJobsStore();
-  
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const fetchRecentLogs = async () => {
+      if (jobs.length === 0) return;
+      setLoading(true);
+      try {
+        const fetchPromises = jobs.map(async (job) => {
+          try {
+            const res = await api.get(`/v1/jobs/${job.id}/executions?limit=5`);
+            const data = (res.data || []) as any[];
+            return data.map((log) => ({
+              ...log,
+              jobName: job.name,
+              jobUrl: job.url,
+            }));
+          } catch (e) {
+            console.error(`Erro ao carregar execuções do job ${job.id}`, e);
+            return [];
+          }
+        });
+        const results = await Promise.all(fetchPromises);
+        const allLogs = results.flat().sort((a, b) => 
+          new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime()
+        );
+        if (active) {
+          setRecentLogs(allLogs.slice(0, 5));
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchRecentLogs();
+    return () => { active = false; };
+  }, [jobs]);
+
   const activeCount = jobs.filter((j) => j.status === 'active').length;
   const totalCount = jobs.length;
   const failingCount = jobs.filter((j) => j.status === 'failing').length;
@@ -101,7 +140,13 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Recent Activity list */}
-      <RecentActivity />
+      {loading && recentLogs.length === 0 ? (
+        <div className="p-6 rounded-2xl glass-panel border border-indigo-950/40 text-slate-400 text-center text-xs animate-pulse">
+          Carregando atividade recente...
+        </div>
+      ) : (
+        <RecentActivity activities={recentLogs} />
+      )}
     </div>
   );
 };

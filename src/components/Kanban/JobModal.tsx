@@ -1,11 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { StatusBadge } from '../Dashboard/StatusBadge';
+import api from '../../services/api';
 
 export const JobModal: React.FC = () => {
   const { activeJob, setActiveJob, updateJob, deleteJob } = useJobsStore();
   const { isJobModalOpen, setJobModalOpen } = useUiStore();
+  const [jobLogs, setJobLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  useEffect(() => {
+    if (!activeJob || !isJobModalOpen) return;
+    setLoadingLogs(true);
+    api.get(`/v1/jobs/${activeJob.id}/executions?limit=5`)
+      .then((res) => {
+        setJobLogs(res.data || []);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar execuções do job:", err);
+      })
+      .finally(() => {
+        setLoadingLogs(false);
+      });
+  }, [activeJob, isJobModalOpen]);
 
   if (!isJobModalOpen || !activeJob) return null;
 
@@ -48,26 +66,6 @@ export const JobModal: React.FC = () => {
       });
     }, 2000);
   };
-
-  // Mock logs for this specific job to make details rich
-  const jobLogs = [
-    {
-      id: 'log-101',
-      status: activeJob.kanbanStatus === 'failed' ? 'failed' : 'success',
-      httpStatus: activeJob.kanbanStatus === 'failed' ? 500 : 200,
-      durationMs: 142,
-      triggeredAt: 'Hoje às 14:15',
-      message: activeJob.kanbanStatus === 'failed' ? 'Internal Server Error' : 'Success',
-    },
-    {
-      id: 'log-102',
-      status: 'success',
-      httpStatus: 200,
-      durationMs: 98,
-      triggeredAt: 'Ontem às 14:15',
-      message: 'Success',
-    },
-  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -160,21 +158,29 @@ export const JobModal: React.FC = () => {
           <div className="space-y-3">
             <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Logs de Execução Recentes</label>
             <div className="border border-indigo-950/30 rounded-xl overflow-hidden text-xs">
-              {jobLogs.map((log) => (
-                <div key={log.id} className="p-3.5 bg-indigo-950/10 border-b border-indigo-950/20 last:border-0 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                      log.status === 'success'
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                    }`}>
-                      {log.httpStatus} {log.message}
-                    </span>
-                    <span className="text-slate-400 font-mono text-[10px]">{log.triggeredAt}</span>
+              {loadingLogs ? (
+                <div className="p-4 text-center text-slate-500 animate-pulse bg-indigo-950/5">Carregando execuções...</div>
+              ) : jobLogs.length > 0 ? (
+                jobLogs.map((log) => (
+                  <div key={log.id} className="p-3.5 bg-indigo-950/10 border-b border-indigo-950/20 last:border-0 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                        log.status === 'success'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      }`}>
+                        {log.httpStatus || 'ERR'} {log.status === 'success' ? 'SUCCESS' : log.status.toUpperCase()}
+                      </span>
+                      <span className="text-slate-400 font-mono text-[10px]">
+                        {new Date(log.triggeredAt).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                    <span className="font-mono text-slate-500 text-[10px]">{log.durationMs}ms</span>
                   </div>
-                  <span className="font-mono text-slate-500 text-[10px]">{log.durationMs}ms</span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="p-4 text-center text-slate-500 italic bg-indigo-950/5">Nenhuma execução registrada para este job.</div>
+              )}
             </div>
           </div>
 
