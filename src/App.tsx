@@ -275,7 +275,7 @@ const ProfilePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab('jobs')}
-                  className="px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary"
+                  className="px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary min-w-[132px]"
                 >
                   Ver Jobs
                 </button>

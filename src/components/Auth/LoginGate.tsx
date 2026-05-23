@@ -4,7 +4,12 @@ import { useUiStore } from '../../store/uiStore';
 import api from '../../services/api';
 
 export const LoginGate: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [apiKey, setApiKey] = useState('');
+  const [email, setEmail] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
@@ -13,7 +18,8 @@ export const LoginGate: React.FC = () => {
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apiKey.trim()) {
+    const token = apiKey.trim();
+    if (!token) {
       setErrorMsg('Por favor, informe a Chave de API.');
       return;
     }
@@ -23,7 +29,7 @@ export const LoginGate: React.FC = () => {
 
     try {
       // Temporarily set token in localstorage so api interceptor reads it
-      localStorage.setItem('cf_token', apiKey.trim());
+      localStorage.setItem('cf_token', token);
       
       // Test credentials with list request
       const response = await api.get('/v1/jobs');
@@ -39,7 +45,7 @@ export const LoginGate: React.FC = () => {
       };
 
       const mockToken = {
-        accessToken: apiKey.trim(),
+        accessToken: token,
         refreshToken: '',
         tokenType: 'Bearer',
         expiresIn: 86400,
@@ -70,6 +76,65 @@ export const LoginGate: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSignupSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !projectName.trim()) {
+      setErrorMsg('Por favor, preencha todos os campos do cadastro.');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+
+    // Simulate secure key generation
+    setTimeout(() => {
+      const chars = '0123456789abcdef';
+      let key = 'cf_live_';
+      for (let i = 0; i < 32; i++) {
+        key += chars[Math.floor(Math.random() * chars.length)];
+      }
+      setGeneratedKey(key);
+      setLoading(false);
+    }, 800);
+  };
+
+  const handleCopyKey = () => {
+    if (!generatedKey) return;
+    navigator.clipboard.writeText(generatedKey);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const handleConnectWithGeneratedKey = () => {
+    if (!generatedKey) return;
+    const token = generatedKey;
+    localStorage.setItem('cf_token', token);
+
+    const newUser = {
+      id: 'user-new',
+      email: email.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    const newToken = {
+      accessToken: token,
+      refreshToken: '',
+      tokenType: 'Bearer',
+      expiresIn: 86400,
+    };
+
+    const newProjects = [
+      {
+        id: 'new-project-uuid',
+        userId: 'user-new',
+        name: projectName.trim(),
+        createdAt: new Date().toISOString(),
+      },
+    ];
+
+    login(newUser, newToken, newProjects);
   };
 
   return (
@@ -116,62 +181,213 @@ export const LoginGate: React.FC = () => {
         <div className="p-6 md:p-8 rounded-3xl glass-panel border border-indigo-950/40 shadow-2xl relative">
           <div className="absolute top-0 inset-x-12 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
           
-          <form onSubmit={handleConnect} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-                Chave de API do Projeto (Bearer)
-              </label>
+          {/* Tabs Selector */}
+          {!generatedKey && (
+            <div className="flex border-b border-indigo-950/20 mb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('login');
+                  setErrorMsg(null);
+                }}
+                className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  activeTab === 'login'
+                    ? 'text-cyan-400 border-b-2 border-cyan-400'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                Conectar Chave
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('signup');
+                  setErrorMsg(null);
+                }}
+                className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  activeTab === 'signup'
+                    ? 'text-cyan-400 border-b-2 border-cyan-400'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                Criar Nova Conta
+              </button>
+            </div>
+          )}
+
+          {generatedKey ? (
+            <div className="space-y-6 animate-in zoom-in-95 duration-300">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-2">
+                <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Sucesso!</span>
+                <p className="text-xs text-slate-300">Sua Chave de API segura foi gerada e está pronta.</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                  Sua Chave de API (cf_live_...)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={generatedKey}
+                    className="flex-1 px-3.5 py-2.5 bg-[#070913]/90 border border-indigo-950/60 rounded-xl font-mono text-xs text-indigo-400 focus:outline-none select-all"
+                  />
+                  <button
+                    onClick={handleCopyKey}
+                    className={`px-4 py-2.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                      copySuccess
+                        ? 'bg-emerald-600 border-emerald-500 text-white'
+                        : 'bg-slate-800/60 hover:bg-slate-800/80 border-slate-700/50 text-slate-300'
+                    }`}
+                  >
+                    {copySuccess ? 'Copiado!' : 'Copiar'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 bg-[#0a0d1d]/80 border border-indigo-950/40 rounded-2xl space-y-3 text-left">
+                <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Banco de dados local</h4>
+                <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
+                  Para rodar requisições localmente no backend em Go, insira o hash SHA-256 desta chave na tabela <code>api_keys</code> vinculada a um usuário e projeto. Veja instruções detalhadas de SQL e seeds no nosso manual de desenvolvimento (README.md).
+                </p>
+              </div>
+
+              <button
+                onClick={handleConnectWithGeneratedKey}
+                className="w-full py-3.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+              >
+                Conectar e Acessar o Dashboard ⚡
+              </button>
               
-              <div className="relative group">
+              <button
+                onClick={() => {
+                  setGeneratedKey(null);
+                  setActiveTab('signup');
+                  setEmail('');
+                  setProjectName('');
+                }}
+                className="w-full text-center text-[10px] text-slate-500 hover:text-slate-400 font-semibold cursor-pointer"
+              >
+                Voltar para o cadastro
+              </button>
+            </div>
+          ) : activeTab === 'login' ? (
+            <form onSubmit={handleConnect} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                  Chave de API do Projeto (Bearer)
+                </label>
+                
+                <div className="relative group">
+                  <input
+                    type="password"
+                    placeholder="cf_live_..."
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                    disabled={loading}
+                  />
+                </div>
+                
+                <div className="text-[10px] text-slate-500 flex justify-between pt-1">
+                  <span>Sugestão de teste local:</span>
+                  <button
+                    type="button"
+                    onClick={() => setApiKey('cf_live_test_key')}
+                    className="text-cyan-400 font-bold hover:underline font-mono cursor-pointer"
+                    disabled={loading}
+                  >
+                    cf_live_test_key
+                  </button>
+                </div>
+              </div>
+
+              {errorMsg && (
+                <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-400 font-semibold text-center select-text">
+                  ⚠️ {errorMsg}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer ${
+                  loading ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Conectando no Servidor...
+                  </>
+                ) : (
+                  'Entrar no Painel ⚡'
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSignupSubmit} className="space-y-5 animate-in fade-in duration-300">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                  E-mail do Desenvolvedor
+                </label>
                 <input
-                  type="password"
-                  placeholder="cf_live_..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                  type="email"
+                  placeholder="junior@empresa.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
                   disabled={loading}
+                  required
                 />
               </div>
-              
-              <div className="text-[10px] text-slate-500 flex justify-between pt-1">
-                <span>Sugestão de teste local:</span>
-                <button
-                  type="button"
-                  onClick={() => setApiKey('cf_live_test_key')}
-                  className="text-cyan-400 font-bold hover:underline font-mono"
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                  Nome do Projeto / Workspace
+                </label>
+                <input
+                  type="text"
+                  placeholder="Meu Sistema SaaS"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
                   disabled={loading}
-                >
-                  cf_live_test_key
-                </button>
+                  required
+                />
               </div>
-            </div>
 
-            {errorMsg && (
-              <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-400 font-semibold text-center select-text">
-                ⚠️ {errorMsg}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 ${
-                loading ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Conectando no Servidor...
-                </>
-              ) : (
-                'Entrar no Painel ⚡'
+              {errorMsg && (
+                <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-400 font-semibold text-center">
+                  ⚠️ {errorMsg}
+                </div>
               )}
-            </button>
-          </form>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3.5 rounded-xl text-xs font-bold text-white bg-[#ff006e] hover:bg-[#d90368] transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer ${
+                  loading ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Gerando Chave Segura...
+                  </>
+                ) : (
+                  'Gerar Chave de API e Acessar 🚀'
+                )}
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Footer info */}
