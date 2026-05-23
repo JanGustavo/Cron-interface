@@ -13,7 +13,7 @@ export const CreateJobModal: React.FC = () => {
   const [httpMethod, setHttpMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>('POST');
   const [headersText, setHeadersText] = useState('{\n  "Content-Type": "application/json"\n}');
   const [payloadText, setPayloadText] = useState('{\n  "status": "ping"\n}');
-  const [webhookAlertUrl, setWebhookAlertUrl] = useState('');
+  const [webhookAlertUrl, setWebhookAlertUrl] = useState(() => localStorage.getItem('cf_global_webhook') || '');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export const CreateJobModal: React.FC = () => {
       setHttpMethod('POST');
       setHeadersText('{\n  "Content-Type": "application/json"\n}');
       setPayloadText('{\n  "status": "ping"\n}');
-      setWebhookAlertUrl('');
+      setWebhookAlertUrl(localStorage.getItem('cf_global_webhook') || '');
       
       handleClose();
     } catch (err) {

@@ -11,6 +11,16 @@ import { Logs } from './pages/Logs';
 import { LoginGate } from './components/Auth/LoginGate';
 import { CreateJobModal } from './components/Kanban/CreateJobModal';
 import api from './services/api';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
 
 const formatDate = (value?: string | null) => {
   if (!value) return 'Não informado';
@@ -23,10 +33,40 @@ const formatDate = (value?: string | null) => {
 };
 
 // Mock Page Components to render inside our Layout
+// Custom tooltip for premium cyber-neon dashboard area chart
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const isSuccess = data.status === 'success';
+    return (
+      <div className="p-4 rounded-xl border border-indigo-950/60 bg-slate-950/90 backdrop-blur-md shadow-2xl space-y-2 text-xs select-none">
+        <div className="flex items-center justify-between gap-4">
+          <span className="font-bold text-slate-200">{data.name}</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            isSuccess 
+              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
+              : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'
+          }`}>
+            {data.status.toUpperCase()}
+          </span>
+        </div>
+        <div className="space-y-1 text-slate-400">
+          <p className="truncate max-w-[200px]"><span className="text-slate-500">URL:</span> {data.jobUrl}</p>
+          <p><span className="text-slate-500">Duração:</span> <span className="font-semibold text-indigo-300">{data.duration}ms</span></p>
+          <p><span className="text-slate-500">HTTP Status:</span> <span className="font-semibold text-slate-300">{data.httpStatus || 'N/A'}</span></p>
+          <p><span className="text-slate-500">Disparo:</span> <span className="text-slate-300">{new Date(data.triggeredAt).toLocaleString('pt-BR')}</span></p>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Premium Dashboard DashboardPage with Recharts Area Chart
 const DashboardPage: React.FC = () => {
   const { setCreateModalOpen } = useUiStore();
   const { jobs } = useJobsStore();
-  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [allRecentLogs, setAllRecentLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -37,7 +77,8 @@ const DashboardPage: React.FC = () => {
       try {
         const fetchPromises = jobs.map(async (job) => {
           try {
-            const res = await api.get(`/v1/jobs/${job.id}/executions?limit=5`);
+            // Fetch 10 executions per job to populate chart and activity feed
+            const res = await api.get(`/v1/jobs/${job.id}/executions?limit=10`);
             const data = (res.data || []) as any[];
             return data.map((log) => ({
               ...log,
@@ -54,7 +95,7 @@ const DashboardPage: React.FC = () => {
           new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime()
         );
         if (active) {
-          setRecentLogs(allLogs.slice(0, 5));
+          setAllRecentLogs(allLogs);
         }
       } catch (err) {
         console.error(err);
@@ -70,6 +111,22 @@ const DashboardPage: React.FC = () => {
   const totalCount = jobs.length;
   const failingCount = jobs.filter((j) => j.status === 'failing').length;
   const successRate = totalCount > 0 ? (((totalCount - failingCount) / totalCount) * 100).toFixed(2) : '100.00';
+
+  // Prepare chart data chronologically (oldest to newest)
+  const chartData = [...allRecentLogs]
+    .slice(0, 15)
+    .reverse()
+    .map((log) => ({
+      name: log.jobName,
+      time: new Date(log.triggeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      duration: log.durationMs || 0,
+      status: log.status,
+      jobUrl: log.jobUrl,
+      httpStatus: log.httpStatus,
+      triggeredAt: log.triggeredAt,
+    }));
+
+  const recentActivities = allRecentLogs.slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -90,11 +147,11 @@ const DashboardPage: React.FC = () => {
         <div className="flex gap-3 mt-6">
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary"
+            className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary cursor-pointer animate-pulse"
           >
             Criar Nova Tarefa
           </button>
-          <button className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all">
+          <button className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all cursor-pointer">
             Documentação API
           </button>
         </div>
@@ -139,13 +196,80 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
+      {/* Recharts Performance Area Chart */}
+      <div className="p-6 rounded-2xl glass-panel border border-indigo-950/30 relative overflow-hidden space-y-4">
+        <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-slate-200">Desempenho de Execuções</h3>
+            <p className="text-xs text-slate-400">Tempo de resposta (ms) das últimas tarefas executadas em tempo real.</p>
+          </div>
+          <div className="flex gap-2">
+            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
+              <span className="w-2.5 h-2.5 rounded bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+              Tempo de Resposta (ms)
+            </span>
+          </div>
+        </div>
+
+        <div className="h-64 w-full">
+          {loading && allRecentLogs.length === 0 ? (
+            <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs animate-pulse">
+              Carregando dados do gráfico...
+            </div>
+          ) : chartData.length === 0 ? (
+            <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
+              Nenhuma execução registrada para exibir no gráfico.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="durationGlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
+                <XAxis 
+                  dataKey="time" 
+                  stroke="#64748b" 
+                  fontSize={10} 
+                  tickLine={false} 
+                  axisLine={false} 
+                />
+                <YAxis 
+                  stroke="#64748b" 
+                  fontSize={10} 
+                  tickLine={false} 
+                  axisLine={false}
+                  tickFormatter={(v) => `${v}ms`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="duration" 
+                  stroke="#6366f1" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#durationGlow)" 
+                  dot={{ r: 3, stroke: '#6366f1', strokeWidth: 2, fill: '#070913' }}
+                  activeDot={{ r: 5, stroke: '#818cf8', strokeWidth: 2, fill: '#070913' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
       {/* Recent Activity list */}
-      {loading && recentLogs.length === 0 ? (
+      {loading && allRecentLogs.length === 0 ? (
         <div className="p-6 rounded-2xl glass-panel border border-indigo-950/40 text-slate-400 text-center text-xs animate-pulse">
           Carregando atividade recente...
         </div>
       ) : (
-        <RecentActivity activities={recentLogs} />
+        <RecentActivity activities={recentActivities} />
       )}
     </div>
   );
@@ -439,49 +563,92 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-const SettingsPage: React.FC = () => (
-  <div className="space-y-6">
-    <div>
-      <h2 className="text-xl font-bold text-slate-100">Configurações do Projeto</h2>
-      <p className="text-xs text-slate-400">Configure chaves de API e alertas globais.</p>
-    </div>
-    
-    <div className="p-6 rounded-2xl glass-panel space-y-6">
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-200">Chaves de API do Workspace</h3>
-        <p className="text-xs text-slate-400">Use essa chave para autenticar requisições na nossa API REST de agendamentos.</p>
-        
-        <div className="flex gap-2 max-w-xl">
-          <input
-            type="text"
-            readOnly
-            value="cf_live_9a3jFk82Lsq10Pd9aM"
-            className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-indigo-950/40 rounded-xl font-mono text-xs text-indigo-400 select-all focus:outline-none"
-          />
-          <button className="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all">
-            Copiar
-          </button>
-        </div>
+const SettingsPage: React.FC = () => {
+  const { token } = useAuthStore();
+  const activeKey = token?.accessToken || localStorage.getItem('cf_token') || 'cf_live_test_key';
+  const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+
+  const handleCopyKey = () => {
+    navigator.clipboard.writeText(activeKey);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const handleUpdateWebhook = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('cf_global_webhook', globalWebhook.trim());
+    setUpdateSuccess(true);
+    setTimeout(() => setUpdateSuccess(false), 2000);
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div>
+        <h2 className="text-xl font-bold text-slate-100">Configurações do Projeto</h2>
+        <p className="text-xs text-slate-400">Configure chaves de API e alertas de webhooks globais para o seu workspace.</p>
       </div>
       
-      <div className="border-t border-indigo-950/20 pt-6 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-200">Webhooks de Alerta</h3>
-        <p className="text-xs text-slate-400">URL para notificar quando um job falhar mais de 3 vezes consecutivas.</p>
-        
-        <div className="flex gap-2 max-w-xl">
-          <input
-            type="text"
-            placeholder="https://sua-api.com/alertas"
-            className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40"
-          />
-          <button className="px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md neon-glow-primary">
-            Atualizar
-          </button>
+      <div className="p-6 rounded-2xl glass-panel space-y-6">
+        {/* Chave de API do Workspace */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-200">Chave de API Ativa do Workspace</h3>
+          <p className="text-xs text-slate-400">
+            Use esta chave de API no cabeçalho <code>X-API-Key</code> ou <code>Authorization: Bearer</code> para autenticar requisições no backend.
+          </p>
+          
+          <div className="flex gap-2 max-w-xl">
+            <input
+              type="text"
+              readOnly
+              value={activeKey}
+              className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-indigo-950/40 rounded-xl font-mono text-xs text-indigo-400 select-all focus:outline-none"
+            />
+            <button 
+              onClick={handleCopyKey}
+              className={`px-4 py-2.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                copySuccess 
+                  ? 'bg-emerald-600 border-emerald-500 text-white' 
+                  : 'bg-slate-800/60 hover:bg-slate-800/80 border-slate-700/50 text-slate-300'
+              }`}
+            >
+              {copySuccess ? 'Copiado!' : 'Copiar'}
+            </button>
+          </div>
         </div>
+        
+        {/* Webhooks de Alerta Global */}
+        <form onSubmit={handleUpdateWebhook} className="border-t border-indigo-950/20 pt-6 space-y-3">
+          <h3 className="text-sm font-semibold text-slate-200">Webhook de Alerta Padrão</h3>
+          <p className="text-xs text-slate-400">
+            Configure uma URL padrão para notificar quando um job falhar 3 vezes seguidas. Ao criar novos jobs no Kanban, este endereço será autopopulado por conveniência.
+          </p>
+          
+          <div className="flex gap-2 max-w-xl">
+            <input
+              type="url"
+              placeholder="https://sua-api.com/alertas-webhook"
+              value={globalWebhook}
+              onChange={(e) => setGlobalWebhook(e.target.value)}
+              className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40"
+            />
+            <button 
+              type="submit"
+              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer ${
+                updateSuccess
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-indigo-600 hover:bg-indigo-500 text-white neon-glow-primary'
+              }`}
+            >
+              {updateSuccess ? 'Salvo! ✓' : 'Atualizar'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const App: React.FC = () => {
   const { activeTab } = useUiStore();
