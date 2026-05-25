@@ -1,11 +1,14 @@
 import React from 'react';
 import type { LogEntry } from '../../types/logs';
+import { useUiStore } from '../../store/uiStore';
 
 interface LogExportProps {
   logs: LogEntry[];
 }
 
 export const LogExport: React.FC<LogExportProps> = ({ logs }) => {
+  const { showToast } = useUiStore();
+
   const handleCopyToClipboard = () => {
     try {
       const formatted = logs
@@ -18,7 +21,7 @@ export const LogExport: React.FC<LogExportProps> = ({ logs }) => {
         .join('\n');
       
       navigator.clipboard.writeText(formatted);
-      alert('Logs copiados para a área de transferência! 📋');
+      showToast('Logs copiados para a área de transferência!', 'success');
     } catch (err) {
       console.error('Falha ao copiar logs:', err);
     }

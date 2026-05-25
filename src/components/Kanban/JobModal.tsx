@@ -5,10 +5,11 @@ import { StatusBadge } from '../Dashboard/StatusBadge';
 import api from '../../services/api';
 
 export const JobModal: React.FC = () => {
-  const { activeJob, setActiveJob, updateJob, deleteJob } = useJobsStore();
-  const { isJobModalOpen, setJobModalOpen } = useUiStore();
+  const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob } = useJobsStore();
+  const { isJobModalOpen, setJobModalOpen, showToast } = useUiStore();
   const [jobLogs, setJobLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [lastTriggerStatus, setLastTriggerStatus] = useState<{ code: number | null; ok: boolean } | null>(null);
 
   useEffect(() => {
     if (!activeJob || !isJobModalOpen) return;
@@ -50,21 +51,17 @@ export const JobModal: React.FC = () => {
     }
   };
 
-  const handleTriggerNow = () => {
-    alert(`Disparo de webhook manual iniciado para ${activeJob.url}`);
-    // Simulate active execution
-    const prevKanban = activeJob.kanbanStatus;
-    updateJob({
-      ...activeJob,
-      kanbanStatus: 'executing',
-    });
-    
-    setTimeout(() => {
-      updateJob({
-        ...activeJob,
-        kanbanStatus: prevKanban,
-      });
-    }, 2000);
+  const handleTriggerNow = async () => {
+    try {
+      const result = await triggerJob(activeJob.id);
+      setLastTriggerStatus({ code: result.status, ok: result.status >= 200 && result.status < 300 });
+      showToast(`Disparo de webhook manual iniciado para ${activeJob.url}`, 'success');
+    } catch (err: any) {
+      console.error(err);
+      const status = typeof err?.status === 'number' ? err.status : null;
+      setLastTriggerStatus({ code: status, ok: false });
+      showToast(`Falha ao disparar tarefa: ${err.message || 'erro interno'}`, 'error');
+    }
   };
 
   return (
@@ -98,7 +95,7 @@ export const JobModal: React.FC = () => {
 
         {/* Modal Content Scrollable Area */}
         <div className="p-6 overflow-y-auto space-y-6">
-          
+
           {/* Metadata Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl">
@@ -198,6 +195,17 @@ export const JobModal: React.FC = () => {
 
           {/* Right Action Stack */}
           <div className="flex gap-2">
+            {lastTriggerStatus && (
+              <span
+                className={`px-2.5 py-2 text-[9px] font-bold rounded-xl border uppercase tracking-wider self-center ${
+                  lastTriggerStatus.ok
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                }`}
+              >
+                HTTP {lastTriggerStatus.code ?? 'ERR'}
+              </span>
+            )}
             <button
               onClick={handleToggleStatus}
               className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-all ${

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
+import { CronTimeHelp } from '../Shared/CronTimeHelp';
 
 export const CreateJobModal: React.FC = () => {
   const { addJob } = useJobsStore();
@@ -159,7 +160,10 @@ export const CreateJobModal: React.FC = () => {
             {/* Agendamento */}
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-                Cron / Intervalo (Schedule)
+                <span className="inline-flex items-center gap-2">
+                  Cron / Intervalo (Schedule)
+                  <CronTimeHelp />
+                </span>
               </label>
               <input
                 type="text"

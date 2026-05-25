@@ -10,7 +10,7 @@ interface LogDetailProps {
 
 export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
   const { jobs } = useJobsStore();
-  const { isLogModalOpen, selectedLogId, setLogModalOpen } = useUiStore();
+  const { isLogModalOpen, selectedLogId, setLogModalOpen, showToast } = useUiStore();
 
   if (!isLogModalOpen || !selectedLogId) return null;
 
@@ -28,7 +28,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
   const handleCopyText = (text: string, message: string) => {
     try {
       navigator.clipboard.writeText(text);
-      alert(message);
+      showToast(message, 'success');
     } catch (err) {
       console.error('Falha ao copiar:', err);
     }
@@ -112,7 +112,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin scrollbar-thumb-indigo-950/60 scrollbar-track-transparent">
-            
+
             {/* Task Meta details */}
             <div className="p-4 bg-indigo-950/10 border border-indigo-950/20 rounded-2xl space-y-2 relative overflow-hidden">
               <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl" />

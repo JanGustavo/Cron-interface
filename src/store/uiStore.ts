@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+type ToastVariant = 'info' | 'success' | 'warning' | 'error';
+
 interface UiState {
   theme: 'dark' | 'light';
   sidebarOpen: boolean;
@@ -8,6 +10,7 @@ interface UiState {
   isLogModalOpen: boolean;
   isCreateModalOpen: boolean;
   selectedLogId: string | null;
+  toast: { message: string; variant: ToastVariant } | null;
 
   // Actions
   toggleTheme: () => void;
@@ -18,6 +21,8 @@ interface UiState {
   setJobModalOpen: (isOpen: boolean) => void;
   setLogModalOpen: (isOpen: boolean, logId?: string | null) => void;
   setCreateModalOpen: (isOpen: boolean) => void;
+  showToast: (message: string, variant?: ToastVariant) => void;
+  clearToast: () => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -28,6 +33,7 @@ export const useUiStore = create<UiState>((set) => ({
   isLogModalOpen: false,
   isCreateModalOpen: false,
   selectedLogId: null,
+  toast: null,
 
   toggleTheme: () =>
     set((state) => {
@@ -62,4 +68,9 @@ export const useUiStore = create<UiState>((set) => ({
     set({ isLogModalOpen, selectedLogId }),
 
   setCreateModalOpen: (isCreateModalOpen) => set({ isCreateModalOpen }),
+
+  showToast: (message, variant = 'info') =>
+    set({ toast: { message, variant } }),
+
+  clearToast: () => set({ toast: null }),
 }));

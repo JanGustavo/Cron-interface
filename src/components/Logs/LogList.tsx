@@ -106,7 +106,7 @@ export const LogList: React.FC<LogListProps> = ({
 
                   {/* Attempt Number */}
                   <td className="p-4 text-center">
-                    <span className="px-2 py-0.5 rounded-md bg-indigo-950/30 border border-indigo-950/40 text-[10px] font-bold text-slate-400 font-mono">
+                    <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-indigo-950/30 border border-indigo-950/40 text-[10px] font-semibold text-slate-400 whitespace-nowrap leading-none">
                       {log.attemptNumber}ª tent.
                     </span>
                   </td>
