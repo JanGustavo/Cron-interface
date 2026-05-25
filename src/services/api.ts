@@ -41,6 +41,7 @@ const camelToPascal = (str: string): string => {
   if (str === 'url') return 'URL';
   if (str === 'httpMethod') return 'HTTPMethod';
   if (str === 'projectId') return 'ProjectID';
+  if (str === 'projectName') return 'project_name';
   if (str === 'nextRunAt') return 'NextRunAt';
   if (str === 'lastRunAt') return 'LastRunAt';
   if (str === 'consecutiveFailures') return 'ConsecutiveFailures';

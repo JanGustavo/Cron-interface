@@ -74,6 +74,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 const DashboardPage: React.FC = () => {
   const { setCreateModalOpen } = useUiStore();
   const { jobs } = useJobsStore();
+  const { user } = useAuthStore();
   const [allRecentLogs, setAllRecentLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -119,6 +120,10 @@ const DashboardPage: React.FC = () => {
   const totalCount = jobs.length;
   const failingCount = jobs.filter((j) => j.status === 'failing').length;
   const successRate = totalCount > 0 ? (((totalCount - failingCount) / totalCount) * 100).toFixed(2) : '100.00';
+
+  const plan = user?.plan || 'free';
+  const maxJobsLimit = plan === 'paid' ? 20 : 5;
+  const isLimitReached = activeCount >= maxJobsLimit;
 
   // Prepare chart data chronologically (oldest to newest)
   const chartData = (() => {
@@ -238,9 +243,15 @@ const DashboardPage: React.FC = () => {
         <div className="flex gap-3 mt-6">
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary cursor-pointer animate-pulse"
+            disabled={isLimitReached}
+            className={`px-4 py-2 text-xs font-semibold text-white rounded-xl transition-all shadow-md cursor-pointer ${
+              isLimitReached
+                ? 'bg-slate-700 hover:bg-slate-700 border border-slate-600/50 cursor-not-allowed opacity-50'
+                : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30 neon-glow-primary animate-pulse'
+            }`}
+            title={isLimitReached ? 'Limite do seu plano atingido (faça upgrade ou pause tarefas)' : 'Criar Nova Tarefa'}
           >
-            Criar Nova Tarefa
+            {isLimitReached ? 'Limite Atingido 🔒' : 'Criar Nova Tarefa'}
           </button>
           <button className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all cursor-pointer">
             Documentação API
@@ -252,9 +263,9 @@ const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Tarefas Ativas"
-          value={`${activeCount} / 100`}
+          value={`${activeCount} / ${maxJobsLimit}`}
           color="indigo"
-          description="Limites do plano Starter"
+          description={plan === 'paid' ? 'Plano Pro (20 tarefas máx)' : 'Plano Gratuito (5 tarefas máx)'}
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -754,6 +765,24 @@ const SettingsPage: React.FC = () => {
   );
 };
 
+const parseJwt = (token: string) => {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+};
+
 const App: React.FC = () => {
   const { activeTab } = useUiStore();
   const { isAuthenticated, login, logout } = useAuthStore();
@@ -773,10 +802,16 @@ const App: React.FC = () => {
           const jobs = response.data || [];
           const extractedProjectId = jobs[0]?.projectId || '0fe9fb93-3fa0-44b6-b5d8-a5c5b62148a1';
 
+          const decoded = parseJwt(savedToken);
+          const email = decoded?.email || 'admin@cronflow.sh';
+          const userId = decoded?.user_id || 'user-admin';
+          const plan = decoded?.plan || 'free';
+          const projectId = decoded?.project_id || extractedProjectId;
+
           login(
-            { id: 'user-admin', email: 'admin@cronflow.sh', createdAt: new Date().toISOString() },
+            { id: userId, email: email, plan: plan, createdAt: new Date().toISOString() },
             { accessToken: savedToken, refreshToken: '', tokenType: 'Bearer', expiresIn: 86400 },
-            [{ id: extractedProjectId, userId: 'user-admin', name: 'Projeto Principal', createdAt: new Date().toISOString() }]
+            [{ id: projectId, userId: userId, name: 'Projeto Principal', createdAt: new Date().toISOString() }]
           );
         } catch (err) {
           console.error('Auto login verification failed', err);

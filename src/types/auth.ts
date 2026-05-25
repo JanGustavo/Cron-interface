@@ -6,6 +6,7 @@
 export interface User {
   id: string;
   email: string;
+  plan: 'free' | 'paid';
   createdAt: string;
 }
 

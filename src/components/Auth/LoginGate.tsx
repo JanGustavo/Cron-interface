@@ -5,22 +5,23 @@ import api from '../../services/api';
 
 export const LoginGate: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
-  const [apiKey, setApiKey] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [signupSession, setSignupSession] = useState<{ user: any; token: any; projects: any } | null>(null);
   
   const { login } = useAuthStore();
   const { toggleTheme, theme } = useUiStore();
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = apiKey.trim();
-    if (!token) {
-      setErrorMsg('Por favor, informe a Chave de API.');
+    if (!email.trim() || !password) {
+      setErrorMsg('Por favor, preencha o e-mail e a senha.');
       return;
     }
 
@@ -28,44 +29,15 @@ export const LoginGate: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      // Temporarily set token in localstorage so api interceptor reads it
-      localStorage.setItem('cf_token', token);
-      
-      // Test credentials with list request
-      const response = await api.get('/v1/jobs');
-      
-      // If success, get project ID from the first job or use a default one
-      const jobs = response.data || [];
-      const extractedProjectId = jobs[0]?.projectId || '0fe9fb93-3fa0-44b6-b5d8-a5c5b62148a1';
+      const response = await api.post('/v1/auth/login', {
+        email: email.trim(),
+        password: password,
+      });
 
-      const mockUser = {
-        id: 'user-admin',
-        email: 'admin@cronflow.sh',
-        createdAt: new Date().toISOString(),
-      };
-
-      const mockToken = {
-        accessToken: token,
-        refreshToken: '',
-        tokenType: 'Bearer',
-        expiresIn: 86400,
-      };
-
-      const mockProjects = [
-        {
-          id: extractedProjectId,
-          userId: 'user-admin',
-          name: 'Projeto Principal',
-          createdAt: new Date().toISOString(),
-        },
-      ];
-
-      // Formally login in the auth store
-      login(mockUser, mockToken, mockProjects);
+      const { token, user, projects } = response.data;
+      login(user, token, projects);
     } catch (err) {
-      localStorage.removeItem('cf_token');
       console.error(err);
-      
       const axiosError = err as { response?: { status: number; data?: { error?: string; reason?: string } } };
       if (axiosError.response) {
         const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
@@ -78,9 +50,9 @@ export const LoginGate: React.FC = () => {
     }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !projectName.trim()) {
+    if (!email.trim() || !password || !projectName.trim()) {
       setErrorMsg('Por favor, preencha todos os campos do cadastro.');
       return;
     }
@@ -88,16 +60,28 @@ export const LoginGate: React.FC = () => {
     setLoading(true);
     setErrorMsg(null);
 
-    // Simulate secure key generation
-    setTimeout(() => {
-      const chars = '0123456789abcdef';
-      let key = 'cf_live_';
-      for (let i = 0; i < 32; i++) {
-        key += chars[Math.floor(Math.random() * chars.length)];
+    try {
+      const response = await api.post('/v1/auth/signup', {
+        email: email.trim(),
+        password: password,
+        projectName: projectName.trim(),
+      });
+
+      const { token, user, projects, apiKey } = response.data;
+      setGeneratedKey(apiKey);
+      setSignupSession({ user, token, projects });
+    } catch (err) {
+      console.error(err);
+      const axiosError = err as { response?: { status: number; data?: { error?: string; reason?: string } } };
+      if (axiosError.response) {
+        const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
+        setErrorMsg(backendError || `Erro no cadastro: HTTP ${axiosError.response.status}`);
+      } else {
+        setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
       }
-      setGeneratedKey(key);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   const handleCopyKey = () => {
@@ -108,33 +92,8 @@ export const LoginGate: React.FC = () => {
   };
 
   const handleConnectWithGeneratedKey = () => {
-    if (!generatedKey) return;
-    const token = generatedKey;
-    localStorage.setItem('cf_token', token);
-
-    const newUser = {
-      id: 'user-new',
-      email: email.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    const newToken = {
-      accessToken: token,
-      refreshToken: '',
-      tokenType: 'Bearer',
-      expiresIn: 86400,
-    };
-
-    const newProjects = [
-      {
-        id: 'new-project-uuid',
-        userId: 'user-new',
-        name: projectName.trim(),
-        createdAt: new Date().toISOString(),
-      },
-    ];
-
-    login(newUser, newToken, newProjects);
+    if (!signupSession) return;
+    login(signupSession.user, signupSession.token, signupSession.projects);
   };
 
   return (
@@ -276,29 +235,71 @@ export const LoginGate: React.FC = () => {
             <form onSubmit={handleConnect} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-                  Chave de API do Projeto (Bearer)
+                  E-mail do Desenvolvedor
                 </label>
-                
-                <div className="relative group">
+                <input
+                  type="email"
+                  placeholder="junior@empresa.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                  Senha de Acesso
+                </label>
+                <div className="relative">
                   <input
-                    type="password"
-                    placeholder="cf_live_..."
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
                     disabled={loading}
+                    required
                   />
-                </div>
-                
-                <div className="text-[10px] text-slate-500 flex justify-between pt-1">
-                  <span>Sugestão de teste local:</span>
                   <button
                     type="button"
-                    onClick={() => setApiKey('cf_live_test_key')}
-                    className="text-cyan-400 font-bold hover:underline font-mono cursor-pointer"
-                    disabled={loading}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    aria-pressed={showPassword}
                   >
-                    cf_live_test_key
+                    {showPassword ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.204.214-2.357.606-3.427m3.2 6.427a4 4 0 116.388 3.25M15 12a3 3 0 00-3-3"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 3l18 18"
+                        />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>
@@ -348,6 +349,62 @@ export const LoginGate: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                  Senha de Acesso (Nova Conta)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                    disabled={loading}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.204.214-2.357.606-3.427m3.2 6.427a4 4 0 116.388 3.25M15 12a3 3 0 00-3-3"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 3l18 18"
+                        />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
                   Nome do Projeto / Workspace
                 </label>
                 <input
@@ -380,10 +437,10 @@ export const LoginGate: React.FC = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Gerando Chave Segura...
+                    Cadastrando Conta...
                   </>
                 ) : (
-                  'Gerar Chave de API e Acessar 🚀'
+                  'Criar Conta e Acessar 🚀'
                 )}
               </button>
             </form>

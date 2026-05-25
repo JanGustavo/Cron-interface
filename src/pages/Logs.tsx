@@ -18,6 +18,7 @@ export const Logs: React.FC = () => {
   const { jobs } = useJobsStore();
   const [filter, setFilter] = useState<LogFilterType>(INITIAL_FILTER);
   const [dbLogs, setDbLogs] = useState<LogEntry[]>([]);
+  const [totalLogs, setTotalLogs] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,10 +26,29 @@ export const Logs: React.FC = () => {
     const fetchAllLogs = async () => {
       setLoading(true);
       try {
-        const res = await api.get('/v1/executions?limit=200');
+        const params = new URLSearchParams();
+        params.append('page', filter.page.toString());
+        params.append('limit', filter.limit.toString());
+        if (filter.searchQuery) {
+          params.append('search', filter.searchQuery);
+        }
+        if (filter.status && filter.status.length > 0) {
+          params.append('status', filter.status[0]);
+        }
+        if (filter.startDate) {
+          params.append('start_date', filter.startDate);
+        }
+        if (filter.endDate) {
+          params.append('end_date', filter.endDate);
+        }
+
+        const res = await api.get(`/v1/executions?${params.toString()}`);
         const payload = (res.data?.data || []) as LogEntry[];
+        const total = res.data?.total || 0;
+        
         if (active) {
           setDbLogs(payload);
+          setTotalLogs(total);
         }
       } catch (err) {
         console.error("Erro ao carregar auditoria global de logs", err);
@@ -38,7 +58,7 @@ export const Logs: React.FC = () => {
     };
     fetchAllLogs();
     return () => { active = false; };
-  }, [jobs]);
+  }, [filter, jobs]);
 
   const handleReset = () => {
     setFilter(INITIAL_FILTER);
@@ -65,50 +85,12 @@ export const Logs: React.FC = () => {
   };
 
   // Perform reactive computations using useMemo
-  const filteredAndFormattedLogs = useMemo(() => {
-    return dbLogs.filter((log) => {
-      // 1. Search query filter (matches ID, job name, or target webhook URL)
-      if (filter.searchQuery) {
-        const query = filter.searchQuery.toLowerCase();
-        const matchesName = log.jobName?.toLowerCase().includes(query);
-        const matchesUrl = log.jobUrl?.toLowerCase().includes(query);
-        const matchesId = log.id.toLowerCase().includes(query) || log.jobId.toLowerCase().includes(query);
-        
-        if (!matchesName && !matchesUrl && !matchesId) return false;
-      }
-
-      // 2. Status filter
-      if (filter.status && filter.status.length > 0) {
-        if (!filter.status.includes(log.status)) return false;
-      }
-
-      // 3. Date range filter
-      const logTime = new Date(log.triggeredAt).getTime();
-      if (filter.startDate) {
-        const start = new Date(filter.startDate).getTime();
-        if (logTime < start) return false;
-      }
-      if (filter.endDate) {
-        // Extend end date to cover the entire day (up to 23:59:59.999)
-        const end = new Date(filter.endDate);
-        end.setHours(23, 59, 59, 999);
-        if (logTime > end.getTime()) return false;
-      }
-
-      return true;
-    }).map((log) => ({
+  const formattedLogs = useMemo(() => {
+    return dbLogs.map((log) => ({
       ...log,
-      // Format triggeredAt into standard Brazilian locale inside UI entries
       triggeredAt: formatTimestamp(log.triggeredAt),
     }));
-  }, [filter, dbLogs]);
-
-  // Paginated subset
-  const paginatedLogs = useMemo(() => {
-    const startIdx = (filter.page - 1) * filter.limit;
-    const endIdx = startIdx + filter.limit;
-    return filteredAndFormattedLogs.slice(startIdx, endIdx);
-  }, [filteredAndFormattedLogs, filter.page, filter.limit]);
+  }, [dbLogs]);
 
   return (
     <div className="space-y-6">
@@ -124,7 +106,7 @@ export const Logs: React.FC = () => {
         </div>
         
         {/* Export Buttons Stack */}
-        <LogExport logs={filteredAndFormattedLogs} />
+        <LogExport logs={formattedLogs} />
       </div>
 
       {/* Advanced Filter Toolbar */}
@@ -141,8 +123,8 @@ export const Logs: React.FC = () => {
         </div>
       ) : (
         <LogList
-          logs={paginatedLogs}
-          totalLogs={filteredAndFormattedLogs.length}
+          logs={formattedLogs}
+          totalLogs={totalLogs}
           currentPage={filter.page}
           limit={filter.limit}
           onPageChange={(page) => setFilter({ ...filter, page })}
