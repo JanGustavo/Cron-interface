@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { DashboardLayout } from './components/Dashboard/DashboardLayout';
 import { StatCard } from './components/Dashboard/StatCard';
 import { RecentActivity } from './components/Dashboard/RecentActivity';
@@ -22,6 +22,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import type { LogEntry } from './types/logs';
 
 
 const formatDate = (value?: string | null) => {
@@ -34,9 +35,23 @@ const formatDate = (value?: string | null) => {
   }).format(new Date(value));
 };
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      time: string;
+      volume: number;
+      successRate: number;
+      successCount: number;
+      failedCount: number;
+      failedJobs?: string[];
+    };
+  }>;
+}
+
 // Mock Page Components to render inside our Layout
 // Custom tooltip for composed volume & success rate chart
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -58,12 +73,23 @@ const CustomTooltip = ({ active, payload }: any) => {
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               Taxa de Sucesso:
             </span>
-            <span className="font-semibold text-emerald-400">{data.successRate}%</span>
+            <span className="font-semibold text-emerald-400">{data.volume > 0 ? `${data.successRate}%` : '-'}</span>
           </div>
           <div className="flex items-center justify-between gap-4 border-t border-indigo-950/20 pt-1.5 mt-1 text-[10px] text-slate-500">
             <span>Sucessos: {data.successCount}</span>
             <span>Falhas: {data.failedCount}</span>
           </div>
+          {data.failedJobs && data.failedJobs.length > 0 && (
+            <div className="flex flex-col gap-1 border-t border-rose-950/30 pt-1.5 mt-1 text-[10px] text-rose-400">
+              <span className="font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                Jobs com Falha:
+              </span>
+              <span className="text-slate-400 font-mono pl-2.5 truncate max-w-[240px]">
+                {data.failedJobs.join(', ')}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -73,11 +99,14 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 // Premium Dashboard DashboardPage with Recharts Composed Chart
 const DashboardPage: React.FC = () => {
-  const { setCreateModalOpen } = useUiStore();
+  const { setCreateModalOpen, setDocsOpen } = useUiStore();
   const { jobs } = useJobsStore();
   const { user } = useAuthStore();
-  const [allRecentLogs, setAllRecentLogs] = useState<any[]>([]);
+  const [allRecentLogs, setAllRecentLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [chartFilter, setChartFilter] = useState<'1h' | '24h' | '3d' | '7d' | '30d'>('24h');
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+  const [isJobFilterOpen, setIsJobFilterOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -87,9 +116,9 @@ const DashboardPage: React.FC = () => {
       try {
         const fetchPromises = jobs.map(async (job) => {
           try {
-            // Fetch 10 executions per job to populate chart and activity feed
-            const res = await api.get(`/v1/jobs/${job.id}/executions?limit=10`);
-            const data = (res.data || []) as any[];
+            // Fetch 100 executions per job to populate chart and activity feed
+            const res = await api.get(`/v1/jobs/${job.id}/executions?limit=100`);
+            const data = (res.data || []) as LogEntry[];
             return data.map((log) => ({
               ...log,
               jobName: job.name,
@@ -118,9 +147,9 @@ const DashboardPage: React.FC = () => {
   }, [jobs]);
 
   const activeCount = jobs.filter((j) => j.status === 'active').length;
-  const totalCount = jobs.length;
-  const failingCount = jobs.filter((j) => j.status === 'failing').length;
-  const successRate = totalCount > 0 ? (((totalCount - failingCount) / totalCount) * 100).toFixed(2) : '100.00';
+  const totalExecutions = allRecentLogs.length;
+  const successExecutions = allRecentLogs.filter((log) => log.status === 'success').length;
+  const successRate = totalExecutions > 0 ? ((successExecutions / totalExecutions) * 100).toFixed(2) : '-';
 
   const plan = user?.plan || 'free';
   const maxJobsLimit = plan === 'paid' ? 20 : 5;
@@ -130,97 +159,134 @@ const DashboardPage: React.FC = () => {
   const chartData = (() => {
     const now = new Date();
     
-    // Dynamic Fallback: if no real logs are present, we display a gorgeous mock trend
-    if (allRecentLogs.length === 0) {
-      return Array.from({ length: 6 }).map((_, idx) => {
-        const d = new Date(now.getTime() - (5 - idx) * 60 * 60 * 1000);
-        const hourLabel = d.getHours().toString().padStart(2, '0') + ':00';
-        const mockVolumes = [12, 19, 15, 24, 30, 28];
-        const mockRates = [100, 95, 100, 92, 96, 100];
-        const vol = mockVolumes[idx];
-        const rate = mockRates[idx];
+    // 1. Define configuration based on filter
+    let config: {
+      durationMs: number;
+      intervalMs: number;
+      count: number;
+      labelFormat: (d: Date) => string;
+      mockVolumes: number[];
+      mockRates: number[];
+    };
+    
+    switch (chartFilter) {
+      case '1h':
+        config = {
+          durationMs: 60 * 60 * 1000,
+          intervalMs: 10 * 60 * 1000,
+          count: 6,
+          labelFormat: (d) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          mockVolumes: [3, 5, 2, 8, 4, 6],
+          mockRates: [100, 100, 50, 100, 100, 100],
+        };
+        break;
+      case '3d':
+        config = {
+          durationMs: 3 * 24 * 60 * 60 * 1000,
+          intervalMs: 12 * 60 * 60 * 1000,
+          count: 6,
+          labelFormat: (d) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + d.getHours().toString().padStart(2, '0') + ':00',
+          mockVolumes: [32, 45, 38, 54, 48, 62],
+          mockRates: [98, 100, 95, 96, 100, 97],
+        };
+        break;
+      case '7d':
+        config = {
+          durationMs: 7 * 24 * 60 * 60 * 1000,
+          intervalMs: 24 * 60 * 60 * 1000,
+          count: 7,
+          labelFormat: (d) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          mockVolumes: [85, 92, 78, 110, 95, 105, 120],
+          mockRates: [100, 98, 97, 100, 96, 99, 100],
+        };
+        break;
+      case '30d':
+        config = {
+          durationMs: 30 * 24 * 60 * 60 * 1000,
+          intervalMs: 5 * 24 * 60 * 60 * 1000,
+          count: 6,
+          labelFormat: (d) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          mockVolumes: [420, 390, 450, 480, 510, 490],
+          mockRates: [99, 98, 99, 97, 99, 100],
+        };
+        break;
+      case '24h':
+      default:
+        config = {
+          durationMs: 24 * 60 * 60 * 1000,
+          intervalMs: 4 * 60 * 60 * 1000,
+          count: 6,
+          labelFormat: (d) => d.getHours().toString().padStart(2, '0') + ':00',
+          mockVolumes: [12, 19, 15, 24, 30, 28],
+          mockRates: [100, 95, 100, 92, 96, 100],
+        };
+        break;
+    }
+
+    const filteredLogs = allRecentLogs.filter(log => {
+      const logTime = new Date(log.triggeredAt).getTime();
+      const matchesTime = now.getTime() - logTime <= config.durationMs;
+      const matchesJob = selectedJobIds.length === 0 || selectedJobIds.includes(log.jobId);
+      return matchesTime && matchesJob;
+    });
+
+    if (filteredLogs.length === 0) {
+      // Use mock data
+      return Array.from({ length: config.count }).map((_, idx) => {
+        const d = new Date(now.getTime() - (config.count - 1 - idx) * config.intervalMs);
+        const label = config.labelFormat(d);
+        const vol = config.mockVolumes[idx];
+        const rate = config.mockRates[idx];
         const succ = Math.round((vol * rate) / 100);
+        const failedJobs = vol - succ > 0 ? ['Job Exemplo Falhou'] : [];
         return {
-          time: hourLabel,
+          time: label,
           volume: vol,
           successRate: rate,
           successCount: succ,
           failedCount: vol - succ,
+          failedJobs,
         };
       });
     }
 
-    const timestamps = allRecentLogs.map(l => new Date(l.triggeredAt).getTime());
-    const minTimestamp = Math.min(...timestamps);
-    const timeSpanMs = now.getTime() - minTimestamp;
+    const intervals = Array.from({ length: config.count }).map((_, idx) => {
+      const d = new Date(now.getTime() - (config.count - 1 - idx) * config.intervalMs);
+      const label = config.labelFormat(d);
+      return {
+        label,
+        start: d.getTime() - config.intervalMs,
+        end: d.getTime(),
+        volume: 0,
+        successCount: 0,
+        failedJobs: [] as string[],
+      };
+    });
 
-    // Use 5-minute resolution if all activities happened in the last 45 minutes
-    const useMinuteGranularity = timeSpanMs < 45 * 60 * 1000;
-
-    if (useMinuteGranularity) {
-      const intervals = Array.from({ length: 6 }).map((_, idx) => {
-        const d = new Date(now.getTime() - (5 - idx) * 5 * 60 * 1000);
-        const label = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        return {
-          label,
-          start: d.getTime() - 5 * 60 * 1000,
-          end: d.getTime(),
-          volume: 0,
-          successCount: 0,
-        };
-      });
-
-      allRecentLogs.forEach((log) => {
-        const logTime = new Date(log.triggeredAt).getTime();
-        const target = intervals.find((int) => logTime > int.start && logTime <= int.end);
-        if (target) {
-          target.volume += 1;
-          if (log.status === 'success') {
-            target.successCount += 1;
+    filteredLogs.forEach((log) => {
+      const logTime = new Date(log.triggeredAt).getTime();
+      const target = intervals.find((int) => logTime >= int.start && logTime <= int.end);
+      if (target) {
+        target.volume += 1;
+        if (log.status === 'success') {
+          target.successCount += 1;
+        } else {
+          const jobName = log.jobName || 'Tarefa';
+          if (!target.failedJobs.includes(jobName)) {
+            target.failedJobs.push(jobName);
           }
         }
-      });
+      }
+    });
 
-      return intervals.map((int) => ({
-        time: int.label,
-        volume: int.volume,
-        successRate: int.volume > 0 ? Math.round((int.successCount / int.volume) * 100) : 100,
-        successCount: int.successCount,
-        failedCount: int.volume - int.successCount,
-      }));
-    } else {
-      // Default hourly resolution (last 6 hours)
-      const intervals = Array.from({ length: 6 }).map((_, idx) => {
-        const d = new Date(now.getTime() - (5 - idx) * 60 * 60 * 1000);
-        const label = d.getHours().toString().padStart(2, '0') + ':00';
-        return {
-          label,
-          start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), 0, 0).getTime(),
-          end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), 59, 59, 999).getTime(),
-          volume: 0,
-          successCount: 0,
-        };
-      });
-
-      allRecentLogs.forEach((log) => {
-        const logTime = new Date(log.triggeredAt).getTime();
-        const target = intervals.find((int) => logTime >= int.start && logTime <= int.end);
-        if (target) {
-          target.volume += 1;
-          if (log.status === 'success') {
-            target.successCount += 1;
-          }
-        }
-      });
-
-      return intervals.map((int) => ({
-        time: int.label,
-        volume: int.volume,
-        successRate: int.volume > 0 ? Math.round((int.successCount / int.volume) * 100) : 100,
-        successCount: int.successCount,
-        failedCount: int.volume - int.successCount,
-      }));
-    }
+    return intervals.map((int) => ({
+      time: int.label,
+      volume: int.volume,
+      successRate: int.volume > 0 ? Math.round((int.successCount / int.volume) * 100) : 100,
+      successCount: int.successCount,
+      failedCount: int.volume - int.successCount,
+      failedJobs: int.failedJobs,
+    }));
   })();
 
   const recentActivities = allRecentLogs.slice(0, 5);
@@ -254,7 +320,10 @@ const DashboardPage: React.FC = () => {
           >
             {isLimitReached ? 'Limite Atingido 🔒' : 'Criar Nova Tarefa'}
           </button>
-          <button className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all cursor-pointer">
+          <button 
+            onClick={() => setDocsOpen(true)}
+            className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all cursor-pointer"
+          >
             Documentação API
           </button>
         </div>
@@ -275,7 +344,7 @@ const DashboardPage: React.FC = () => {
         />
         <StatCard
           title="Taxa de Sucesso"
-          value={`${successRate}%`}
+          value={successRate === '-' ? '-' : `${successRate}%`}
           color="emerald"
           trend={{ value: "+0.12%", type: 'up' }}
           description="Últimas 24 horas"
@@ -303,20 +372,118 @@ const DashboardPage: React.FC = () => {
       <div className="p-6 rounded-2xl glass-panel border border-indigo-950/30 relative overflow-hidden space-y-4">
         <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
         
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-slate-200">Volume & Taxa de Sucesso</h3>
-            <p className="text-xs text-slate-400">Total de requisições disparadas e taxa de entrega nas últimas horas.</p>
+            <p className="text-xs text-slate-400">Total de requisições disparadas e taxa de entrega por período.</p>
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 bg-slate-900/40 border border-indigo-950/20 px-3 py-1.5 rounded-xl text-[10px] font-semibold text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-              Volume (Barra)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              Taxa de Sucesso (Linha)
-            </span>
+          
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Job Selector Dropdown Filter */}
+            <div className="relative select-none">
+              <button
+                type="button"
+                onClick={() => setIsJobFilterOpen(!isJobFilterOpen)}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-900/80 border border-indigo-950/40 hover:border-indigo-500/20 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span>
+                  Jobs: {selectedJobIds.length === 0 ? 'Todos' : `${selectedJobIds.length} selecionados`}
+                </span>
+                <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isJobFilterOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isJobFilterOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsJobFilterOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-64 rounded-xl border border-indigo-900/50 bg-[#070913]/95 backdrop-blur-md shadow-2xl p-3 space-y-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex justify-between items-center border-b border-indigo-950/40 pb-2">
+                      <span className="text-[10px] uppercase font-bold text-slate-400">Filtrar por Job</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedJobIds([])}
+                        className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        Limpar Filtro
+                      </button>
+                    </div>
+
+                    <div className="max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
+                      {jobs.map((job) => {
+                        const checked = selectedJobIds.includes(job.id);
+                        return (
+                          <label
+                            key={job.id}
+                            className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-indigo-950/20 cursor-pointer select-none text-[11px] font-medium text-slate-300 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                if (checked) {
+                                  setSelectedJobIds(selectedJobIds.filter((id) => id !== job.id));
+                                } else {
+                                  setSelectedJobIds([...selectedJobIds, job.id]);
+                                }
+                              }}
+                              className="rounded border-indigo-950 text-indigo-600 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 bg-slate-950"
+                            />
+                            <span className="truncate flex-1">{job.name}</span>
+                          </label>
+                        );
+                      })}
+                      {jobs.length === 0 && (
+                        <div className="text-[10px] text-slate-500 italic p-2 text-center">
+                          Nenhum job disponível
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Filter Toggle Buttons Group */}
+            <div className="flex bg-slate-900/60 border border-indigo-950/40 p-1 rounded-xl gap-0.5 select-none">
+              {[
+                { id: '1h', label: '1 Hora' },
+                { id: '24h', label: '24 Horas' },
+                { id: '3d', label: '3 Dias' },
+                { id: '7d', label: '7 Dias' },
+                { id: '30d', label: '30 Dias' },
+              ].map((filter) => {
+                const active = chartFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    onClick={() => setChartFilter(filter.id as typeof chartFilter)}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      active
+                        ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/20 shadow-md'
+                        : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chart Legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 bg-slate-900/40 border border-indigo-950/20 px-3 py-1.5 rounded-xl text-[10px] font-semibold text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                Volume (Barra)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                Taxa de Sucesso (Linha)
+              </span>
+            </div>
           </div>
         </div>
 
@@ -423,10 +590,132 @@ const InfoTip: React.FC<{ text: string }> = ({ text }) => (
   </span>
 );
 
+const HARDCODED_README = `🚀 CronFlow — Plataforma de Agendamento e Automação de Tarefas
+## Documentação de Desenvolvimento e Arquitetura do MVP
+
+Bem-vindo ao **CronFlow**! Este guia detalha o funcionamento interno de nosso sistema, desde a arquitetura de múltiplos binários até os fluxos de dados mais complexos.
+
+O CronFlow é uma plataforma SaaS de agendamento de tarefas e disparo de webhooks (um "CronTab em escala como serviço"). O sistema permite que nossos usuários cadastrem requisições HTTP agendadas (via expressões cron) que devem ser executadas com alta precisão, tolerância a falhas e total rastreabilidade.
+
+---
+
+## 🗺️ Visão Geral da Arquitetura (Múltiplos Binários)
+
+Em vez de construirmos um monólito gigante e pesado, o CronFlow foi projetado seguindo o **Princípio da Responsabilidade Única (SRP)** no nível de infraestrutura. O sistema é dividido em **3 processos totalmente independentes** (binários distintos) que rodam lado a lado, comunicando-se através de duas fontes: o banco de dados **PostgreSQL** e o broker de mensagens **Redis**.
+
+### Os 3 Processos Principais:
+1. **API (cmd/api)**: REST API construída com Chi Router, Handlers e Services. Responsável pela autenticação via SHA-256 (API Keys). Precisa de alta escalabilidade e baixa latência.
+2. **Scheduler (cmd/scheduler)**: O coração do agendamento. Loop de 30s que busca no Postgres tarefas elegíveis, adquire Locks distribuídos no Redis e as enfileira para execução.
+3. **Worker (cmd/worker)**: Consome as tarefas do Redis (usando Asynq com até 50 goroutines simultâneas). Executa a requisição HTTP, salva o log e trata retentativas (3x com Backoff Exponencial).
+
+---
+
+## 🗂️ Glossário de Domínio (As Entidades)
+
+*   **User (Usuário)**: Conta principal do cliente cadastrado. Controla qual plano de assinatura (ex: free ou paid) está ativo. Autenticação via API Key.
+*   **Project (Projeto/Workspace)**: O ambiente (tenant) isolado de trabalho de um usuário. Suporta múltiplos projetos por usuário.
+*   **Job (Tarefa Agendada)**: Contém a expressão cron (schedule), as especificações HTTP (URL, headers, payload), o status (active ou paused) e nextRunAt.
+*   **Execution (Histórico/Log)**: Registro imutável de uma tentativa de execução HTTP pelo Worker, incluindo HTTPStatus, DurationMs e AttemptNumber.
+
+---
+
+## 🔄 Fluxos de Execução Passo a Passo
+
+### Loop do Scheduler:
+O processo Scheduler executa um ciclo de varredura (chamado de tick) a cada 30 segundos:
+- Adquire Lock distribuído no Redis para evitar concorrência.
+- Busca no Postgres todos os Jobs ATIVOS onde next_run_at <= NOW.
+- Enfileira no Redis e agenda a próxima execução recalculando o cron.`;
+
+const parseMarkdownToReact = (markdown: string) => {
+  if (!markdown) return null;
+  const lines = markdown.split('\n');
+  let inCodeBlock = false;
+  let codeBlockContent: string[] = [];
+  
+  return lines.map((line, idx) => {
+    // Handle code blocks
+    if (line.trim().startsWith('```')) {
+      if (inCodeBlock) {
+        inCodeBlock = false;
+        const code = codeBlockContent.join('\n');
+        codeBlockContent = [];
+        return (
+          <pre key={idx} className="my-3 p-4 bg-slate-950/80 border border-indigo-500/20 rounded-xl font-mono text-xs text-indigo-300 overflow-x-auto shadow-inner select-all whitespace-pre-wrap">
+            <code>{code}</code>
+          </pre>
+        );
+      } else {
+        inCodeBlock = true;
+        return null;
+      }
+    }
+    
+    if (inCodeBlock) {
+      codeBlockContent.push(line);
+      return null;
+    }
+    
+    // Title level 1
+    if (line.startsWith('# ')) {
+      return (
+        <h1 key={idx} className="text-2xl font-black text-slate-100 mt-6 mb-3 tracking-wide flex items-center gap-2 border-b border-indigo-550/20 pb-2">
+          {line.replace('# ', '')}
+        </h1>
+      );
+    }
+    
+    // Title level 2
+    if (line.startsWith('## ')) {
+      return (
+        <h2 key={idx} className="text-lg font-bold text-indigo-400 mt-5 mb-2 tracking-wide">
+          {line.replace('## ', '')}
+        </h2>
+      );
+    }
+    
+    // Title level 3
+    if (line.startsWith('### ')) {
+      return (
+        <h3 key={idx} className="text-base font-bold text-slate-200 mt-4 mb-2">
+          {line.replace('### ', '')}
+        </h3>
+      );
+    }
+    
+    // Horizontal rule
+    if (line.trim() === '---') {
+      return <hr key={idx} className="my-5 border-t border-indigo-950/50" />;
+    }
+    
+    // Bullet list
+    if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
+      const cleanLine = line.trim().slice(2);
+      return (
+        <ul key={idx} className="list-disc pl-5 my-1 text-sm text-slate-350 leading-relaxed">
+          <li>{cleanLine}</li>
+        </ul>
+      );
+    }
+    
+    // Empty line
+    if (line.trim() === '') {
+      return <div key={idx} className="h-2" />;
+    }
+    
+    // Standard paragraph
+    return (
+      <p key={idx} className="text-sm text-slate-300 my-1.5 leading-relaxed">
+        {line}
+      </p>
+    );
+  }).filter(el => el !== null);
+};
+
 const ProfilePage: React.FC = () => {
   const { user, activeProject, projects, token } = useAuthStore();
   const { jobs } = useJobsStore();
-  const { setActiveTab, setCreateModalOpen, showToast } = useUiStore();
+  const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen } = useUiStore();
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
 
   const userEmail = user?.email || 'admin@cronflow.sh';
@@ -439,11 +728,23 @@ const ProfilePage: React.FC = () => {
 
   const activeKey = token?.accessToken || localStorage.getItem('cf_token') || '';
   const maskedKey = activeKey ? `${activeKey.slice(0, 8)}...${activeKey.slice(-4)}` : 'cf_live_demo';
-  const globalWebhook = localStorage.getItem('cf_global_webhook') || '';
+  const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
+  const [updateSuccess, setUpdateSuccess] = useState(false);
   const webhookConfigured = globalWebhook.trim().length > 0;
-  const memberDays = user?.createdAt
-    ? Math.max(1, Math.floor((Date.now() - new Date(user.createdAt).getTime()) / 86400000))
-    : 0;
+
+  const handleUpdateWebhook = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('cf_global_webhook', globalWebhook.trim());
+    setUpdateSuccess(true);
+    showToast('Webhook atualizado com sucesso.', 'success');
+    setTimeout(() => setUpdateSuccess(false), 2000);
+  };
+  const memberDays = useMemo(() => {
+    if (!user?.createdAt) return 0;
+    const nowTime = new Date().getTime();
+    const createdTime = new Date(user.createdAt).getTime();
+    return Math.max(1, Math.floor((nowTime - createdTime) / 86400000));
+  }, [user]);
 
   const workspaceJobs = activeProject
     ? jobs.filter((job) => job.projectId === activeProject.id)
@@ -497,11 +798,26 @@ const ProfilePage: React.FC = () => {
     setCreateModalOpen(true);
   };
 
-  const handleOpenSettings = () => setActiveTab('settings');
+  const handleOpenSettings = () => setSecurityTab('keys');
+  const handleOpenWebhooks = () => setSecurityTab('webhooks');
   const handleOpenJobs = () => setActiveTab('jobs');
   const handleOpenLogs = () => setActiveTab('logs');
-  const handleOpenDocs = () => showToast('Documentacao em breve.', 'info');
-  const handleOpenSupport = () => showToast('Suporte em breve.', 'info');
+  const handleOpenDocs = () => setDocsOpen(true);
+
+  const handleOpenSupport = () => {
+    const email = 'jandersongustavo01@gmail.com';
+    const subject = encodeURIComponent('[CronFlow] Suporte - Solicitação de Atendimento');
+    const body = encodeURIComponent(
+      'Olá Janderson,\n\n' +
+      'Gostaria de solicitar suporte referente ao CronFlow.\n\n' +
+      '[Descreva seu problema, dúvida ou sugestão aqui]\n\n' +
+      'Atenciosamente,\n' +
+      'Equipe CronFlow'
+    );
+    const mailto = `mailto:${email}?subject=${subject}&body=${body}`;
+    const gmailUrl = `https://mail.google.com/mail/?extsrc=mailto&url=${encodeURIComponent(mailto)}`;
+    window.open(gmailUrl, '_blank');
+  };
 
   const onboardingSteps = [
     {
@@ -527,7 +843,7 @@ const ProfilePage: React.FC = () => {
       detail: webhookConfigured ? 'Webhook configurado' : 'Nao configurado',
       action: {
         label: 'Ir',
-        onClick: handleOpenSettings,
+        onClick: handleOpenWebhooks,
       },
     },
     {
@@ -610,7 +926,7 @@ const ProfilePage: React.FC = () => {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)]">
         <div className="space-y-6">
           <div
-            className="relative overflow-hidden rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/15 via-[#0a0d1d] to-cyan-500/10 p-6 md:p-7 shadow-[0_0_45px_rgba(99,102,241,0.18)] transition-all duration-300 hover:border-indigo-400/60 hover:shadow-[0_0_65px_rgba(99,102,241,0.25)] animate-in fade-in slide-in-from-bottom-4"
+            className="relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/15 via-[#0a0d1d] to-cyan-500/10 p-6 md:p-7 shadow-[0_0_45px_rgba(99,102,241,0.18)] transition-all duration-300 hover:border-indigo-400/60 hover:shadow-[0_0_65px_rgba(99,102,241,0.25)] animate-in fade-in slide-in-from-bottom-4"
             style={{ animationDelay: '40ms' }}
           >
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 opacity-90" />
@@ -644,19 +960,22 @@ const ProfilePage: React.FC = () => {
 
                   <h3 className="text-2xl font-bold text-slate-100">{userEmail}</h3>
 
-                  <p className="max-w-2xl text-sm text-slate-400">
-                    Membro desde {memberSince}. O perfil reflete a estrutura de produto do CronFlow, com autenticação por projeto, controle de workspace e observabilidade dos jobs.
+                  <p className="max-w-2xl text-sm text-slate-400 leading-relaxed">
+                    Membro ativo desde {memberSince}. Esta conta opera sob a arquitetura multitenant do CronFlow, garantindo isolamento total por projeto, controle integrado de workspaces e observabilidade em tempo real dos seus disparos de agendamentos.
                   </p>
 
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-300">
-                      Workspace: {workspaceName}
+                  <div className="flex flex-wrap gap-2.5 pt-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-500/25 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-300 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                      Workspace: <strong className="text-indigo-200">{workspaceName}</strong>
                     </span>
-                    <span className="rounded-full border border-slate-700/50 bg-slate-950/40 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-300">
-                      {projects.length} projeto{projects.length === 1 ? '' : 's'}
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/50 bg-slate-950/40 px-3 py-1.5 text-xs font-semibold text-slate-300 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                      <strong className="text-slate-200">{projects.length}</strong> projeto{projects.length === 1 ? '' : 's'}
                     </span>
-                    <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-300">
-                      {workspaceJobs.length} job{workspaceJobs.length === 1 ? '' : 's'} no workspace
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/25 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                      <strong className="text-cyan-200">{workspaceJobs.length}</strong> job{workspaceJobs.length === 1 ? '' : 's'} no workspace
                     </span>
                   </div>
                 </div>
@@ -672,7 +991,7 @@ const ProfilePage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('settings')}
+                  onClick={() => setSecurityTab('keys')}
                   className="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all"
                 >
                   Gerenciar Chaves
@@ -682,7 +1001,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           <div
-            className="rounded-3xl glass-panel border border-indigo-950/30 p-6 animate-in fade-in slide-in-from-bottom-4"
+            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 animate-in fade-in slide-in-from-bottom-4"
             style={{ animationDelay: '120ms' }}
           >
             <div className="flex items-center gap-2">
@@ -732,7 +1051,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           <div
-            className="rounded-3xl glass-panel border border-indigo-950/30 p-6 animate-in fade-in slide-in-from-bottom-4"
+            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 animate-in fade-in slide-in-from-bottom-4"
             style={{ animationDelay: '320ms' }}
           >
             <div className="flex items-center justify-between gap-3">
@@ -792,7 +1111,7 @@ const ProfilePage: React.FC = () => {
 
         <div className="space-y-6">
           <div
-            className="rounded-3xl glass-panel border border-indigo-950/30 p-6 space-y-5 animate-in fade-in slide-in-from-bottom-4"
+            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 space-y-5 animate-in fade-in slide-in-from-bottom-4"
             style={{ animationDelay: '160ms' }}
           >
             <div className="flex items-start justify-between gap-3">
@@ -911,7 +1230,7 @@ const ProfilePage: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={handleOpenSettings}
+                    onClick={() => showToast('Geração de chaves em breve.', 'info')}
                     className="w-full px-4 py-2 text-[10px] uppercase font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-500/30"
                   >
                     Gerar nova chave
@@ -920,28 +1239,42 @@ const ProfilePage: React.FC = () => {
               )}
 
               {securityTab === 'webhooks' && (
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                <form onSubmit={handleUpdateWebhook} className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
                       <span className="text-[10px] uppercase tracking-[0.24em] text-slate-500">
-                        Webhook de alerta
+                        Webhook de alerta padrao
                       </span>
-                      <p className="mt-1 text-xs text-slate-400">
-                        Configure um endpoint padrao para falhas consecutivas.
-                      </p>
+                      <InfoTip text="Usado quando um job falha 3 vezes seguidas." />
                     </div>
+                    <p className="text-xs text-slate-400">
+                      Configure uma URL padrao para notificacoes de falha do workspace.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <input
+                      type="url"
+                      placeholder="https://sua-api.com/alertas-webhook"
+                      value={globalWebhook}
+                      onChange={(e) => setGlobalWebhook(e.target.value)}
+                      className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40"
+                    />
                     <button
-                      type="button"
-                      onClick={handleOpenSettings}
-                      className="px-3 py-1.5 text-[10px] uppercase font-bold text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-950/70 rounded-xl border border-indigo-900/40 transition-all"
+                      type="submit"
+                      className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer ${
+                        updateSuccess
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-indigo-600 hover:bg-indigo-500 text-white neon-glow-primary'
+                      }`}
                     >
-                      Ir
+                      {updateSuccess ? 'Salvo! ✓' : 'Atualizar'}
                     </button>
                   </div>
 
                   <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Atual</span>
+                      <span className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Status</span>
                       <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] ${
                         webhookConfigured
                           ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
@@ -954,7 +1287,7 @@ const ProfilePage: React.FC = () => {
                       {webhookConfigured ? globalWebhook : 'Nao configurado'}
                     </div>
                   </div>
-                </div>
+                </form>
               )}
 
               {securityTab === 'sessions' && (
@@ -1005,7 +1338,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           <div
-            className="rounded-3xl glass-panel border border-indigo-950/30 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4"
+            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4"
             style={{ animationDelay: '240ms' }}
           >
             <div>
@@ -1068,7 +1401,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           <div
-            className="rounded-3xl glass-panel border border-indigo-950/30 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4"
+            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4"
             style={{ animationDelay: '320ms' }}
           >
             <div className="flex items-center gap-2">
@@ -1090,7 +1423,7 @@ const ProfilePage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenLogs}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-slate-200 bg-slate-800/60 hover:bg-slate-800/90 rounded-xl transition-all"
+                className="px-4 py-2 text-[10px] uppercase font-bold text-cyan-300 bg-cyan-950/30 hover:bg-cyan-950/60 border border-cyan-500/20 rounded-xl transition-all"
               >
                 Ver logs
               </button>
@@ -1103,7 +1436,7 @@ const ProfilePage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={handleOpenSettings}
+                onClick={handleOpenWebhooks}
                 className="px-4 py-2 text-[10px] uppercase font-bold text-amber-300 bg-amber-950/30 hover:bg-amber-950/60 border border-amber-500/20 rounded-xl transition-all"
               >
                 Configurar
@@ -1111,107 +1444,21 @@ const ProfilePage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenSupport}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-slate-400 bg-slate-900/40 hover:text-white hover:bg-slate-900/70 rounded-xl transition-all"
+                className="px-4 py-2 text-[10px] uppercase font-bold text-violet-300 bg-violet-950/30 hover:bg-violet-950/60 border border-violet-500/20 rounded-xl transition-all"
               >
                 Suporte
               </button>
               <button
                 type="button"
                 onClick={handleOpenDocs}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-slate-400 bg-slate-900/40 hover:text-white hover:bg-slate-900/70 rounded-xl transition-all"
+                className="px-4 py-2 text-[10px] uppercase font-bold text-indigo-300 bg-indigo-950/30 hover:bg-indigo-950/60 border border-indigo-500/20 rounded-xl transition-all"
               >
                 Docs
               </button>
             </div>
           </div>
+
         </div>
-      </div>
-    </div>
-  );
-};
-
-const SettingsPage: React.FC = () => {
-  const { token } = useAuthStore();
-  const activeKey = token?.accessToken || localStorage.getItem('cf_token') || 'cf_live_test_key';
-  const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
-  const [copySuccess, setCopySuccess] = useState(false);
-  const [updateSuccess, setUpdateSuccess] = useState(false);
-
-  const handleCopyKey = () => {
-    navigator.clipboard.writeText(activeKey);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
-  };
-
-  const handleUpdateWebhook = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('cf_global_webhook', globalWebhook.trim());
-    setUpdateSuccess(true);
-    setTimeout(() => setUpdateSuccess(false), 2000);
-  };
-
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div>
-        <h2 className="text-xl font-bold text-slate-100">Configurações do Projeto</h2>
-        <p className="text-xs text-slate-400">Configure chaves de API e alertas de webhooks globais para o seu workspace.</p>
-      </div>
-      
-      <div className="p-6 rounded-2xl glass-panel space-y-6">
-        {/* Chave de API do Workspace */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-slate-200">Chave de API Ativa do Workspace</h3>
-          <p className="text-xs text-slate-400">
-            Use esta chave de API no cabeçalho <code>X-API-Key</code> ou <code>Authorization: Bearer</code> para autenticar requisições no backend.
-          </p>
-          
-          <div className="flex gap-2 max-w-xl">
-            <input
-              type="text"
-              readOnly
-              value={activeKey}
-              className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-indigo-950/40 rounded-xl font-mono text-xs text-indigo-400 select-all focus:outline-none"
-            />
-            <button 
-              onClick={handleCopyKey}
-              className={`px-4 py-2.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
-                copySuccess 
-                  ? 'bg-emerald-600 border-emerald-500 text-white' 
-                  : 'bg-slate-800/60 hover:bg-slate-800/80 border-slate-700/50 text-slate-300'
-              }`}
-            >
-              {copySuccess ? 'Copiado!' : 'Copiar'}
-            </button>
-          </div>
-        </div>
-        
-        {/* Webhooks de Alerta Global */}
-        <form onSubmit={handleUpdateWebhook} className="border-t border-indigo-950/20 pt-6 space-y-3">
-          <h3 className="text-sm font-semibold text-slate-200">Webhook de Alerta Padrão</h3>
-          <p className="text-xs text-slate-400">
-            Configure uma URL padrão para notificar quando um job falhar 3 vezes seguidas. Ao criar novos jobs no Kanban, este endereço será autopopulado por conveniência.
-          </p>
-          
-          <div className="flex gap-2 max-w-xl">
-            <input
-              type="url"
-              placeholder="https://sua-api.com/alertas-webhook"
-              value={globalWebhook}
-              onChange={(e) => setGlobalWebhook(e.target.value)}
-              className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40"
-            />
-            <button 
-              type="submit"
-              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer ${
-                updateSuccess
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white neon-glow-primary'
-              }`}
-            >
-              {updateSuccess ? 'Salvo! ✓' : 'Atualizar'}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
@@ -1236,10 +1483,38 @@ const parseJwt = (token: string) => {
 };
 
 const App: React.FC = () => {
-  const { activeTab } = useUiStore();
+  const { activeTab, setActiveTab, isDocsOpen, setDocsOpen, setJobModalOpen } = useUiStore();
   const { isAuthenticated, login, logout } = useAuthStore();
-  const { fetchJobs } = useJobsStore();
+  const { fetchJobs, jobs, setActiveJob } = useJobsStore();
   const [authChecking, setAuthChecking] = useState(true);
+
+  // Global Docs State
+  const [docsMarkdown, setDocsMarkdown] = useState('');
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
+  useEffect(() => {
+    const handleFetchDocs = async () => {
+      if (!isDocsOpen || docsMarkdown) return;
+      
+      setLoadingDocs(true);
+      try {
+        const res = await fetch('https://raw.githubusercontent.com/JanGustavo/Cron/master/README.md');
+        if (res.ok) {
+          const text = await res.text();
+          setDocsMarkdown(text);
+        } else {
+          throw new Error('Failed to fetch');
+        }
+      } catch (err) {
+        console.error('Failed to fetch raw README, using fallback:', err);
+        setDocsMarkdown(HARDCODED_README);
+      } finally {
+        setLoadingDocs(false);
+      }
+    };
+
+    handleFetchDocs();
+  }, [isDocsOpen, docsMarkdown]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -1259,11 +1534,13 @@ const App: React.FC = () => {
           const userId = decoded?.user_id || 'user-admin';
           const plan = decoded?.plan || 'free';
           const projectId = decoded?.project_id || extractedProjectId;
+          const iat = decoded?.iat;
+          const userCreatedAt = iat ? new Date(iat * 1000).toISOString() : new Date().toISOString();
 
           login(
-            { id: userId, email: email, plan: plan, createdAt: new Date().toISOString() },
+            { id: userId, email: email, plan: plan, createdAt: userCreatedAt },
             { accessToken: savedToken, refreshToken: '', tokenType: 'Bearer', expiresIn: 86400 },
-            [{ id: projectId, userId: userId, name: 'Projeto Principal', createdAt: new Date().toISOString() }]
+            [{ id: projectId, userId: userId, name: 'Projeto Principal', createdAt: userCreatedAt }]
           );
         } catch (err) {
           console.error('Auto login verification failed', err);
@@ -1286,6 +1563,25 @@ const App: React.FC = () => {
       return () => clearInterval(interval);
     }
   }, [isAuthenticated, fetchJobs]);
+
+  useEffect(() => {
+    if (isAuthenticated && jobs.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const jobIdFromUrl = params.get('jobId');
+      if (jobIdFromUrl) {
+        const targetJob = jobs.find((j) => j.id === jobIdFromUrl);
+        if (targetJob) {
+          setActiveTab('jobs');
+          setActiveJob(targetJob);
+          setJobModalOpen(true);
+
+          // Clean up the URL parameter cleanly so it doesn't open on reload
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      }
+    }
+  }, [isAuthenticated, jobs, setActiveJob, setJobModalOpen, setActiveTab]);
 
   if (authChecking) {
     return (
@@ -1317,7 +1613,7 @@ const App: React.FC = () => {
       case 'profile':
         return <ProfilePage />;
       case 'settings':
-        return <SettingsPage />;
+        return <ProfilePage />;
       default:
         return <DashboardPage />;
     }
@@ -1330,6 +1626,65 @@ const App: React.FC = () => {
         <CreateJobModal />
       </DashboardLayout>
       <ToastHost />
+
+      {/* Global Docs Modal */}
+      {isDocsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl max-h-[85vh] flex flex-col rounded-2xl border border-indigo-500/30 bg-[#0a0d1d]/95 p-6 md:p-8 shadow-[0_0_50px_rgba(99,102,241,0.25)] overflow-hidden transition-all duration-300">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 opacity-90" />
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-indigo-950/40">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-950/40 border border-indigo-500/20 shadow-lg text-indigo-400">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-100 tracking-wide">Documentação do CronFlow</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[9px] uppercase tracking-wider text-slate-400">Conectado ao GitHub (live)</span>
+                  </div>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setDocsOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900/60 transition-colors cursor-pointer"
+                title="Fechar"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto pr-2 my-6 space-y-4 custom-scrollbar text-slate-350 select-text max-h-[58vh]">
+              {loadingDocs ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                  <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+                  <p className="text-xs text-slate-400 uppercase tracking-widest animate-pulse">Buscando README.md do GitHub...</p>
+                </div>
+              ) : (
+                parseMarkdownToReact(docsMarkdown)
+              )}
+            </div>
+            
+            {/* Footer */}
+            <div className="flex justify-end pt-4 border-t border-indigo-950/40">
+              <button
+                onClick={() => setDocsOpen(false)}
+                className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/90 rounded-xl transition-all cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

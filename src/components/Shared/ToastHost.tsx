@@ -3,7 +3,7 @@ import { useUiStore } from '../../store/uiStore';
 
 type ToastStyle = {
   container: string;
-  icon: JSX.Element;
+  icon: React.ReactNode;
 };
 
 const toastStyles: Record<string, ToastStyle> = {

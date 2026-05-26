@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useJobsStore } from '../../store/jobsStore';
+import { useUiStore } from '../../store/uiStore';
 import { KanbanColumn } from './KanbanColumn';
 import type { KanbanStatus } from '../../types/jobs';
 
@@ -15,6 +16,7 @@ const COLUMNS: { id: KanbanStatus; title: string }[] = [
 
 export const KanbanBoard: React.FC = () => {
   const { jobs, moveJobKanbanStatus } = useJobsStore();
+  const { setCreateModalOpen } = useUiStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -87,6 +89,17 @@ export const KanbanBoard: React.FC = () => {
 
         {/* Filter Toggle & Search Stack */}
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Create Job button */}
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary flex items-center gap-1.5 cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Nova Tarefa</span>
+          </button>
+
           {/* Button to toggle advanced filters */}
           <button
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}

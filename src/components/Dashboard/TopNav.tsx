@@ -17,8 +17,6 @@ export const TopNav: React.FC = () => {
         return 'Histórico de Execuções';
       case 'profile':
         return 'Minha Conta';
-      case 'settings':
-        return 'Configurações do Workspace';
       default:
         return 'CronFlow';
     }

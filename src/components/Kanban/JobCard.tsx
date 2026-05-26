@@ -66,10 +66,12 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={handleCardClick}
-          className={`p-4 rounded-xl glass-panel border border-indigo-950/40 cursor-grab active:cursor-grabbing select-none transition-all duration-300 ${
+          className={`p-4 rounded-xl glass-panel border cursor-grab active:cursor-grabbing select-none transition-all duration-300 ${
             snapshot.isDragging
               ? 'scale-105 border-indigo-500/40 shadow-[0_8px_32px_rgba(99,102,241,0.25)] neon-glow-primary'
-              : getKanbanStatusGlow(job.kanbanStatus || 'draft')
+              : (job.consecutiveFailures >= 3 || job.status === 'failing')
+                ? 'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.06)] hover:border-rose-500/50 hover:shadow-[0_0_20px_rgba(244,63,94,0.15)] bg-rose-950/5'
+                : getKanbanStatusGlow(job.kanbanStatus || 'draft')
           }`}
         >
           {/* Card Title & Method */}
@@ -86,6 +88,16 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
           <div className="text-[10px] text-slate-500 font-mono mt-1.5 truncate">
             {job.url}
           </div>
+
+          {/* Suspended Alert Indicator */}
+          {(job.consecutiveFailures >= 3 || job.status === 'failing') && (
+            <div className="mt-2.5 px-2 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center gap-1.5 text-[10px] text-rose-400 font-semibold animate-pulse">
+              <svg className="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>Serviço Suspenso (3 falhas)</span>
+            </div>
+          )}
 
           {/* Separation Divider */}
           <div className="h-px bg-indigo-950/20 my-3" />

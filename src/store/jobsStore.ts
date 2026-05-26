@@ -131,10 +131,34 @@ export const useJobsStore = create<JobsState>((set, get) => ({
   updateJob: async (updatedJob) => {
     set({ isLoading: true, error: null });
     try {
-      // Verify if the job status has changed and update on the backend
+      // Verify if the job status or configuration has changed and update on the backend
       const currentJob = get().jobs.find((j) => j.id === updatedJob.id);
-      if (currentJob && currentJob.status !== updatedJob.status) {
-        await api.patch(`/v1/jobs/${updatedJob.id}`, { status: updatedJob.status });
+      if (currentJob) {
+        const statusChanged = currentJob.status !== updatedJob.status;
+        const configChanged =
+          currentJob.name !== updatedJob.name ||
+          currentJob.schedule !== updatedJob.schedule ||
+          currentJob.timezone !== updatedJob.timezone ||
+          currentJob.url !== updatedJob.url ||
+          currentJob.httpMethod !== updatedJob.httpMethod ||
+          JSON.stringify(currentJob.headers) !== JSON.stringify(updatedJob.headers) ||
+          JSON.stringify(currentJob.payload) !== JSON.stringify(updatedJob.payload) ||
+          currentJob.webhookAlertUrl !== updatedJob.webhookAlertUrl;
+
+        if (configChanged) {
+          await api.put(`/v1/jobs/${updatedJob.id}`, {
+            name: updatedJob.name,
+            schedule: updatedJob.schedule,
+            timezone: updatedJob.timezone,
+            url: updatedJob.url,
+            http_method: updatedJob.httpMethod,
+            headers: updatedJob.headers,
+            payload: updatedJob.payload,
+            webhook_alert_url: updatedJob.webhookAlertUrl || null,
+          });
+        } else if (statusChanged) {
+          await api.patch(`/v1/jobs/${updatedJob.id}`, { status: updatedJob.status });
+        }
       }
 
       set((state) => ({
