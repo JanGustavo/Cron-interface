@@ -3,7 +3,7 @@ import { useUiStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
 
 export const Sidebar: React.FC = () => {
-  const { sidebarOpen, activeTab, setActiveTab, toggleSidebar } = useUiStore();
+  const { sidebarOpen, activeTab, setActiveTab, toggleSidebar, setSidebarOpen } = useUiStore();
   const { user, logout } = useAuthStore();
 
   const navItems = [
@@ -45,10 +45,19 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
+  const handleTabClick = (tabId: string) => {
+    setActiveTab(tabId);
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
+
   return (
     <aside
-      className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out border-r border-indigo-950/40 glass-panel flex flex-col justify-between ${
-        sidebarOpen ? 'w-64' : 'w-20'
+      className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out border-r border-indigo-950/40 glass-panel flex flex-col justify-between ${
+        sidebarOpen 
+          ? 'w-64 translate-x-0' 
+          : 'w-20 -translate-x-full md:translate-x-0'
       }`}
     >
       {/* Top Brand Logo Section */}
@@ -60,7 +69,12 @@ export const Sidebar: React.FC = () => {
         >
           <button
             type="button"
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => {
+              setActiveTab('dashboard');
+              if (window.innerWidth < 768) {
+                setSidebarOpen(false);
+              }
+            }}
             className={`group flex items-center overflow-hidden text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-0 ${
               sidebarOpen ? 'gap-3' : 'w-10 justify-center mx-auto'
             }`}
@@ -99,7 +113,7 @@ export const Sidebar: React.FC = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleTabClick(item.id)}
                 className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl transition-all duration-200 select-none ${
                   isActive
                     ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] font-semibold'

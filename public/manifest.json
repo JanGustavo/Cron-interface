@@ -1,0 +1,25 @@
+{
+  "short_name": "CronFlow",
+  "name": "CronFlow - Agendamento & Automação Serverless",
+  "description": "Plataforma integrada de agendamento de tarefas e disparo de webhooks com alta precisão e telemetria em tempo real.",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#070913",
+  "theme_color": "#070913",
+  "display": "standalone",
+  "orientation": "portrait",
+  "categories": ["productivity", "developer-tools"]
+}

@@ -29,7 +29,7 @@ interface UiState {
 
 export const useUiStore = create<UiState>((set) => ({
   theme: 'dark', // Defaulting to dark theme (premium glassmorphism/cyberpunk style)
-  sidebarOpen: true,
+  sidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
   activeTab: 'dashboard',
   isJobModalOpen: false,
   isLogModalOpen: false,

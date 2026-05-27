@@ -3,7 +3,7 @@ import { useUiStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
 
 export const TopNav: React.FC = () => {
-  const { theme, toggleTheme, activeTab } = useUiStore();
+  const { theme, toggleTheme, activeTab, toggleSidebar } = useUiStore();
   const { activeProject, projects, setActiveProject } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -31,10 +31,19 @@ export const TopNav: React.FC = () => {
   ];
 
   return (
-    <header className="h-16 border-b border-indigo-950/40 glass-panel sticky top-0 z-30 px-6 flex items-center justify-between">
-      {/* Page Title */}
-      <div className="flex items-center gap-4">
-        <h1 className="text-lg font-bold text-slate-100 tracking-wide select-none">
+    <header className="h-16 border-b border-indigo-950/40 glass-panel sticky top-0 z-30 px-4 md:px-6 flex items-center justify-between">
+      {/* Page Title & Mobile Sidebar Toggle */}
+      <div className="flex items-center gap-2 md:gap-4">
+        <button
+          onClick={toggleSidebar}
+          className="p-2 -ml-2 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-950/30 border border-indigo-950/40 transition-colors md:hidden cursor-pointer"
+          aria-label="Abrir menu"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-100 tracking-wide select-none">
           {getPageTitle()}
         </h1>
       </div>

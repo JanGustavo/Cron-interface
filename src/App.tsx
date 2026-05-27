@@ -329,230 +329,263 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          title="Tarefas Ativas"
-          value={`${activeCount} / ${maxJobsLimit}`}
-          color="indigo"
-          description={plan === 'paid' ? 'Plano Pro (20 tarefas máx)' : 'Plano Gratuito (5 tarefas máx)'}
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <StatCard
-          title="Taxa de Sucesso"
-          value={successRate === '-' ? '-' : `${successRate}%`}
-          color="emerald"
-          trend={{ value: "+0.12%", type: 'up' }}
-          description="Últimas 24 horas"
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <StatCard
-          title="Tempo de Resposta Médio"
-          value="142ms"
-          color="purple"
-          trend={{ value: "-14ms", type: 'up' }}
-          description="Média geral de webhooks"
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          }
-        />
-      </div>
-
-      {/* Recharts Performance Composed Chart */}
-      <div className="p-6 rounded-2xl glass-panel border border-indigo-950/30 relative overflow-hidden space-y-4">
-        <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
-        
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h3 className="text-base font-bold text-slate-200">Volume & Taxa de Sucesso</h3>
-            <p className="text-xs text-slate-400">Total de requisições disparadas e taxa de entrega por período.</p>
-          </div>
+      {jobs.length === 0 ? (
+        <div className="p-8 md:p-12 rounded-2xl glass-panel border border-dashed border-indigo-500/20 text-center relative overflow-hidden flex flex-col items-center justify-center space-y-6 py-16 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none pulse-slow" />
           
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Job Selector Dropdown Filter */}
-            <div className="relative select-none">
-              <button
-                type="button"
-                onClick={() => setIsJobFilterOpen(!isJobFilterOpen)}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-900/80 border border-indigo-950/40 hover:border-indigo-500/20 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
-              >
-                <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
-                <span>
-                  Jobs: {selectedJobIds.length === 0 ? 'Todos' : `${selectedJobIds.length} selecionados`}
-                </span>
-                <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isJobFilterOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {isJobFilterOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsJobFilterOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-64 rounded-xl border border-indigo-900/50 bg-[#070913]/95 backdrop-blur-md shadow-2xl p-3 space-y-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="flex justify-between items-center border-b border-indigo-950/40 pb-2">
-                      <span className="text-[10px] uppercase font-bold text-slate-400">Filtrar por Job</span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedJobIds([])}
-                        className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
-                      >
-                        Limpar Filtro
-                      </button>
-                    </div>
-
-                    <div className="max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
-                      {jobs.map((job) => {
-                        const checked = selectedJobIds.includes(job.id);
-                        return (
-                          <label
-                            key={job.id}
-                            className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-indigo-950/20 cursor-pointer select-none text-[11px] font-medium text-slate-300 transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => {
-                                if (checked) {
-                                  setSelectedJobIds(selectedJobIds.filter((id) => id !== job.id));
-                                } else {
-                                  setSelectedJobIds([...selectedJobIds, job.id]);
-                                }
-                              }}
-                              className="rounded border-indigo-950 text-indigo-600 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 bg-slate-950"
-                            />
-                            <span className="truncate flex-1">{job.name}</span>
-                          </label>
-                        );
-                      })}
-                      {jobs.length === 0 && (
-                        <div className="text-[10px] text-slate-500 italic p-2 text-center">
-                          Nenhum job disponível
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Filter Toggle Buttons Group */}
-            <div className="flex bg-slate-900/60 border border-indigo-950/40 p-1 rounded-xl gap-0.5 select-none">
-              {[
-                { id: '1h', label: '1 Hora' },
-                { id: '24h', label: '24 Horas' },
-                { id: '3d', label: '3 Dias' },
-                { id: '7d', label: '7 Dias' },
-                { id: '30d', label: '30 Dias' },
-              ].map((filter) => {
-                const active = chartFilter === filter.id;
-                return (
-                  <button
-                    key={filter.id}
-                    onClick={() => setChartFilter(filter.id as typeof chartFilter)}
-                    className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                      active
-                        ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/20 shadow-md'
-                        : 'text-slate-400 hover:text-slate-200 border border-transparent'
-                    }`}
-                  >
-                    {filter.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Chart Legend */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1.5 bg-slate-900/40 border border-indigo-950/20 px-3 py-1.5 rounded-xl text-[10px] font-semibold text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-                Volume (Barra)
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                Taxa de Sucesso (Linha)
-              </span>
-            </div>
+          {/* Animated Glow Icon */}
+          <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.2)]">
+            <svg className="w-8 h-8 text-indigo-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-        </div>
 
-        <div className="h-64 w-full pt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6}/>
-                  <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.1}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
-              <XAxis 
-                dataKey="time" 
-                stroke="#64748b" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
-              />
-              {/* Y-Axis Left: Volume of Executions */}
-              <YAxis 
-                yAxisId="left"
-                stroke="#64748b" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false}
-                tickFormatter={(v) => `${v} req`}
-              />
-              {/* Y-Axis Right: Success Rate (%) */}
-              <YAxis 
-                yAxisId="right"
-                orientation="right"
-                stroke="#64748b" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false}
-                domain={[0, 100]}
-                tickFormatter={(v) => `${v}%`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar 
-                yAxisId="left"
-                dataKey="volume" 
-                barSize={32}
-                radius={[6, 6, 0, 0]}
-                fill="url(#volumeGlow)"
-              />
-              <Line 
-                yAxisId="right"
-                type="monotone" 
-                dataKey="successRate" 
-                stroke="#10b981" 
-                strokeWidth={3}
-                dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }}
-                activeDot={{ r: 6, stroke: '#34d399', strokeWidth: 2, fill: '#070913' }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+          <div className="space-y-2 max-w-md relative z-10">
+            <h3 className="text-lg font-bold text-slate-100 font-mono">Nenhum Job Cadastrado</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Você ainda não possui nenhuma tarefa de agendamento ativa neste workspace. Crie seu primeiro job serverless em segundos para monitorar execuções, disparar webhooks e analisar a telemetria.
+            </p>
+          </div>
 
-      {/* Recent Activity list */}
-      {loading && allRecentLogs.length === 0 ? (
-        <div className="p-6 rounded-2xl glass-panel border border-indigo-950/40 text-slate-400 text-center text-xs animate-pulse">
-          Carregando atividade recente...
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="px-6 py-3 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-lg shadow-indigo-600/35 neon-glow-primary hover:scale-[1.02] active:scale-[0.98] cursor-pointer relative z-10 flex items-center gap-2"
+          >
+            <span>Criar Minha Primeira Tarefa</span>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
         </div>
       ) : (
-        <RecentActivity activities={recentActivities} />
+        <>
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard
+              title="Tarefas Ativas"
+              value={`${activeCount} / ${maxJobsLimit}`}
+              color="indigo"
+              description={plan === 'paid' ? 'Plano Pro (20 tarefas máx)' : 'Plano Gratuito (5 tarefas máx)'}
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            />
+            <StatCard
+              title="Taxa de Sucesso"
+              value={successRate === '-' ? '-' : `${successRate}%`}
+              color="emerald"
+              trend={{ value: "+0.12%", type: 'up' }}
+              description="Últimas 24 horas"
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            />
+            <StatCard
+              title="Tempo de Resposta Médio"
+              value="142ms"
+              color="purple"
+              trend={{ value: "-14ms", type: 'up' }}
+              description="Média geral de webhooks"
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              }
+            />
+          </div>
+
+          {/* Recharts Performance Composed Chart */}
+          <div className="p-6 rounded-2xl glass-panel border border-indigo-950/30 relative overflow-hidden space-y-4">
+            <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
+            
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-200">Volume & Taxa de Sucesso</h3>
+                <p className="text-xs text-slate-400">Total de requisições disparadas e taxa de entrega por período.</p>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Job Selector Dropdown Filter */}
+                <div className="relative select-none">
+                  <button
+                    type="button"
+                    onClick={() => setIsJobFilterOpen(!isJobFilterOpen)}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-900/80 border border-indigo-950/40 hover:border-indigo-500/20 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span>
+                      Jobs: {selectedJobIds.length === 0 ? 'Todos' : `${selectedJobIds.length} selecionados`}
+                    </span>
+                    <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isJobFilterOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {isJobFilterOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsJobFilterOpen(false)} />
+                      <div className="absolute right-0 mt-2 w-64 rounded-xl border border-indigo-900/50 bg-[#070913]/95 backdrop-blur-md shadow-2xl p-3 space-y-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex justify-between items-center border-b border-indigo-950/40 pb-2">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Filtrar por Job</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedJobIds([])}
+                            className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
+                          >
+                            Limpar Filtro
+                          </button>
+                        </div>
+
+                        <div className="max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
+                          {jobs.map((job) => {
+                            const checked = selectedJobIds.includes(job.id);
+                            return (
+                              <label
+                                key={job.id}
+                                className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-indigo-950/20 cursor-pointer select-none text-[11px] font-medium text-slate-300 transition-colors"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => {
+                                    if (checked) {
+                                      setSelectedJobIds(selectedJobIds.filter((id) => id !== job.id));
+                                    } else {
+                                      setSelectedJobIds([...selectedJobIds, job.id]);
+                                    }
+                                  }}
+                                  className="rounded border-indigo-950 text-indigo-600 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 bg-slate-950"
+                                />
+                                <span className="truncate flex-1">{job.name}</span>
+                              </label>
+                            );
+                          })}
+                          {jobs.length === 0 && (
+                            <div className="text-[10px] text-slate-500 italic p-2 text-center">
+                              Nenhum job disponível
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Filter Toggle Buttons Group */}
+                <div className="flex bg-slate-900/60 border border-indigo-950/40 p-1 rounded-xl gap-0.5 select-none">
+                  {[
+                    { id: '1h', label: '1 Hora' },
+                    { id: '24h', label: '24 Horas' },
+                    { id: '3d', label: '3 Dias' },
+                    { id: '7d', label: '7 Dias' },
+                    { id: '30d', label: '30 Dias' },
+                  ].map((filter) => {
+                    const active = chartFilter === filter.id;
+                    return (
+                      <button
+                        key={filter.id}
+                        onClick={() => setChartFilter(filter.id as typeof chartFilter)}
+                        className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          active
+                            ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/20 shadow-md'
+                            : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Chart Legend */}
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5 bg-slate-900/40 border border-indigo-950/20 px-3 py-1.5 rounded-xl text-[10px] font-semibold text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                    Volume (Barra)
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    Taxa de Sucesso (Linha)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="h-64 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
+                  <XAxis 
+                    dataKey="time" 
+                    stroke="#64748b" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false} 
+                  />
+                  {/* Y-Axis Left: Volume of Executions */}
+                  <YAxis 
+                    yAxisId="left"
+                    stroke="#64748b" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false}
+                    tickFormatter={(v) => `${v} req`}
+                  />
+                  {/* Y-Axis Right: Success Rate (%) */}
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#64748b" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false}
+                    domain={[0, 100]}
+                    tickFormatter={(v) => `${v}%`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar 
+                    yAxisId="left"
+                    dataKey="volume" 
+                    barSize={32}
+                    radius={[6, 6, 0, 0]}
+                    fill="url(#volumeGlow)"
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="successRate" 
+                    stroke="#10b981" 
+                    strokeWidth={3}
+                    dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }}
+                    activeDot={{ r: 6, stroke: '#34d399', strokeWidth: 2, fill: '#070913' }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Recent Activity list */}
+          {loading && allRecentLogs.length === 0 ? (
+            <div className="p-6 rounded-2xl glass-panel border border-indigo-950/40 text-slate-400 text-center text-xs animate-pulse">
+              Carregando atividade recente...
+            </div>
+          ) : (
+            <RecentActivity activities={recentActivities} />
+          )}
+        </>
       )}
     </div>
   );
@@ -727,7 +760,7 @@ const ProfilePage: React.FC = () => {
   const isProPlan = plan === 'paid';
 
   const activeKey = token?.accessToken || localStorage.getItem('cf_token') || '';
-  const maskedKey = activeKey ? `${activeKey.slice(0, 8)}...${activeKey.slice(-4)}` : 'cf_live_demo';
+  const maskedKey = activeKey ? `${activeKey.slice(0, 8)}...${activeKey.slice(-4)}` : 'cf_live_prod_5a1f2b3c';
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const webhookConfigured = globalWebhook.trim().length > 0;
@@ -1128,9 +1161,9 @@ const ProfilePage: React.FC = () => {
               <span className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] ${
                 isProPlan
                   ? 'border-indigo-500/20 bg-indigo-500/10 text-indigo-300'
-                  : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+                  : 'border-indigo-500/20 bg-indigo-500/10 text-indigo-300'
               }`}>
-                {isProPlan ? 'PRO' : 'MVP'}
+                {isProPlan ? 'PRO' : 'STARTER'}
               </span>
             </div>
 
@@ -1200,7 +1233,7 @@ const ProfilePage: React.FC = () => {
                         <button
                           type="button"
                           disabled
-                          title="Em breve"
+                          title="Disponível no Plano Pro"
                           className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800/40 opacity-60 cursor-not-allowed"
                         >
                           Rotar
@@ -1208,7 +1241,7 @@ const ProfilePage: React.FC = () => {
                         <button
                           type="button"
                           disabled
-                          title="Em breve"
+                          title="Disponível no Plano Pro"
                           className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800/40 opacity-60 cursor-not-allowed"
                         >
                           Deletar
@@ -1218,19 +1251,19 @@ const ProfilePage: React.FC = () => {
 
                     <div className="flex items-start justify-between rounded-2xl border border-indigo-950/40 bg-slate-950/30 p-4">
                       <div className="space-y-1">
-                        <p className="text-xs font-semibold text-slate-200">Chave de teste</p>
-                        <p className="text-[10px] font-mono text-slate-500">cf_test_demo_4c2a</p>
-                        <p className="text-[9px] text-slate-600">Gerada automaticamente</p>
+                        <p className="text-xs font-semibold text-slate-200">Chave de Staging</p>
+                        <p className="text-[10px] font-mono text-slate-500">cf_staging_demo_4c2a</p>
+                        <p className="text-[9px] text-slate-600">Gerada automaticamente para testes locais</p>
                       </div>
                       <span className="rounded-full border border-slate-700/50 bg-slate-900/40 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                        Teste
+                        Staging
                       </span>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => showToast('Geração de chaves em breve.', 'info')}
+                    onClick={() => showToast('Geração de novas chaves sob demanda disponível no Plano Pro.', 'info')}
                     className="w-full px-4 py-2 text-[10px] uppercase font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-500/30"
                   >
                     Gerar nova chave
@@ -1323,13 +1356,13 @@ const ProfilePage: React.FC = () => {
                     </p>
                   </div>
                   <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-200">Disponivel em breve</span>
+                    <span className="text-xs font-semibold text-slate-200">Disponível no Plano Enterprise</span>
                     <button
                       type="button"
                       disabled
                       className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800/40 opacity-60 cursor-not-allowed"
                     >
-                      Em breve
+                      Enterprise
                     </button>
                   </div>
                 </div>

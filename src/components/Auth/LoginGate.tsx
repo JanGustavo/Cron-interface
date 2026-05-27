@@ -449,7 +449,7 @@ export const LoginGate: React.FC = () => {
 
         {/* Footer info */}
         <p className="text-center text-[10px] text-slate-600 font-medium">
-          CronFlow Schedulers & Workers v1.0.0 (MVP) • Go / Postgres / Redis
+          CronFlow Schedulers & Workers v1.0.0-stable • Go / Postgres / Redis
         </p>
       </div>
     </div>
