@@ -6,6 +6,12 @@ const ASSETS_TO_CACHE = [
   '/favicon.svg'
 ];
 
+const isLocalhost = Boolean(
+  self.location.hostname === 'localhost' ||
+  self.location.hostname === '[::1]' ||
+  self.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
+);
+
 // Instalação do Service Worker e caching de recursos essenciais
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -34,6 +40,11 @@ self.addEventListener('activate', (event) => {
 
 // Intercepção de requisições de rede
 self.addEventListener('fetch', (event) => {
+  // Ignorar caching em localhost para não atrapalhar o hot-reload do desenvolvimento
+  if (isLocalhost) {
+    return;
+  }
+
   // Ignorar chamadas de API do Go ou outros domínios externos para não quebrar a sincronização
   if (event.request.url.includes('/v1/') || !event.request.url.startsWith(self.location.origin)) {
     return;

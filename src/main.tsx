@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
-// Registrar o Service Worker para suporte a PWA (Progressive Web App) apenas em ambiente de produção
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Registrar o Service Worker para suporte a PWA (Progressive Web App)
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
