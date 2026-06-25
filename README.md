@@ -2,7 +2,7 @@
 
 Esta é a interface web (Single Page Application) do **CronFlow**, desenvolvida em React, TypeScript e Tailwind CSS v4. A interface fornece um painel interativo em tempo real para gerenciar e monitorar tarefas agendadas (Cron Jobs).
 
-Para a documentação completa do projeto (incluindo arquitetura do backend, banco de dados, filas e deploy), consulte o **[README.md Principal da Raiz (Root)](../README.md)**.
+Para a documentação completa do projeto (incluindo arquitetura do backend, banco de dados, filas e deploy), consulte o **[README.md Principal da Raiz (Root)](https://github.com/JanGustavo/Cron/blob/master/README.md)**.
 
 ---
 
