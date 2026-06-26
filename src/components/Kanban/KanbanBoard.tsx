@@ -16,7 +16,7 @@ const COLUMNS: { id: KanbanStatus; title: string }[] = [
 
 export const KanbanBoard: React.FC = () => {
   const { jobs, moveJobKanbanStatus } = useJobsStore();
-  const { setCreateModalOpen } = useUiStore();
+  const { setCreateModalOpen, setImportModalOpen } = useUiStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -98,6 +98,17 @@ export const KanbanBoard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
             </svg>
             <span>Nova Tarefa</span>
+          </button>
+
+          {/* Import JSON button */}
+          <button
+            onClick={() => setImportModalOpen(true)}
+            className="px-4 py-2 text-xs font-semibold text-indigo-400 hover:text-white bg-indigo-950/30 hover:bg-indigo-950/60 border border-indigo-500/20 hover:border-indigo-400/40 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span>Importar JSON</span>
           </button>
 
           {/* Button to toggle advanced filters */}

@@ -21,6 +21,7 @@ export const JobModal: React.FC = () => {
   const [editUrl, setEditUrl] = useState('');
   const [editHeaders, setEditHeaders] = useState('');
   const [editPayload, setEditPayload] = useState('');
+  const [editWebhookAlertUrl, setEditWebhookAlertUrl] = useState('');
 
   useEffect(() => {
     if (!activeJob || !isJobModalOpen) return;
@@ -38,7 +39,7 @@ export const JobModal: React.FC = () => {
   }, [activeJob, isJobModalOpen]);
 
   useEffect(() => {
-    if (activeJob) {
+    if (activeJob && !isEditing) {
       setEditName(activeJob.name || '');
       setEditSchedule(activeJob.schedule || '');
       setEditTimezone(activeJob.timezone || 'UTC');
@@ -46,6 +47,7 @@ export const JobModal: React.FC = () => {
       setEditUrl(activeJob.url || '');
       setEditHeaders(activeJob.headers ? JSON.stringify(activeJob.headers, null, 2) : '');
       setEditPayload(activeJob.payload ? JSON.stringify(activeJob.payload, null, 2) : '');
+      setEditWebhookAlertUrl(activeJob.webhookAlertUrl || '');
     }
   }, [activeJob, isEditing]);
 
@@ -138,6 +140,7 @@ export const JobModal: React.FC = () => {
         httpMethod: editMethod as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
         headers: parsedHeaders || undefined,
         payload: parsedPayload || undefined,
+        webhookAlertUrl: editWebhookAlertUrl.trim() || undefined,
       };
 
       await updateJob(updatedJob);
@@ -280,6 +283,24 @@ export const JobModal: React.FC = () => {
             ) : (
               <div className="px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-xs font-mono text-slate-300 break-all select-all select-none">
                 {activeJob.url}
+              </div>
+            )}
+          </div>
+
+          {/* Webhook Alert URL (Optional) */}
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Webhook de Alerta (Opcional)</label>
+            {isEditing ? (
+              <input
+                type="url"
+                value={editWebhookAlertUrl}
+                onChange={(e) => setEditWebhookAlertUrl(e.target.value)}
+                className="w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                placeholder="https://hooks.slack.com/services/..."
+              />
+            ) : (
+              <div className="px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-xs font-mono text-slate-300 break-all select-all select-none">
+                {activeJob.webhookAlertUrl || <span className="text-slate-600 italic">Nenhum webhook de alerta configurado</span>}
               </div>
             )}
           </div>

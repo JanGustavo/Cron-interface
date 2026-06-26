@@ -130,6 +130,15 @@ export const DashboardPage: React.FC = () => {
   const successExecutions = allRecentLogs.filter((log) => log.status === 'success').length;
   const successRate = totalExecutions > 0 ? ((successExecutions / totalExecutions) * 100).toFixed(2) : '-';
 
+  const avgResponseTime = (() => {
+    const logsWithDuration = allRecentLogs.filter(
+      (log) => log.durationMs !== null && log.durationMs !== undefined
+    );
+    if (logsWithDuration.length === 0) return '-';
+    const sum = logsWithDuration.reduce((acc, log) => acc + (log.durationMs || 0), 0);
+    return `${Math.round(sum / logsWithDuration.length)}ms`;
+  })();
+
   const plan = user?.plan || 'free';
   const maxJobsLimit = plan === 'paid' ? 20 : 5;
   const isLimitReached = activeCount >= maxJobsLimit;
@@ -208,26 +217,6 @@ export const DashboardPage: React.FC = () => {
       const matchesJob = selectedJobIds.length === 0 || selectedJobIds.includes(log.jobId);
       return matchesTime && matchesJob;
     });
-
-    if (filteredLogs.length === 0) {
-      // Use mock data
-      return Array.from({ length: config.count }).map((_, idx) => {
-        const d = new Date(now.getTime() - (config.count - 1 - idx) * config.intervalMs);
-        const label = config.labelFormat(d);
-        const vol = config.mockVolumes[idx];
-        const rate = config.mockRates[idx];
-        const succ = Math.round((vol * rate) / 100);
-        const failedJobs = vol - succ > 0 ? ['Job Exemplo Falhou'] : [];
-        return {
-          time: label,
-          volume: vol,
-          successRate: rate,
-          successCount: succ,
-          failedCount: vol - succ,
-          failedJobs,
-        };
-      });
-    }
 
     const intervals = Array.from({ length: config.count }).map((_, idx) => {
       const d = new Date(now.getTime() - (config.count - 1 - idx) * config.intervalMs);
@@ -356,8 +345,7 @@ export const DashboardPage: React.FC = () => {
               title="Taxa de Sucesso"
               value={successRate === '-' ? '-' : `${successRate}%`}
               color="emerald"
-              trend={{ value: "+0.12%", type: 'up' }}
-              description="Últimas 24 horas"
+              description={successRate === '-' ? 'Sem execuções registradas' : 'Últimas 24 horas'}
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -366,10 +354,9 @@ export const DashboardPage: React.FC = () => {
             />
             <StatCard
               title="Tempo de Resposta Médio"
-              value="142ms"
+              value={avgResponseTime}
               color="purple"
-              trend={{ value: "-14ms", type: 'up' }}
-              description="Média geral de webhooks"
+              description={avgResponseTime === '-' ? 'Sem execuções registradas' : 'Média geral de webhooks'}
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

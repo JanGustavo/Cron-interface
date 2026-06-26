@@ -4,8 +4,12 @@ import { useAuthStore } from '../../store/authStore';
 
 export const TopNav: React.FC = () => {
   const { theme, toggleTheme, activeTab, toggleSidebar } = useUiStore();
-  const { activeProject, projects, setActiveProject } = useAuthStore();
+  const { activeProject, projects, setActiveProject, user } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const userEmail = user?.email || 'admin@cronflow.sh';
+  const userHandle = userEmail.split('@')[0] || 'cronflow';
+  const avatarLabel = userHandle.slice(0, 2).toUpperCase();
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -129,9 +133,12 @@ export const TopNav: React.FC = () => {
         </div>
 
         {/* Profile Info Indicator */}
-        <div className="flex items-center gap-2 border-l border-indigo-950/40 pl-4 select-none">
+        <div className="flex items-center gap-3 border-l border-indigo-950/40 pl-4 select-none">
+          <span className="hidden md:inline text-xs font-semibold text-slate-350 max-w-[120px] truncate">
+            {userHandle}
+          </span>
           <div className="w-8.5 h-8.5 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md border border-indigo-400/20">
-            A
+            {avatarLabel}
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { CronTimeHelp } from '../Shared/CronTimeHelp';
@@ -18,6 +18,12 @@ export const CreateJobModal: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isCreateModalOpen) {
+      setWebhookAlertUrl(localStorage.getItem('cf_global_webhook') || '');
+    }
+  }, [isCreateModalOpen]);
 
   if (!isCreateModalOpen) return null;
 

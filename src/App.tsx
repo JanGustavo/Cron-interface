@@ -8,6 +8,7 @@ import { JobModal } from './components/Kanban/JobModal';
 import { Logs } from './pages/Logs';
 import { LoginGate } from './components/Auth/LoginGate';
 import { CreateJobModal } from './components/Kanban/CreateJobModal';
+import { ImportJobModal } from './components/Kanban/ImportJobModal';
 import { ToastHost } from './components/Shared/ToastHost';
 import api from './services/api';
 
@@ -329,6 +330,7 @@ const App: React.FC = () => {
           {renderActivePage()}
         </React.Suspense>
         <CreateJobModal />
+        <ImportJobModal />
       </DashboardLayout>
       <ToastHost />
 
