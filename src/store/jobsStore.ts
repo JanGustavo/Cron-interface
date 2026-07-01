@@ -263,6 +263,41 @@ export const useJobsStore = create<JobsState>((set, get) => ({
     }
 
     try {
+
+      if (newKanbanStatus === 'executing') {
+        // Se movido para executing, garante que o status é active no backend
+        await api.patch(`/v1/jobs/${jobId}`, { status: 'active' });
+        
+        // Atualiza o estado local para active para que triggerJob obtenha o prevLastRunAt correto
+        set((state) => ({
+          jobs: state.jobs.map((job) =>
+            job.id === jobId
+              ? {
+                  ...job,
+                  status: 'active',
+                }
+              : job
+          ),
+          activeJob:
+            state.activeJob?.id === jobId
+              ? {
+                  ...state.activeJob,
+                  status: 'active',
+                }
+              : state.activeJob,
+        }));
+
+        // Dispara o job imediatamente
+        await get().triggerJob(jobId);
+        return;
+      }
+
+      // Se movido para outro status, remove dos executingJobs se estiver lá
+      const executingJobs = { ...get().executingJobs };
+      if (executingJobs[jobId]) {
+        delete executingJobs[jobId];
+      }
+
       await api.patch(`/v1/jobs/${jobId}`, { status: backendStatus });
       set((state) => ({
         jobs: state.jobs.map((job) =>
@@ -282,6 +317,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
                 kanbanStatus: newKanbanStatus,
               }
             : state.activeJob,
+        executingJobs,
       }));
     } catch (err) {
       console.error(err);
