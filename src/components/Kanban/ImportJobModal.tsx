@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
+import { parseCurl } from '../Shared/cronTranslator';
 
 const EXAMPLE_JSON = `{
   "name": "Monitor PromoPulse",
@@ -46,7 +47,7 @@ export const ImportJobModal: React.FC = () => {
     setErrorMsg(null);
 
     if (!jsonText.trim()) {
-      setErrorMsg('Por favor, cole o conteúdo JSON.');
+      setErrorMsg('Por favor, cole o conteúdo JSON ou comando cURL.');
       return;
     }
 
@@ -54,10 +55,19 @@ export const ImportJobModal: React.FC = () => {
 
     try {
       let parsed: any;
-      try {
-        parsed = JSON.parse(jsonText.trim());
-      } catch (err: any) {
-        throw new Error(`JSON inválido: ${err.message}`);
+      const text = jsonText.trim();
+      if (text.startsWith('curl')) {
+        const curlParsed = parseCurl(text);
+        if (!curlParsed) {
+          throw new Error('Comando cURL inválido ou impossível de extrair parâmetros.');
+        }
+        parsed = curlParsed;
+      } else {
+        try {
+          parsed = JSON.parse(text);
+        } catch (err: any) {
+          throw new Error(`JSON inválido: ${err.message}`);
+        }
       }
 
       if (!parsed.name || typeof parsed.name !== 'string' || !parsed.name.trim()) {
@@ -111,7 +121,7 @@ export const ImportJobModal: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-100 tracking-wide">Importar Tarefa via JSON</h3>
+              <h3 className="text-lg font-bold text-slate-100 tracking-wide">Importar via JSON ou cURL</h3>
               <p className="text-[9px] uppercase tracking-wider text-slate-400 mt-0.5">Crie um job instantaneamente</p>
             </div>
           </div>
@@ -131,27 +141,27 @@ export const ImportJobModal: React.FC = () => {
           {/* Explanation Banner */}
           <div className="p-3 bg-indigo-950/20 border border-indigo-500/10 rounded-xl text-slate-400 text-xs leading-relaxed space-y-1.5 select-none">
             <p>
-              Cole a estrutura JSON contendo os campos obrigatórios (<code className="text-indigo-400 font-bold font-mono">name</code>, <code className="text-indigo-400 font-bold font-mono">schedule</code> e <code className="text-indigo-400 font-bold font-mono">url</code>).
+              Cole a estrutura JSON do job ou um <strong>comando cURL bruto</strong> direto do seu terminal/postman.
             </p>
             <div className="flex justify-between items-center pt-1 border-t border-indigo-950/40">
-              <span className="text-[10px] text-slate-500">Exemplo com headers, timezone e alerta.</span>
+              <span className="text-[10px] text-slate-500 font-mono">{"curl -X POST \"https://api...\" -d '{\"status\":\"ping\"}'"}</span>
               <button
                 type="button"
                 onClick={handleCopyExample}
                 className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
               >
-                Copiar Exemplo 📋
+                Copiar Exemplo JSON 📋
               </button>
             </div>
           </div>
 
-          {/* JSON Textarea */}
+          {/* JSON/cURL Textarea */}
           <div className="space-y-1.5">
             <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-              Conteúdo JSON
+              Conteúdo JSON ou Comando cURL
             </label>
             <textarea
-              placeholder='{\n  "name": "Minha Tarefa",\n  "schedule": "every:5m",\n  "url": "https://api.exemplo.com"\n}'
+              placeholder='Cole aqui seu JSON ou curl...'
               value={jsonText}
               onChange={(e) => setJsonText(e.target.value)}
               className="w-full h-44 px-3.5 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-indigo-400 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono text-xs custom-scrollbar"

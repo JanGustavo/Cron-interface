@@ -9,7 +9,7 @@ interface LogDetailProps {
 }
 
 export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
-  const { jobs } = useJobsStore();
+  const { jobs, triggerJob } = useJobsStore();
   const { isLogModalOpen, selectedLogId, setLogModalOpen, showToast } = useUiStore();
 
   if (!isLogModalOpen || !selectedLogId) return null;
@@ -32,6 +32,35 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
     } catch (err) {
       console.error('Falha ao copiar:', err);
     }
+  };
+
+  const handleReplayJob = async () => {
+    if (!job) return;
+    try {
+      await triggerJob(job.id);
+      showToast(`Replay de execução manual iniciado para: ${job.name} 🚀`, 'success');
+    } catch (err: any) {
+      showToast(`Falha ao fazer replay: ${err.message || 'erro interno'}`, 'error');
+    }
+  };
+
+  const handleCopyAsCurl = () => {
+    if (!job) return;
+    const method = job.httpMethod || 'POST';
+    let curl = `curl -X ${method} "${log.jobUrl || job.url}"`;
+    
+    if (job.headers) {
+      Object.entries(job.headers).forEach(([key, val]) => {
+        curl += ` \\\n  -H "${key}: ${val}"`;
+      });
+    }
+    
+    if (job.payload && method !== 'GET') {
+      const payloadStr = typeof job.payload === 'object' ? JSON.stringify(job.payload) : job.payload;
+      curl += ` \\\n  -d '${payloadStr.replace(/'/g, "'\\''")}'`;
+    }
+    
+    handleCopyText(curl, 'Comando cURL copiado para o clipboard! 📋');
   };
 
   // Mock attempts timeline depending on the current attemptNumber
@@ -130,9 +159,29 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
 
             {/* Request Block */}
             <div className="space-y-2">
-              <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                Webhook Request (Envio)
-              </h5>
+              <div className="flex justify-between items-center select-none">
+                <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                  Webhook Request (Envio)
+                </h5>
+                <div className="flex gap-2.5">
+                  <button
+                    onClick={handleCopyAsCurl}
+                    className="text-[9px] font-extrabold text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer uppercase font-mono tracking-wider"
+                    title="Copiar chamada como comando cURL"
+                  >
+                    💻 Copiar cURL
+                  </button>
+                  {job && (
+                    <button
+                      onClick={handleReplayJob}
+                      className="text-[9px] font-extrabold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer uppercase font-mono tracking-wider"
+                      title="Disparar esta tarefa novamente agora"
+                    >
+                      🔄 Replay
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="space-y-3 p-4 bg-slate-950/40 border border-indigo-950/40 rounded-2xl">
                 
                 {/* Method & URL */}

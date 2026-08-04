@@ -2,22 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { CronTimeHelp } from '../Shared/CronTimeHelp';
+import { translateSchedule } from '../Shared/cronTranslator';
 
 export const CreateJobModal: React.FC = () => {
-  const { addJob } = useJobsStore();
-  const { isCreateModalOpen, setCreateModalOpen } = useUiStore();
+	const { addJob, jobs } = useJobsStore();
+	const { isCreateModalOpen, setCreateModalOpen } = useUiStore();
 
-  const [name, setName] = useState('');
-  const [schedule, setSchedule] = useState('every:5m');
-  const [timezone, setTimezone] = useState('UTC');
-  const [url, setUrl] = useState('https://httpbin.org/post');
-  const [httpMethod, setHttpMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>('POST');
-  const [headersText, setHeadersText] = useState('{\n  "Content-Type": "application/json"\n}');
-  const [payloadText, setPayloadText] = useState('{\n  "status": "ping"\n}');
-  const [webhookAlertUrl, setWebhookAlertUrl] = useState(() => localStorage.getItem('cf_global_webhook') || '');
+	const [name, setName] = useState('');
+	const [schedule, setSchedule] = useState('every:5m');
+	const [timezone, setTimezone] = useState('UTC');
+	const [url, setUrl] = useState('https://httpbin.org/post');
+	const [httpMethod, setHttpMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>('POST');
+	const [headersText, setHeadersText] = useState('{\n  "Content-Type": "application/json"\n}');
+	const [payloadText, setPayloadText] = useState('{\n  "status": "ping"\n}');
+	const [webhookAlertUrl, setWebhookAlertUrl] = useState(() => localStorage.getItem('cf_global_webhook') || '');
+	const [nextJobId, setNextJobId] = useState('');
+	const [tagsInput, setTagsInput] = useState('');
 
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
+	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (isCreateModalOpen) {
@@ -83,6 +86,8 @@ export const CreateJobModal: React.FC = () => {
         payload,
         status: 'active',
         webhookAlertUrl: webhookAlertUrl.trim() ? webhookAlertUrl.trim() : undefined,
+        nextJobId: nextJobId.trim() ? nextJobId.trim() : undefined,
+        tags: tagsInput.trim() ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean) : undefined,
       });
 
       // Clear state and close
@@ -94,6 +99,8 @@ export const CreateJobModal: React.FC = () => {
       setHeadersText('{\n  "Content-Type": "application/json"\n}');
       setPayloadText('{\n  "status": "ping"\n}');
       setWebhookAlertUrl(localStorage.getItem('cf_global_webhook') || '');
+      setNextJobId('');
+      setTagsInput('');
       
       handleClose();
     } catch (err) {
@@ -182,6 +189,11 @@ export const CreateJobModal: React.FC = () => {
               <span className="text-[9px] text-slate-500 block pt-0.5">
                 Formatos: <code className="text-cyan-500 font-mono">every:15m</code>, <code className="text-cyan-500 font-mono">every:2h</code>, ou expressão cron.
               </span>
+              {schedule.trim() && (
+                <span className="text-[9px] text-cyan-400 font-semibold block pt-1 font-mono">
+                  ⏱️ {translateSchedule(schedule)}
+                </span>
+              )}
             </div>
           </div>
 
@@ -253,8 +265,45 @@ export const CreateJobModal: React.FC = () => {
               disabled={loading}
             />
             <span className="text-[9px] text-slate-500 block pt-0.5">
-              Notificado se a tarefa falhar repetidamente (excedendo 3 falhas seguidas).
+              Notificado se a tarefa falhar repetidamente (excedendo 3 falhas seguidas). Suporta Discord, Slack e ntfy.
             </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Próximo Job (Workflow Chaining) */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                Próximo Job (Workflow)
+              </label>
+              <select
+                value={nextJobId}
+                onChange={(e) => setNextJobId(e.target.value)}
+                className="w-full px-3 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
+                disabled={loading}
+              >
+                <option value="">Nenhum (Finalizar Fluxo)</option>
+                {jobs.map((jb) => (
+                  <option key={jb.id} value={jb.id}>
+                    {jb.name} ({jb.schedule})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tags Input */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                Tags (separadas por vírgula)
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: billing, sync, prod"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 placeholder-slate-650 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
+                disabled={loading}
+              />
+            </div>
           </div>
 
           {/* Headers & Payload JSON Blocks */}

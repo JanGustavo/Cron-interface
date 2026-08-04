@@ -79,9 +79,16 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
             <h4 className="font-extrabold text-sm text-slate-200 tracking-wide line-clamp-1 group-hover:text-indigo-400">
               {job.name}
             </h4>
-            <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${getMethodColor(job.httpMethod)}`}>
-              {job.httpMethod}
-            </span>
+            <div className="flex gap-1.5 items-center">
+              {job.nextJobId && (
+                <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 text-[8px] font-black uppercase tracking-wider" title="Dispara próxima tarefa">
+                  🔗 fluxo
+                </span>
+              )}
+              <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${getMethodColor(job.httpMethod)}`}>
+                {job.httpMethod}
+              </span>
+            </div>
           </div>
 
           {/* Webhook Endpoint URL */}
@@ -96,6 +103,17 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <span>Serviço Suspenso (3 falhas)</span>
+            </div>
+          )}
+
+          {/* Tags list */}
+          {job.tags && job.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2.5">
+              {job.tags.map((tg, idx) => (
+                <span key={idx} className="px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/25 text-[8px] font-extrabold text-indigo-300 uppercase font-mono tracking-wider">
+                  {tg}
+                </span>
+              ))}
             </div>
           )}
 

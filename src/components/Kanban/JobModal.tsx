@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { StatusBadge } from '../Dashboard/StatusBadge';
+import { translateSchedule } from '../Shared/cronTranslator';
 import api from '../../services/api';
 import type { Job } from '../../types/jobs';
 
 export const JobModal: React.FC = () => {
-  const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob } = useJobsStore();
+  const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob, jobs } = useJobsStore();
   const { isJobModalOpen, setJobModalOpen, showToast } = useUiStore();
   const [jobLogs, setJobLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -22,6 +23,8 @@ export const JobModal: React.FC = () => {
   const [editHeaders, setEditHeaders] = useState('');
   const [editPayload, setEditPayload] = useState('');
   const [editWebhookAlertUrl, setEditWebhookAlertUrl] = useState('');
+  const [editNextJobId, setEditNextJobId] = useState('');
+  const [editTagsInput, setEditTagsInput] = useState('');
 
   useEffect(() => {
     if (!activeJob || !isJobModalOpen) return;
@@ -48,6 +51,8 @@ export const JobModal: React.FC = () => {
       setEditHeaders(activeJob.headers ? JSON.stringify(activeJob.headers, null, 2) : '');
       setEditPayload(activeJob.payload ? JSON.stringify(activeJob.payload, null, 2) : '');
       setEditWebhookAlertUrl(activeJob.webhookAlertUrl || '');
+      setEditNextJobId(activeJob.nextJobId || '');
+      setEditTagsInput(activeJob.tags ? activeJob.tags.join(', ') : '');
     }
   }, [activeJob, isEditing]);
 
@@ -141,6 +146,8 @@ export const JobModal: React.FC = () => {
         headers: parsedHeaders || undefined,
         payload: parsedPayload || undefined,
         webhookAlertUrl: editWebhookAlertUrl.trim() || undefined,
+        nextJobId: editNextJobId.trim() || null,
+        tags: editTagsInput.trim() ? editTagsInput.split(',').map((t) => t.trim()).filter(Boolean) : [],
       };
 
       await updateJob(updatedJob);
@@ -214,15 +221,27 @@ export const JobModal: React.FC = () => {
             <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl flex flex-col justify-between">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Agendamento</span>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={editSchedule}
-                  onChange={(e) => setEditSchedule(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-indigo-500/20 rounded-lg px-2 py-1 text-xs font-semibold text-slate-200 mt-1 font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-                  placeholder="*/5 * * * *"
-                />
+                <>
+                  <input
+                    type="text"
+                    value={editSchedule}
+                    onChange={(e) => setEditSchedule(e.target.value)}
+                    className="w-full bg-slate-950/80 border border-indigo-500/20 rounded-lg px-2 py-1 text-xs font-semibold text-slate-200 mt-1 font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                    placeholder="*/5 * * * *"
+                  />
+                  {editSchedule.trim() && (
+                    <span className="text-[9px] text-cyan-400 font-semibold block pt-0.5 font-mono">
+                      ⏱️ {translateSchedule(editSchedule)}
+                    </span>
+                  )}
+                </>
               ) : (
-                <div className="text-xs font-semibold text-slate-200 mt-1 font-mono">{activeJob.schedule}</div>
+                <>
+                  <div className="text-xs font-semibold text-slate-200 mt-1 font-mono">{activeJob.schedule}</div>
+                  <span className="text-[9px] text-cyan-500 font-semibold block pt-0.5 font-mono">
+                    ⏱️ {translateSchedule(activeJob.schedule)}
+                  </span>
+                </>
               )}
             </div>
             <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl flex flex-col justify-between">
@@ -303,6 +322,65 @@ export const JobModal: React.FC = () => {
                 {activeJob.webhookAlertUrl || <span className="text-slate-600 italic">Nenhum webhook de alerta configurado</span>}
               </div>
             )}
+          </div>
+
+          {/* Workflow Chaining & Tags Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Próximo Job (Workflow Chaining) */}
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Próximo Job (Workflow)</label>
+              {isEditing ? (
+                <select
+                  value={editNextJobId}
+                  onChange={(e) => setEditNextJobId(e.target.value)}
+                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 select-none"
+                >
+                  <option value="">Nenhum (Finalizar Fluxo)</option>
+                  {jobs.filter(jb => jb.id !== activeJob.id).map((jb) => (
+                    <option key={jb.id} value={jb.id}>
+                      {jb.name} ({jb.schedule})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-xs font-mono text-slate-300 select-none">
+                  {activeJob.nextJobId ? (
+                    (() => {
+                      const nextJ = jobs.find(j => j.id === activeJob.nextJobId);
+                      return nextJ ? `🔗 ${nextJ.name} (${nextJ.schedule})` : `🔗 ${activeJob.nextJobId}`;
+                    })()
+                  ) : (
+                    <span className="text-slate-600 italic">Nenhum próximo job (fim do fluxo)</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Tags Badges / Input */}
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tags</label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editTagsInput}
+                  onChange={(e) => setEditTagsInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                  placeholder="Ex: sync, billing, prod"
+                />
+              ) : (
+                <div className="px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl flex flex-wrap gap-1.5 min-h-[42px] items-center">
+                  {activeJob.tags && activeJob.tags.length > 0 ? (
+                    activeJob.tags.map((tg, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded bg-indigo-500/15 border border-indigo-500/35 text-[9px] font-bold text-indigo-300 uppercase font-mono tracking-wider">
+                        {tg}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-slate-600 italic text-xs">Sem tags configuradas</span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Headers & Payload Grid */}

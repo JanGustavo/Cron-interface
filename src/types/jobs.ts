@@ -30,6 +30,8 @@ export interface Job {
   consecutiveFailures: number;
   createdAt: string;
   webhookAlertUrl?: string;
+  nextJobId?: string | null;
+  tags?: string[];
 }
 
 /**

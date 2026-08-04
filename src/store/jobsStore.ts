@@ -143,7 +143,9 @@ export const useJobsStore = create<JobsState>((set, get) => ({
           currentJob.httpMethod !== updatedJob.httpMethod ||
           JSON.stringify(currentJob.headers) !== JSON.stringify(updatedJob.headers) ||
           JSON.stringify(currentJob.payload) !== JSON.stringify(updatedJob.payload) ||
-          currentJob.webhookAlertUrl !== updatedJob.webhookAlertUrl;
+          currentJob.webhookAlertUrl !== updatedJob.webhookAlertUrl ||
+          currentJob.nextJobId !== updatedJob.nextJobId ||
+          JSON.stringify(currentJob.tags) !== JSON.stringify(updatedJob.tags);
 
         if (configChanged) {
           await api.put(`/v1/jobs/${updatedJob.id}`, {
@@ -155,6 +157,8 @@ export const useJobsStore = create<JobsState>((set, get) => ({
             headers: updatedJob.headers,
             payload: updatedJob.payload,
             webhook_alert_url: updatedJob.webhookAlertUrl || null,
+            next_job_id: updatedJob.nextJobId || null,
+            tags: updatedJob.tags || [],
           });
         } else if (statusChanged) {
           await api.patch(`/v1/jobs/${updatedJob.id}`, { status: updatedJob.status });
