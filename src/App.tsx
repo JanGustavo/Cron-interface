@@ -10,6 +10,7 @@ import { LoginGate } from './components/Auth/LoginGate';
 import { CreateJobModal } from './components/Kanban/CreateJobModal';
 import { ImportJobModal } from './components/Kanban/ImportJobModal';
 import { ToastHost } from './components/Shared/ToastHost';
+import { AgentChat } from './components/Shared/AgentChat';
 import api from './services/api';
 
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -330,6 +331,7 @@ const App: React.FC = () => {
         <CreateJobModal />
         <ImportJobModal />
       </DashboardLayout>
+      <AgentChat />
       <ToastHost />
 
       {/* Global Docs Modal */}

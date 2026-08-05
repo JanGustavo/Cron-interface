@@ -5,6 +5,7 @@ import { useUiStore } from '../store/uiStore';
 import { useAuthStore } from '../store/authStore';
 import { useJobsStore } from '../store/jobsStore';
 import api from '../services/api';
+import { PixModal } from '../components/Shared/PixModal';
 import {
   ComposedChart,
   Bar,
@@ -78,7 +79,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 };
 
 export const DashboardPage: React.FC = () => {
-  const { setCreateModalOpen, setDocsOpen } = useUiStore();
+  const { setCreateModalOpen, setDocsOpen, showToast } = useUiStore();
   const { jobs } = useJobsStore();
   const { user } = useAuthStore();
   const [allRecentLogs, setAllRecentLogs] = useState<LogEntry[]>([]);
@@ -86,6 +87,7 @@ export const DashboardPage: React.FC = () => {
   const [chartFilter, setChartFilter] = useState<'1h' | '24h' | '3d' | '7d' | '30d'>('24h');
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [isJobFilterOpen, setIsJobFilterOpen] = useState(false);
+  const [isPixModalOpen, setIsPixModalOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -293,6 +295,27 @@ export const DashboardPage: React.FC = () => {
             className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all cursor-pointer"
           >
             Documentação API
+          </button>
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText('jandersongustavo1@gmail.com');
+              showToast('E-mail de contato copiado para a área de transferência! 📋', 'success');
+            }}
+            className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all cursor-pointer flex items-center gap-1.5"
+            title="Copiar e-mail de contato"
+          >
+            <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Contato
+          </button>
+          <button 
+            onClick={() => setIsPixModalOpen(true)}
+            className="px-4 py-2 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/45 border border-indigo-500/20 hover:border-indigo-400/40 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+            title="Apoiar o projeto via PIX"
+          >
+            <span className="animate-[pulse-heart_1.8s_ease-in-out_infinite]">💜</span>
+            Apoia-se
           </button>
         </div>
       </div>
@@ -553,6 +576,7 @@ export const DashboardPage: React.FC = () => {
           )}
         </>
       )}
+      <PixModal isOpen={isPixModalOpen} onClose={() => setIsPixModalOpen(false)} />
     </div>
   );
 };

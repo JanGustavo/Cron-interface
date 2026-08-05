@@ -16,7 +16,7 @@ const COLUMNS: { id: KanbanStatus; title: string }[] = [
 
 export const KanbanBoard: React.FC = () => {
   const { jobs, moveJobKanbanStatus } = useJobsStore();
-  const { setCreateModalOpen, setImportModalOpen } = useUiStore();
+  const { setCreateModalOpen, setImportModalOpen, showToast } = useUiStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -79,9 +79,18 @@ export const KanbanBoard: React.FC = () => {
       {/* Board Controls and Stats */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div>
-          <h2 className="text-xl font-bold text-slate-100 tracking-wide">
-            Quadro Kanban de Tarefas
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-100 tracking-wide">
+              Quadro Kanban de Tarefas
+            </h2>
+            <button
+              onClick={() => showToast('Dica: Você pode criar, testar e rodar tarefas enviando comandos cURL diretamente para o nosso Assistente de IA! Clique no ícone de chat no canto inferior direito. 🤖', 'info')}
+              className="w-5 h-5 rounded-full bg-indigo-950/40 hover:bg-indigo-950/80 border border-indigo-500/20 hover:border-indigo-400/40 flex items-center justify-center text-xs text-indigo-400 hover:text-indigo-200 font-bold transition-all duration-200 cursor-pointer shadow-sm"
+              title="Ajuda do Assistente de IA"
+            >
+              ?
+            </button>
+          </div>
           <p className="text-xs text-slate-400">
             Arraste e solte tarefas para gerenciar seus fluxos e estados de execução em tempo real.
           </p>
