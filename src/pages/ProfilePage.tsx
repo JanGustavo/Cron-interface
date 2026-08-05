@@ -80,21 +80,46 @@ export const ProfilePage: React.FC = () => {
       label: 'Projetos',
       value: projects.length.toString().padStart(2, '0'),
       helper: 'Workspaces vinculados à conta',
+      tone: 'indigo',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+      ),
     },
     {
       label: 'Jobs ativos',
       value: activeJobs.toString().padStart(2, '0'),
       helper: 'Em execução no workspace atual',
+      tone: 'emerald',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
     },
     {
       label: 'Jobs pausados',
       value: pausedJobs.toString().padStart(2, '0'),
       helper: 'Disponíveis para reativação',
+      tone: 'amber',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
     },
     {
       label: 'Jobs em falha',
       value: failingJobs.toString().padStart(2, '0'),
       helper: 'Precisam de atenção imediata',
+      tone: 'rose',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      ),
     },
   ];
 
@@ -181,11 +206,11 @@ export const ProfilePage: React.FC = () => {
   const progressPercent = Math.round((completedSteps / onboardingSteps.length) * 100);
 
   const quickStatStyles: Record<string, string> = {
-    indigo: 'border-indigo-500/20 bg-indigo-500/10',
-    emerald: 'border-emerald-500/20 bg-emerald-500/10',
-    amber: 'border-amber-500/20 bg-amber-500/10',
-    cyan: 'border-cyan-500/20 bg-cyan-500/10',
-    slate: 'border-slate-700/40 bg-slate-950/40',
+    indigo: 'border-indigo-500/10 bg-indigo-500/5 hover:border-indigo-500/40 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] text-indigo-400',
+    emerald: 'border-emerald-500/10 bg-emerald-500/5 hover:border-emerald-500/40 hover:shadow-[0_0_15px_rgba(16,185,129,0.15)] text-emerald-400',
+    amber: 'border-amber-500/10 bg-amber-500/5 hover:border-amber-500/40 hover:shadow-[0_0_15px_rgba(245,158,11,0.15)] text-amber-400',
+    cyan: 'border-cyan-500/10 bg-cyan-500/5 hover:border-cyan-500/40 hover:shadow-[0_0_15px_rgba(6,182,212,0.15)] text-cyan-400',
+    slate: 'border-slate-800 bg-slate-950/20 hover:border-slate-700 hover:shadow-[0_0_15px_rgba(148,163,184,0.1)] text-slate-400',
   };
 
   const quickStats = [
@@ -194,24 +219,45 @@ export const ProfilePage: React.FC = () => {
       value: isProPlan ? 'PRO' : 'FREE',
       helper: isProPlan ? 'Limite 20 jobs' : 'Limite 5 jobs',
       tone: isProPlan ? 'indigo' : 'slate',
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.907c.961 0 1.36 1.236.588 1.81l-3.974 2.89a1 1 0 00-.364 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.89a1 1 0 00-1.176 0l-3.976 2.89c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.364-1.118L2.49 11.1c-.773-.574-.374-1.81.588-1.81h4.907a1 1 0 00.95-.69l1.519-4.674z" />
+        </svg>
+      ),
     },
     {
       label: 'API Keys',
-      value: activeKey ? '1 activa' : '0 activa', // Maintain Portuguese typo if existing: Wait, "activa" or "ativa"? Let's look at the original code: activeKey ? '1 ativa' : '0 ativa'. Let's keep it '1 ativa' : '0 ativa'
+      value: activeKey ? '1 ativa' : '0 ativa',
       helper: activeKey ? 'Pronta para uso' : 'Configure em Settings',
       tone: activeKey ? 'emerald' : 'amber',
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 7a2 2 0 012 2m-2 4a5 5 0 110-10 5 5 0 010 10zM19 19a2 2 0 01-2 2h-1.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 0113 18.586V17h-2v-2H9v-2H7v-2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14z" />
+        </svg>
+      ),
     },
     {
       label: 'Uso de jobs',
       value: `${activeJobs}/${maxJobsLimit}`,
       helper: `${jobsUsagePercent}% do limite`,
       tone: jobsUsagePercent >= 90 ? 'amber' : 'cyan',
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+        </svg>
+      ),
     },
     {
       label: 'Membro ha',
       value: memberDays ? `${memberDays} dias` : 'hoje',
       helper: `Desde ${memberSince}`,
       tone: 'slate',
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      ),
     },
     {
       label: 'Workspace',
@@ -219,12 +265,22 @@ export const ProfilePage: React.FC = () => {
       helper: `${projects.length} projeto${projects.length === 1 ? '' : 's'}`,
       tone: 'indigo',
       title: workspaceName,
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      ),
     },
     {
       label: 'Status',
       value: 'Ativo',
       helper: 'Sessao autenticada',
       tone: 'emerald',
+      icon: (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      ),
     },
   ];
 
@@ -337,16 +393,23 @@ export const ProfilePage: React.FC = () => {
                   key={stat.label}
                   title={stat.title || stat.value}
                   style={{ animationDelay: `${140 + index * 40}ms` }}
-                  className={`rounded-2xl border p-3 transition-all duration-300 hover:bg-slate-900/60 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/20 animate-in fade-in slide-in-from-bottom-4 ${quickStatStyles[stat.tone]}`}
+                  className={`rounded-2xl border p-3.5 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 hover:bg-slate-900/60 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 flex flex-col justify-between group ${quickStatStyles[stat.tone]}`}
                 >
-                  <div className="text-[9px] uppercase tracking-[0.24em] text-slate-500">
-                    {stat.label}
+                  <div className="flex items-center justify-between gap-1.5 w-full">
+                    <span className="text-[9px] uppercase tracking-[0.24em] text-slate-500 font-bold group-hover:text-slate-400 transition-colors">
+                      {stat.label}
+                    </span>
+                    <span className="text-slate-500 group-hover:text-slate-350 transition-colors duration-300">
+                      {stat.icon}
+                    </span>
                   </div>
-                  <div className="mt-2 text-sm font-bold text-slate-100 truncate">
+                  <div className="mt-3.5 text-sm font-bold text-slate-100 truncate">
                     {stat.value}
                   </div>
                   {stat.helper && (
-                    <div className="mt-1 text-[9px] text-slate-500">{stat.helper}</div>
+                    <div className="mt-1 text-[9px] text-slate-500 font-medium group-hover:text-slate-400 transition-colors">
+                      {stat.helper}
+                    </div>
                   )}
                 </div>
               ))}
@@ -354,19 +417,40 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-            {profileStats.map((stat, index) => (
-              <div
-                key={stat.label}
-                style={{ animationDelay: `${200 + index * 60}ms` }}
-                className="rounded-2xl glass-panel border border-indigo-950/30 p-4 transition-all duration-300 hover:bg-slate-900/60 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/20 animate-in fade-in slide-in-from-bottom-4"
-              >
-                <span className="text-[10px] uppercase tracking-[0.24em] text-slate-500">
-                  {stat.label}
-                </span>
-                <div className="mt-3 text-2xl font-black text-slate-100">{stat.value}</div>
-                <p className="mt-1 text-xs text-slate-400">{stat.helper}</p>
-              </div>
-            ))}
+            {profileStats.map((stat, index) => {
+              const statTones: Record<string, string> = {
+                indigo: 'border-indigo-500/10 bg-indigo-500/5 hover:border-indigo-500/40 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]',
+                emerald: 'border-emerald-500/10 bg-emerald-500/5 hover:border-emerald-500/40 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]',
+                amber: 'border-amber-500/10 bg-amber-500/5 hover:border-amber-500/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]',
+                rose: 'border-rose-500/10 bg-rose-500/5 hover:border-rose-500/40 hover:shadow-[0_0_20px_rgba(244,63,94,0.15)]',
+              };
+              
+              const iconColors: Record<string, string> = {
+                indigo: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+                emerald: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+                amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+                rose: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+              };
+
+              return (
+                <div
+                  key={stat.label}
+                  style={{ animationDelay: `${200 + index * 60}ms` }}
+                  className={`rounded-2xl border p-4.5 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 animate-in fade-in slide-in-from-bottom-4 flex flex-col justify-between group ${statTones[stat.tone]}`}
+                >
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span className="text-[10px] uppercase tracking-[0.24em] text-slate-400 font-bold group-hover:text-slate-200 transition-colors">
+                      {stat.label}
+                    </span>
+                    <div className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-transform duration-300 group-hover:rotate-6 ${iconColors[stat.tone]}`}>
+                      {stat.icon}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-3xl font-black text-slate-100 tracking-tight font-mono">{stat.value}</div>
+                  <p className="mt-2 text-xs text-slate-500 font-medium group-hover:text-slate-400 transition-colors">{stat.helper}</p>
+                </div>
+              );
+            })}
           </div>
 
           <div
