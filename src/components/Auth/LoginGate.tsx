@@ -129,10 +129,8 @@ export const LoginGate: React.FC = () => {
       <header className="sticky top-0 z-40 w-full border-b border-indigo-950/40 bg-[#060813]/70 backdrop-blur-md transition-all select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-950/40 border border-cyan-500/20 shadow-[0_0_15px_rgba(0,217,255,0.15)]">
-              <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-950/40 border border-cyan-500/20 shadow-[0_0_15px_rgba(0,217,255,0.15)] p-1.5">
+              <img src="/logo.svg" alt="Logo CronFlow" className="w-full h-full object-contain" />
             </div>
             <span className="text-lg font-black tracking-widest text-gradient-cyber font-mono uppercase">
               CronFlow
@@ -515,10 +513,8 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
             {/* Logo inside modal */}
             {!generatedKey && (
               <div className="text-center space-y-2 mb-6">
-                <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-950/40 border border-cyan-500/20 shadow-lg text-cyan-400">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-950/40 border border-cyan-500/20 shadow-lg p-1.5">
+                  <img src="/logo.svg" alt="Logo CronFlow" className="w-full h-full object-contain" />
                 </div>
                 <h3 className="text-lg font-black text-slate-100 uppercase tracking-widest font-mono">Conectar ao CronFlow</h3>
               </div>
