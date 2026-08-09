@@ -16,6 +16,58 @@ export const LoginGate: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [signupSession, setSignupSession] = useState<{ user: any; token: any; projects: any } | null>(null);
   
+  // Signup Wizard States
+  const [signupStep, setSignupStep] = useState(1);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [company, setCompany] = useState('');
+  const [role, setRole] = useState('Desenvolvedor Full Stack');
+  const [techStack, setTechStack] = useState('Node.js / TypeScript');
+  const [timezone, setTimezone] = useState('America/Sao_Paulo');
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
+
+  // Reset step wizard on tab change
+  useEffect(() => {
+    if (activeTab === 'signup') {
+      setSignupStep(1);
+      setErrorMsg(null);
+    }
+  }, [activeTab, isModalOpen]);
+
+  // Password strength checker helper
+  const getPasswordStrength = () => {
+    if (!password) return { score: 0, label: 'Não informada', color: 'bg-slate-700' };
+    if (password.length < 6) return { score: 1, label: 'Fraca (Mínimo 6 caracteres)', color: 'bg-rose-500' };
+
+    const hasLetters = /[a-zA-Z]/.test(password);
+    const hasNumbers = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    // Se tiver apenas números ou apenas letras
+    if ((hasNumbers && !hasLetters && !hasSpecial) || (hasLetters && !hasNumbers && !hasSpecial)) {
+      return { score: 1, label: 'Fraca (Misture letras e números)', color: 'bg-rose-500' };
+    }
+
+    // Se tiver letras e números mas for menor que 8 ou sem símbolos
+    if (password.length < 8 || !(hasLetters && hasNumbers)) {
+      return { score: 2, label: 'Razoável', color: 'bg-amber-500' };
+    }
+
+    // Se tiver letras, números e caracteres especiais, e for >= 8
+    if (hasLetters && hasNumbers && hasSpecial && password.length >= 8) {
+      return { score: 4, label: 'Muito Forte! 🔥', color: 'bg-gradient-to-r from-emerald-500 to-teal-400 animate-pulse' };
+    }
+
+    return { score: 3, label: 'Forte!', color: 'bg-emerald-500' };
+  };
+
+  // Validation flags for the Signup Onboarding Wizard
+  const isEmailValid = email.trim() === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isPasswordValid = password.length === 0 || password.length >= 6;
+  const isConfirmPasswordValid = confirmPassword.length === 0 || password === confirmPassword;
+  const isFullNameValid = fullName.trim() === '' || fullName.trim().split(' ').filter(Boolean).length >= 2;
+  const isCompanyValid = company.trim() === '' || company.trim().length >= 2;
+
   // Interactive Sandbox Tab State
   const [activeSandboxTab, setActiveSandboxTab] = useState<'curl' | 'json' | 'agent'>('curl');
 
@@ -72,6 +124,15 @@ export const LoginGate: React.FC = () => {
       });
 
       const { token, user, projects, apiKey } = response.data;
+      
+      // Save onboarding fields locally
+      localStorage.setItem('cf_user_name', fullName.trim());
+      localStorage.setItem('cf_user_company', company.trim());
+      localStorage.setItem('cf_user_role', role);
+      localStorage.setItem('cf_user_tech_stack', techStack);
+      localStorage.setItem('cf_user_timezone', timezone);
+      localStorage.setItem('cf_user_plan', selectedPlan);
+
       setGeneratedKey(apiKey);
       setSignupSession({ user, token, projects });
     } catch (err) {
@@ -676,83 +737,398 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleSignupSubmit} className="space-y-4 text-left">
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-                    E-mail do Desenvolvedor
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="dev@empresa.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
-                    disabled={loading}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-                    Senha de Acesso
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
-                      disabled={loading}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
-                    >
-                      {showPassword ? (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.204.214-2.357.606-3.427m3.2 6.427a4 4 0 116.388 3.25M15 12a3 3 0 00-3-3 M3 3l18 18" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      )}
-                    </button>
+              <div className="space-y-4 text-left">
+                {/* Step Indicators */}
+                <div className="flex items-center justify-between mb-4 font-mono text-[9px] text-slate-500 font-bold uppercase tracking-wider select-none">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${signupStep >= 1 ? 'border-cyan-400 text-cyan-400 bg-cyan-950/45' : 'border-indigo-950/60 bg-transparent'}`}>1</span>
+                    <span className={signupStep >= 1 ? 'text-slate-350' : ''}>Acesso</span>
+                  </div>
+                  <div className="h-px flex-1 bg-indigo-950/20 mx-2" />
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${signupStep >= 2 ? 'border-cyan-400 text-cyan-400 bg-cyan-950/45' : 'border-indigo-950/60 bg-transparent'}`}>2</span>
+                    <span className={signupStep >= 2 ? 'text-slate-350' : ''}>Perfil</span>
+                  </div>
+                  <div className="h-px flex-1 bg-indigo-950/20 mx-2" />
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${signupStep >= 3 ? 'border-cyan-400 text-cyan-400 bg-cyan-950/45' : 'border-indigo-950/60 bg-transparent'}`}>3</span>
+                    <span className={signupStep >= 3 ? 'text-slate-350' : ''}>Workspace</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-                    Nome do Projeto / Workspace
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="SaaS Faturamento"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
-                    disabled={loading}
-                    required
-                  />
-                </div>
+                {signupStep === 1 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-200">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        E-mail do Desenvolvedor
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="dev@empresa.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={`w-full px-4 py-3 bg-[#070913]/90 border rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-all duration-300 ${
+                          email && !isEmailValid 
+                            ? 'border-rose-500/40 focus:border-rose-500/60 focus:ring-rose-500/20' 
+                            : 'border-indigo-950/60 focus:border-cyan-500/40 focus:ring-cyan-500/20'
+                        }`}
+                        required
+                      />
+                      {email && !isEmailValid && (
+                        <span className="text-[9px] font-semibold text-rose-400 mt-1 block">
+                          ⚠️ Digite um formato de e-mail válido (ex: dev@empresa.com).
+                        </span>
+                      )}
+                    </div>
 
-                {errorMsg && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] text-rose-400 font-semibold text-center">
-                    ⚠️ {errorMsg}
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Senha de Acesso
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className={`w-full px-4 py-3 pr-12 bg-[#070913]/90 border rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-all duration-300 font-mono ${
+                            password && !isPasswordValid 
+                              ? 'border-rose-500/40 focus:border-rose-500/60 focus:ring-rose-500/20' 
+                              : 'border-indigo-950/60 focus:border-cyan-500/40 focus:ring-cyan-500/20'
+                          }`}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                        >
+                          {showPassword ? (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.204.214-2.357.606-3.427m3.2 6.427a4 4 0 116.388 3.25M15 12a3 3 0 00-3-3 M3 3l18 18" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                      
+                      {password && !isPasswordValid && (
+                        <span className="text-[9px] font-semibold text-rose-400 mt-1 block">
+                          ⚠️ A senha precisa de pelo menos 6 caracteres.
+                        </span>
+                      )}
+
+                      {/* Password Strength Indicator */}
+                      {password && (
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex justify-between items-center text-[9px] font-bold tracking-wider font-mono text-slate-500 uppercase">
+                            <span>Força da Senha:</span>
+                            <span className={
+                              getPasswordStrength().score === 1 ? 'text-rose-400' :
+                              getPasswordStrength().score === 2 ? 'text-amber-400' : 'text-emerald-400'
+                            }>
+                              {getPasswordStrength().label}
+                            </span>
+                          </div>
+                          <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden flex">
+                            <div className={`h-full rounded-full transition-all duration-300 ${getPasswordStrength().color}`} style={{ width: `${(getPasswordStrength().score / 4) * 100}%` }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Confirmar Senha
+                      </label>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className={`w-full px-4 py-3 bg-[#070913]/90 border rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-all duration-300 font-mono ${
+                          confirmPassword && !isConfirmPasswordValid 
+                            ? 'border-rose-500/40 focus:border-rose-500/60 focus:ring-rose-500/20' 
+                            : 'border-indigo-950/60 focus:border-cyan-500/40 focus:ring-cyan-500/20'
+                        }`}
+                        required
+                      />
+                      {confirmPassword && !isConfirmPasswordValid && (
+                        <span className="text-[9px] font-semibold text-rose-400 mt-1 block">
+                          ⚠️ As senhas digitadas não coincidem.
+                        </span>
+                      )}
+                    </div>
+
+                    {errorMsg && (
+                      <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] text-rose-400 font-semibold text-center select-text">
+                        ⚠️ {errorMsg}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={!email.trim() || !password || !confirmPassword || !isEmailValid || !isPasswordValid || !isConfirmPasswordValid}
+                      onClick={() => {
+                        setErrorMsg(null);
+                        setSignupStep(2);
+                      }}
+                      className="w-full py-3.5 rounded-xl text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      Avançar: Perfil do Dev
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-xs font-bold text-white bg-[#ff006e] hover:bg-[#d90368] transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {loading ? 'Cadastrando...' : 'Registrar e Entrar 🚀'}
-                </button>
-              </form>
+                {signupStep === 2 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-200">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Nome Completo
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ana Silva"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className={`w-full px-4 py-3 bg-[#070913]/90 border rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-all duration-300 ${
+                          fullName && !isFullNameValid 
+                            ? 'border-rose-500/40 focus:border-rose-500/60 focus:ring-rose-500/20' 
+                            : 'border-indigo-950/60 focus:border-cyan-500/40 focus:ring-cyan-500/20'
+                        }`}
+                        required
+                      />
+                      {fullName && !isFullNameValid && (
+                        <span className="text-[9px] font-semibold text-rose-400 mt-1 block">
+                          ⚠️ Digite seu nome e sobrenome (ex: Ana Silva).
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Nome da Empresa / Organização
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Empresa Tech Ltda"
+                        value={company}
+                        onChange={(e) => setCompany(e.target.value)}
+                        className={`w-full px-4 py-3 bg-[#070913]/90 border rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-all duration-300 ${
+                          company && !isCompanyValid 
+                            ? 'border-rose-500/40 focus:border-rose-500/60 focus:ring-rose-500/20' 
+                            : 'border-indigo-950/60 focus:border-cyan-500/40 focus:ring-cyan-500/20'
+                        }`}
+                        required
+                      />
+                      {company && !isCompanyValid && (
+                        <span className="text-[9px] font-semibold text-rose-400 mt-1 block">
+                          ⚠️ O nome da empresa deve ter pelo menos 2 caracteres.
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Cargo / Função
+                      </label>
+                      <select
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        className="w-full px-4 py-3 pr-10 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-300 hover:border-indigo-900/80 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 cursor-pointer appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
+                      >
+                        <option value="Desenvolvedor Backend">Desenvolvedor Backend</option>
+                        <option value="Desenvolvedor Frontend">Desenvolvedor Frontend</option>
+                        <option value="Desenvolvedor Full Stack">Desenvolvedor Full Stack</option>
+                        <option value="Engenheiro DevOps / SRE">Engenheiro DevOps / SRE</option>
+                        <option value="Founder / CTO">Founder / CTO</option>
+                        <option value="Gerente de Produto">Gerente de Produto</option>
+                        <option value="Estudante / Outro">Estudante / Outro</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Stack Principal
+                      </label>
+                      <select
+                        value={techStack}
+                        onChange={(e) => setTechStack(e.target.value)}
+                        className="w-full px-4 py-3 pr-10 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-300 hover:border-indigo-900/80 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 cursor-pointer appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
+                      >
+                        <option value="Node.js / TypeScript">Node.js / TypeScript</option>
+                        <option value="Go (Golang)">Go (Golang)</option>
+                        <option value="Python">Python</option>
+                        <option value="Java / Spring Boot">Java / Spring Boot</option>
+                        <option value="PHP / Laravel">PHP / Laravel</option>
+                        <option value="C# / .NET">C# / .NET</option>
+                        <option value="Ruby / Rust / Outro">Ruby / Rust / Outro</option>
+                      </select>
+                    </div>
+
+                    {errorMsg && (
+                      <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] text-rose-400 font-semibold text-center select-text">
+                        ⚠️ {errorMsg}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSignupStep(1)}
+                        className="flex-1 py-3 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700/50 transition-all cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Voltar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!fullName.trim() || !company.trim() || !isFullNameValid || !isCompanyValid}
+                        onClick={() => {
+                          setErrorMsg(null);
+                          setSignupStep(3);
+                        }}
+                        className="flex-[2] py-3 rounded-xl text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        Avançar: Workspace
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {signupStep === 3 && (
+                  <form onSubmit={handleSignupSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-200">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Nome do Workspace / Projeto
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="SaaS Faturamento"
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
+                        className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Fuso Horário Padrão
+                      </label>
+                      <select
+                        value={timezone}
+                        onChange={(e) => setTimezone(e.target.value)}
+                        disabled={loading}
+                        className="w-full px-4 py-3 pr-10 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-350 hover:border-indigo-900/80 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 cursor-pointer appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
+                      >
+                        <option value="America/Sao_Paulo">America/Sao_Paulo (UTC-3)</option>
+                        <option value="UTC">UTC (Universal Time)</option>
+                        <option value="America/New_York">America/New_York (UTC-5)</option>
+                        <option value="Europe/London">Europe/London (UTC+0)</option>
+                      </select>
+                    </div>
+
+                    {/* Choose Plan Cards */}
+                    <div className="space-y-2 select-none">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Selecione seu Plano
+                      </label>
+                      
+                      <div className="grid grid-cols-2 gap-3.5">
+                        {/* Free Tier Card */}
+                        <div
+                          onClick={() => !loading && setSelectedPlan('free')}
+                          className={`p-3.5 rounded-2xl border transition-all duration-300 flex flex-col justify-between text-left cursor-pointer ${
+                            selectedPlan === 'free'
+                              ? 'border-cyan-500/50 bg-cyan-950/15 shadow-[0_0_15px_rgba(0,217,255,0.15)] ring-1 ring-cyan-500/35'
+                              : 'border-indigo-950/60 bg-transparent hover:border-slate-800'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-extrabold text-xs text-slate-200">Plano Free</span>
+                              <span className="text-[8px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">R$0</span>
+                            </div>
+                            <p className="text-[9px] text-slate-450 leading-relaxed">
+                              Ideal para testes e projetos pessoais simples.
+                            </p>
+                          </div>
+                          
+                          <div className="mt-3.5 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            Limite 5 jobs
+                          </div>
+                        </div>
+
+                        {/* Paid Pro Tier Card */}
+                        <div
+                          onClick={() => !loading && setSelectedPlan('paid')}
+                          className={`p-3.5 rounded-2xl border transition-all duration-300 flex flex-col justify-between text-left cursor-pointer ${
+                            selectedPlan === 'paid'
+                              ? 'border-[#ff006e]/50 bg-[#ff006e]/5 shadow-[0_0_15px_rgba(255,0,110,0.15)] ring-1 ring-[#ff006e]/35'
+                              : 'border-indigo-950/60 bg-transparent hover:border-slate-800'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-extrabold text-xs text-slate-200">Pro Dev</span>
+                              <span className="text-[8px] font-bold text-[#ff006e] bg-[#ff006e]/10 px-1.5 py-0.5 rounded border border-[#ff006e]/20">R$19</span>
+                            </div>
+                            <p className="text-[9px] text-slate-450 leading-relaxed">
+                              Agendamentos de produção com webhook de falhas.
+                            </p>
+                          </div>
+                          
+                          <div className="mt-3.5 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-[#ff006e]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#ff006e] animate-pulse" />
+                            Limite 20 jobs
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {errorMsg && (
+                      <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] text-rose-400 font-semibold text-center select-text">
+                        ⚠️ {errorMsg}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => setSignupStep(2)}
+                        className="flex-1 py-3.5 rounded-xl text-xs font-semibold text-slate-350 hover:text-white bg-slate-805 hover:bg-slate-800 border border-slate-700/50 transition-all cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Voltar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={loading || !projectName.trim()}
+                        className="flex-[2] py-3.5 rounded-xl text-xs font-bold text-white bg-[#ff006e] hover:bg-[#d90368] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        {loading ? 'Cadastrando...' : 'Registrar e Entrar 🚀'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             )}
           </div>
         </div>

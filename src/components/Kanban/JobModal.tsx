@@ -250,7 +250,7 @@ export const JobModal: React.FC = () => {
                 <select
                   value={editTimezone}
                   onChange={(e) => setEditTimezone(e.target.value)}
-                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-lg px-1 py-1 text-xs font-semibold text-slate-200 mt-1 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-lg px-2 py-1.5 pr-8 text-xs font-semibold text-slate-200 mt-1 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:1em_1em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
                 >
                   <option value="UTC">UTC</option>
                   <option value="America/Sao_Paulo">America/Sao_Paulo</option>
@@ -270,7 +270,7 @@ export const JobModal: React.FC = () => {
                 <select
                   value={editMethod}
                   onChange={(e) => setEditMethod(e.target.value)}
-                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-lg px-2 py-1 text-xs font-black text-indigo-400 mt-1 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-lg px-2 py-1.5 pr-8 text-xs font-black text-indigo-400 mt-1 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:1em_1em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
                 >
                   <option value="GET">GET</option>
                   <option value="POST">POST</option>
@@ -333,7 +333,7 @@ export const JobModal: React.FC = () => {
                 <select
                   value={editNextJobId}
                   onChange={(e) => setEditNextJobId(e.target.value)}
-                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 select-none"
+                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 pr-10 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 select-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
                 >
                   <option value="">Nenhum (Finalizar Fluxo)</option>
                   {jobs.filter(jb => jb.id !== activeJob.id).map((jb) => (

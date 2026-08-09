@@ -10,7 +10,7 @@ export const CreateJobModal: React.FC = () => {
 
 	const [name, setName] = useState('');
 	const [schedule, setSchedule] = useState('every:5m');
-	const [timezone, setTimezone] = useState('UTC');
+	const [timezone, setTimezone] = useState(() => localStorage.getItem('cf_user_timezone') || 'UTC');
 	const [url, setUrl] = useState('https://httpbin.org/post');
 	const [httpMethod, setHttpMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>('POST');
 	const [headersText, setHeadersText] = useState('{\n  "Content-Type": "application/json"\n}');
@@ -206,7 +206,7 @@ export const CreateJobModal: React.FC = () => {
               <select
                 value={httpMethod}
                 onChange={(e) => setHttpMethod(e.target.value as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH')}
-                className="w-full px-3 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
+                className="w-full px-3 py-2.5 pr-10 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 hover:border-indigo-900/80 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono cursor-pointer appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
                 disabled={loading}
               >
                 <option value="GET">GET</option>
@@ -225,7 +225,7 @@ export const CreateJobModal: React.FC = () => {
               <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
+                className="w-full px-3 py-2.5 pr-10 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 hover:border-indigo-900/80 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono cursor-pointer appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
                 disabled={loading}
               >
                 <option value="UTC">UTC (Universal Time Coordinated)</option>

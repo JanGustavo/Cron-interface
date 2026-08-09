@@ -98,9 +98,13 @@ export const AgentChat: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
+      const backendError = err.response?.data?.error || err.response?.data?.reason;
+      const errorMessage = backendError 
+        ? `❌ Erro: ${backendError}` 
+        : '❌ Ops, ocorreu um erro ao processar sua solicitação. Certifique-se de que o backend está ativo.';
       setMessages(prev => [...prev, { 
         role: 'model', 
-        text: '❌ Ops, ocorreu um erro ao processar sua solicitação. Certifique-se de que o backend está ativo e a chave API do Gemini está configurada.' 
+        text: errorMessage
       }]);
     } finally {
       setIsLoading(false);

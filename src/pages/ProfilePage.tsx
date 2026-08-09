@@ -36,12 +36,24 @@ export const ProfilePage: React.FC = () => {
   const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen } = useUiStore();
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
 
+  // Load custom profile details saved during onboarding
+  const fullName = localStorage.getItem('cf_user_name') || '';
+  const company = localStorage.getItem('cf_user_company') || '';
+  const role = localStorage.getItem('cf_user_role') || '';
+  const techStack = localStorage.getItem('cf_user_tech_stack') || 'Node.js / TypeScript';
+  const timezone = localStorage.getItem('cf_user_timezone') || 'America/Sao_Paulo';
+
   const userEmail = user?.email || 'admin@cronflow.sh';
   const userHandle = userEmail.split('@')[0] || 'cronflow';
-  const avatarLabel = userHandle.slice(0, 2).toUpperCase();
+  
+  // Custom avatar initials if full name exists
+  const avatarLabel = fullName
+    ? fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : userHandle.slice(0, 2).toUpperCase();
+
   const memberSince = formatDate(user?.createdAt);
   const workspaceName = activeProject?.name || 'Projeto Pessoal';
-  const plan = user?.plan || 'free';
+  const plan = localStorage.getItem('cf_user_plan') || user?.plan || 'free';
   const isProPlan = plan === 'paid';
 
   const activeKey = token?.accessToken || localStorage.getItem('cf_token') || '';
@@ -49,6 +61,32 @@ export const ProfilePage: React.FC = () => {
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const webhookConfigured = globalWebhook.trim().length > 0;
+
+  const getCodeSnippet = () => {
+    const key = activeKey || 'SUA_API_KEY_AQUI';
+    const tz = timezone || 'America/Sao_Paulo';
+
+    if (techStack.includes('Node.js')) {
+      return `fetch("http://localhost:8080/v1/jobs", {\n  method: "POST",\n  headers: {\n    "Authorization": "Bearer ${key}",\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify({\n    Name: "Minha Tarefa Agendada",\n    CronExpr: "*/5 * * * *", // a cada 5m\n    Method: "POST",\n    Url: "https://minhaapi.com/webhooks/limpeza",\n    Timezone: "${tz}"\n  })\n})\n.then(res => res.json())\n.then(data => console.log("Job cadastrado:", data.Id));`;
+    }
+    if (techStack.includes('Go')) {
+      return `package main\n\nimport (\n\t"bytes"\n\t"encoding/json"\n\t"fmt"\n\t"net/http"\n)\n\nfunc main() {\n\tpayload := map[string]interface{}{\n\t\t"Name":     "Minha Tarefa",\n\t\t"CronExpr": "*/5 * * * *",\n\t\t"Method":   "POST",\n\t\t"Url":      "https://minhaapi.com/webhooks/limpeza",\n\t\t"Timezone": "${tz}",\n\t}\n\tbody, _ := json.Marshal(payload)\n\n\treq, _ := http.NewRequest("POST", "http://localhost:8080/v1/jobs", bytes.NewBuffer(body))\n\treq.Header.Set("Authorization", "Bearer \${key}")\n\treq.Header.Set("Content-Type", "application/json")\n\n\tclient := &http.Client{}\n\tclient.Do(req)\n}`;
+    }
+    if (techStack.includes('Python')) {
+      return `import requests\n\nurl = "http://localhost:8080/v1/jobs"\nheaders = {\n    "Authorization": "Bearer ${key}",\n    "Content-Type": "application/json"\n}\npayload = {\n    "Name": "Minha Tarefa Agendada",\n    "CronExpr": "*/5 * * * *",\n    "Method": "POST",\n    "Url": "https://minhaapi.com/webhooks/limpeza",\n    "Timezone": "${tz}"\n}\n\nresponse = requests.post(url, json=payload, headers=headers)\nprint(response.json())`;
+    }
+    if (techStack.includes('PHP')) {
+      return `$ch = curl_init("http://localhost:8080/v1/jobs");\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\ncurl_setopt($ch, CURLOPT_POST, true);\ncurl_setopt($ch, CURLOPT_HTTPHEADER, [\n    "Authorization: Bearer ${key}",\n    "Content-Type: application/json"\n]);\ncurl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([\n    "Name" => "Minha Tarefa",\n    "CronExpr" => "*/5 * * * *",\n    "Method" => "POST",\n    "Url" => "https://minhaapi.com/webhooks/limpeza",\n    "Timezone" => "${tz}"\n]));\n$resp = curl_exec($ch);`;
+    }
+    if (techStack.includes('C#')) {
+      return `using var client = new HttpClient();\nclient.DefaultRequestHeaders.Add("Authorization", "Bearer ${key}");\n\nvar payload = new {\n    Name = "Minha Tarefa Agendada",\n    CronExpr = "*/5 * * * *",\n    Method = "POST",\n    Url = "https://minhaapi.com/webhooks/limpeza",\n    Timezone = "${tz}"\n};\n\nawait client.PostAsJsonAsync("http://localhost:8080/v1/jobs", payload);`;
+    }
+    if (techStack.includes('Java')) {
+      return `// Exemplo HTTP Client (Java 11+):\nvar client = HttpClient.newHttpClient();\nvar req = HttpRequest.newBuilder()\n  .uri(URI.create("http://localhost:8080/v1/jobs"))\n  .header("Authorization", "Bearer ${key}")\n  .header("Content-Type", "application/json")\n  .POST(HttpRequest.BodyPublishers.ofString("{\\"Name\\":\\"Tarefa\\",\\"CronExpr\\":\\"*/5 * * * *\\",\\"Method\\":\\"POST\\",\\"Url\\":\\"https://api.com\\",\\"Timezone\\":\\"${tz}\\"}"))\n  .build();\nclient.send(req, HttpResponse.BodyHandlers.ofString());`;
+    }
+
+    return `curl -X POST "http://localhost:8080/v1/jobs" \\\n     -H "Authorization: Bearer ${key}" \\\n     -H "Content-Type: application/json" \\\n     -d '{\n       "Name": "Minha Tarefa Agendada",\n       "CronExpr": "*/5 * * * *",\n       "Method": "POST",\n       "Url": "https://minhaapi.com/webhooks/limpeza",\n       "Timezone": "${tz}"\n     }'`;
+  };
 
   const handleUpdateWebhook = (e: React.FormEvent) => {
     e.preventDefault();
@@ -333,7 +371,18 @@ export const ProfilePage: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-2xl font-bold text-slate-100">{userEmail}</h3>
+                  <h3 className="text-2xl font-bold text-slate-100">{fullName || userEmail}</h3>
+                  {fullName && (
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-indigo-400 font-bold font-mono">
+                      <span>{userEmail}</span>
+                      {role && (
+                        <>
+                          <span className="text-slate-650 font-sans">•</span>
+                          <span className="text-slate-300">{role}{company && ` em ${company}`}</span>
+                        </>
+                      )}
+                    </div>
+                  )}
 
                   <p className="max-w-2xl text-sm text-slate-400 leading-relaxed">
                     Membro ativo desde {memberSince}. Esta conta opera sob a arquitetura multitenant do CronFlow, garantindo isolamento total por projeto, controle integrado de workspaces e observabilidade em tempo real dos seus disparos de agendamentos.
@@ -351,6 +400,14 @@ export const ProfilePage: React.FC = () => {
                     <span className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/25 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 shadow-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                       <strong className="text-cyan-200">{workspaceJobs.length}</strong> job{workspaceJobs.length === 1 ? '' : 's'} no workspace
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-violet-500/25 bg-violet-500/10 px-3 py-1.5 text-xs font-semibold text-violet-300 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                      Timezone: <strong className="text-violet-200">{timezone}</strong>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-300 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400" />
+                      Stack: <strong className="text-fuchsia-200">{techStack}</strong>
                     </span>
                   </div>
                 </div>
@@ -638,6 +695,39 @@ export const ProfilePage: React.FC = () => {
                   >
                     Gerar nova chave
                   </button>
+
+                  {/* Quickstart Integration Code Snippet based on user's Stack */}
+                  <div className="mt-6 pt-4 border-t border-indigo-950/40 space-y-3 text-left">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[9px] uppercase tracking-[0.24em] text-indigo-400 font-bold font-mono">
+                          Integração Rápida ({techStack})
+                        </span>
+                        <p className="mt-0.5 text-[10px] text-slate-500">
+                          Use esta chamada HTTP para registrar jobs programaticamente.
+                        </p>
+                      </div>
+                      <span className="text-[8px] font-mono font-bold text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-900/30">
+                        {timezone}
+                      </span>
+                    </div>
+
+                    <div className="relative rounded-xl overflow-hidden border border-indigo-950/80 bg-[#04060f]/90 p-3.5 font-mono text-[10px] leading-relaxed text-slate-350 select-text">
+                      <pre className="overflow-x-auto select-all whitespace-pre pr-12">
+                        {getCodeSnippet()}
+                      </pre>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(getCodeSnippet());
+                          showToast('Código de exemplo copiado!', 'success');
+                        }}
+                        className="absolute right-2 top-2 px-2 py-1 text-[8px] font-bold text-slate-400 hover:text-white bg-slate-900 rounded border border-slate-800 transition-colors"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
