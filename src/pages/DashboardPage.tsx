@@ -10,6 +10,7 @@ import {
   ComposedChart,
   Bar,
   Line,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -28,6 +29,8 @@ interface CustomTooltipProps {
       successCount: number;
       failedCount: number;
       failedJobs?: string[];
+      avgLatency?: number;
+      maxLatency?: number;
     };
   }>;
 }
@@ -56,6 +59,24 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
             </span>
             <span className="font-semibold text-emerald-400">{data.volume > 0 ? `${data.successRate}%` : '-'}</span>
           </div>
+          {data.avgLatency !== undefined && data.avgLatency > 0 && (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded bg-purple-500" />
+                Latência Média:
+              </span>
+              <span className="font-semibold text-purple-300">{data.avgLatency}ms</span>
+            </div>
+          )}
+          {data.maxLatency !== undefined && data.maxLatency > 0 && (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded bg-cyan-500" />
+                Latência Máxima:
+              </span>
+              <span className="font-semibold text-cyan-300">{data.maxLatency}ms</span>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-4 border-t border-indigo-950/20 pt-1.5 mt-1 text-[10px] text-slate-500">
             <span>Sucessos: {data.successCount}</span>
             <span>Falhas: {data.failedCount}</span>
@@ -88,6 +109,7 @@ export const DashboardPage: React.FC = () => {
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [isJobFilterOpen, setIsJobFilterOpen] = useState(false);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
+  const [activeMetric, setActiveMetric] = useState<'overview' | 'latency' | 'errors'>('overview');
 
   useEffect(() => {
     let active = true;
@@ -139,6 +161,29 @@ export const DashboardPage: React.FC = () => {
     if (logsWithDuration.length === 0) return '-';
     const sum = logsWithDuration.reduce((acc, log) => acc + (log.durationMs || 0), 0);
     return `${Math.round(sum / logsWithDuration.length)}ms`;
+  })();
+
+  const errorBreakdown = (() => {
+    const counts = {
+      ssrf: 0,
+      timeout: 0,
+      dns: 0,
+      http5xx: 0,
+      http4xx: 0,
+      others: 0,
+    };
+    allRecentLogs.forEach((log) => {
+      if (log.status === 'failed') {
+        const msg = (log.errorMessage || '').toLowerCase();
+        if (msg.includes('ssrf')) counts.ssrf++;
+        else if (msg.includes('timeout') || msg.includes('deadline')) counts.timeout++;
+        else if (msg.includes('lookup') || msg.includes('dns') || msg.includes('no such host')) counts.dns++;
+        else if (log.httpStatus && log.httpStatus >= 500) counts.http5xx++;
+        else if (log.httpStatus && log.httpStatus >= 400) counts.http4xx++;
+        else counts.others++;
+      }
+    });
+    return counts;
   })();
 
   const plan = user?.plan || 'free';
@@ -230,6 +275,7 @@ export const DashboardPage: React.FC = () => {
         volume: 0,
         successCount: 0,
         failedJobs: [] as string[],
+        durations: [] as number[],
       };
     });
 
@@ -246,17 +292,28 @@ export const DashboardPage: React.FC = () => {
             target.failedJobs.push(jobName);
           }
         }
+        if (log.durationMs !== null && log.durationMs !== undefined) {
+          target.durations.push(log.durationMs);
+        }
       }
     });
 
-    return intervals.map((int) => ({
-      time: int.label,
-      volume: int.volume,
-      successRate: int.volume > 0 ? Math.round((int.successCount / int.volume) * 100) : 100,
-      successCount: int.successCount,
-      failedCount: int.volume - int.successCount,
-      failedJobs: int.failedJobs,
-    }));
+    return intervals.map((int) => {
+      const avg = int.durations.length > 0
+        ? Math.round(int.durations.reduce((a, b) => a + b, 0) / int.durations.length)
+        : 0;
+      const max = int.durations.length > 0 ? Math.max(...int.durations) : 0;
+      return {
+        time: int.label,
+        volume: int.volume,
+        successRate: int.volume > 0 ? Math.round((int.successCount / int.volume) * 100) : 100,
+        successCount: int.successCount,
+        failedCount: int.volume - int.successCount,
+        failedJobs: int.failedJobs,
+        avgLatency: avg,
+        maxLatency: max,
+      };
+    });
   })();
 
   const recentActivities = allRecentLogs.slice(0, 5);
@@ -389,15 +446,54 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Recharts Performance Composed Chart */}
-          <div className="p-6 rounded-2xl glass-panel border border-indigo-950/30 relative overflow-hidden space-y-4">
+          <div className="p-6 rounded-2xl glass-panel border border-indigo-950/30 relative overflow-hidden space-y-5">
             <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
             
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between border-b border-indigo-950/20 pb-4 gap-4">
               <div>
-                <h3 className="text-base font-bold text-slate-200">Volume & Taxa de Sucesso</h3>
-                <p className="text-xs text-slate-400">Total de requisições disparadas e taxa de entrega por período.</p>
+                <h3 className="text-base font-bold text-slate-200">Métricas & Telemetria</h3>
+                <p className="text-xs text-slate-400">Analise a saúde e o desempenho das entregas no seu workspace.</p>
               </div>
-              
+
+              {/* Segmented Metric Selector */}
+              <div className="flex bg-[#04060f]/60 p-1 rounded-xl border border-indigo-950/80 self-start select-none">
+                <button
+                  type="button"
+                  onClick={() => setActiveMetric('overview')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    activeMetric === 'overview'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Volume
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveMetric('latency')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    activeMetric === 'latency'
+                      ? 'bg-purple-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Latência
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveMetric('errors')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    activeMetric === 'errors'
+                      ? 'bg-rose-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Erros
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3">
                 {/* Job Selector Dropdown Filter */}
                 <div className="relative select-none">
@@ -420,7 +516,7 @@ export const DashboardPage: React.FC = () => {
                   {isJobFilterOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setIsJobFilterOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-64 rounded-xl border border-indigo-900/50 bg-[#070913]/95 backdrop-blur-md shadow-2xl p-3 space-y-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="absolute left-0 mt-2 w-64 rounded-xl border border-indigo-900/50 bg-[#070913]/95 backdrop-blur-md shadow-2xl p-3 space-y-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="flex justify-between items-center border-b border-indigo-950/40 pb-2">
                           <span className="text-[10px] uppercase font-bold text-slate-400">Filtrar por Job</span>
                           <button
@@ -456,11 +552,6 @@ export const DashboardPage: React.FC = () => {
                               </label>
                             );
                           })}
-                          {jobs.length === 0 && (
-                            <div className="text-[10px] text-slate-500 italic p-2 text-center">
-                              Nenhum job disponível
-                            </div>
-                          )}
                         </div>
                       </div>
                     </>
@@ -492,77 +583,134 @@ export const DashboardPage: React.FC = () => {
                     );
                   })}
                 </div>
+              </div>
 
-                {/* Chart Legend */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5 bg-slate-900/40 border border-indigo-950/20 px-3 py-1.5 rounded-xl text-[10px] font-semibold text-slate-400">
+              {/* Dynamic Chart Legends */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 bg-slate-900/40 border border-indigo-950/20 px-3 py-1.5 rounded-xl text-[10px] font-semibold text-slate-400 select-none">
+                {activeMetric === 'overview' && (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                      Volume (Barra)
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      Taxa de Sucesso (Linha)
+                    </span>
+                  </>
+                )}
+                {activeMetric === 'latency' && (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                      Média (Área)
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-0.5 bg-cyan-400 border border-dashed border-cyan-400" />
+                      Pico Máximo (Linha)
+                    </span>
+                  </>
+                )}
+                {activeMetric === 'errors' && (
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-                    Volume (Barra)
+                    <span className="w-2.5 h-2.5 rounded bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                    Requisições Falhas (Barra)
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                    Taxa de Sucesso (Linha)
-                  </span>
-                </div>
+                )}
               </div>
             </div>
 
-            <div className="h-64 w-full pt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6}/>
-                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
-                  <XAxis 
-                    dataKey="time" 
-                    stroke="#64748b" 
-                    fontSize={10} 
-                    tickLine={false} 
-                    axisLine={false} 
-                  />
-                  {/* Y-Axis Left: Volume of Executions */}
-                  <YAxis 
-                    yAxisId="left"
-                    stroke="#64748b" 
-                    fontSize={10} 
-                    tickLine={false} 
-                    axisLine={false}
-                    tickFormatter={(v) => `${v} req`}
-                  />
-                  {/* Y-Axis Right: Success Rate (%) */}
-                  <YAxis 
-                    yAxisId="right"
-                    orientation="right"
-                    stroke="#64748b" 
-                    fontSize={10} 
-                    tickLine={false} 
-                    axisLine={false}
-                    domain={[0, 100]}
-                    tickFormatter={(v) => `${v}%`}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="volume" 
-                    barSize={32}
-                    radius={[6, 6, 0, 0]}
-                    fill="url(#volumeGlow)"
-                  />
-                  <Line 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="successRate" 
-                    stroke="#10b981" 
-                    strokeWidth={3}
-                    dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }}
-                    activeDot={{ r: 6, stroke: '#34d399', strokeWidth: 2, fill: '#070913' }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
+            {/* Dynamic Charts Container */}
+            <div className="pt-2">
+              {activeMetric === 'overview' && (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
+                      <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} req`} />
+                      <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar yAxisId="left" dataKey="volume" barSize={32} radius={[6, 6, 0, 0]} fill="url(#volumeGlow)" />
+                      <Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#10b981" strokeWidth={3} dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }} activeDot={{ r: 6, stroke: '#34d399', strokeWidth: 2, fill: '#070913' }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {activeMetric === 'latency' && (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="latencyGlow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#a855f7" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
+                      <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}ms`} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area type="monotone" dataKey="avgLatency" stroke="#a855f7" strokeWidth={3} fill="url(#latencyGlow)" />
+                      <Line type="monotone" dataKey="maxLatency" stroke="#06b6d4" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {activeMetric === 'errors' && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                  <div className="lg:col-span-2 h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
+                        <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} err`} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="failedCount" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={24} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  <div className="space-y-2.5 bg-[#050716]/65 p-4 rounded-2xl border border-indigo-950/40 select-none text-left">
+                    <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400">Classificação dos Erros (Workspace)</h4>
+                    <div className="space-y-2">
+                      {[
+                        { label: 'SSRF Bloqueado', count: errorBreakdown.ssrf, color: 'bg-rose-500', icon: '🛡️' },
+                        { label: 'Timeouts / Deadlines', count: errorBreakdown.timeout, color: 'bg-amber-500', icon: '⏱️' },
+                        { label: 'Resolução DNS / Host', count: errorBreakdown.dns, color: 'bg-cyan-500', icon: '🌐' },
+                        { label: 'Erros do Servidor (5xx)', count: errorBreakdown.http5xx, color: 'bg-purple-500', icon: '🔥' },
+                        { label: 'Erros do Cliente (4xx)', count: errorBreakdown.http4xx, color: 'bg-yellow-500', icon: '⚠️' },
+                        { label: 'Outros Erros', count: errorBreakdown.others, color: 'bg-slate-500', icon: '⚙️' },
+                      ].map((item, idx) => {
+                        const totalFailed = Object.values(errorBreakdown).reduce((a, b) => a + b, 0);
+                        const pct = totalFailed > 0 ? Math.round((item.count / totalFailed) * 100) : 0;
+                        return (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+                              <span className="flex items-center gap-1.5">
+                                <span>{item.icon}</span>
+                                <span className="text-slate-350">{item.label}</span>
+                              </span>
+                              <span className="font-mono text-slate-400">{item.count} ({pct}%)</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-indigo-950/20">
+                              <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
