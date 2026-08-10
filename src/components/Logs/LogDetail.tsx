@@ -110,50 +110,53 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden select-none">
-      {/* Drawer Backdrop */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none">
+      {/* Modal Backdrop */}
       <div
         onClick={handleClose}
-        className="absolute inset-0 bg-[#04060c]/80 backdrop-filter backdrop-blur-sm transition-opacity duration-300 cursor-pointer animate-in fade-in"
+        className="absolute inset-0 bg-[#04060c]/85 backdrop-filter backdrop-blur-sm transition-opacity duration-300 cursor-pointer animate-in fade-in"
       />
 
-      {/* Drawer Panel Container */}
-      <div className="absolute inset-y-0 right-0 max-w-lg w-full flex pl-10">
-        <div className="w-full bg-[#070913]/95 border-l border-indigo-900/50 glass-panel shadow-2xl flex flex-col h-full overflow-hidden animate-in slide-in-from-right duration-300">
-          
-          {/* Header Section */}
-          <div className="p-5 border-b border-indigo-950/30 flex justify-between items-center bg-indigo-950/15">
-            <div className="flex items-center gap-3">
-              <StatusBadge status={log.status} />
-              <span className="text-[10px] text-slate-500 font-mono">
-                ID: #{log.id.slice(0, 8)}
+      {/* Modal Panel Container */}
+      <div className="relative max-w-4xl w-full bg-[#070913]/95 border border-indigo-900/50 glass-panel shadow-2xl rounded-3xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200 z-10">
+        
+        {/* Header Section */}
+        <div className="p-5 border-b border-indigo-950/30 flex justify-between items-center bg-indigo-950/15">
+          <div className="flex items-center gap-3">
+            <StatusBadge status={log.status} />
+            <div>
+              <h3 className="text-sm font-black text-slate-200 tracking-wide">
+                Inspeção de Execução: <span className="text-indigo-400">{log.jobName || 'Tarefa Removida'}</span>
+              </h3>
+              <span className="text-[9px] text-slate-500 font-mono block mt-0.5">
+                Log ID: #{log.id}
               </span>
             </div>
-            <button
-              onClick={handleClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-indigo-950/30 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
+          <button
+            onClick={handleClose}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-950/30 transition-colors cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin scrollbar-thumb-indigo-950/60 scrollbar-track-transparent">
-
+        {/* Scrollable Content - 2 Columns */}
+        <div className="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-2 gap-6 scrollbar-thin scrollbar-thumb-indigo-950/60 scrollbar-track-transparent">
+          
+          {/* LEFT COLUMN: Request / Config details */}
+          <div className="space-y-5 text-left">
             {/* Task Meta details */}
             <div className="p-4 bg-indigo-950/10 border border-indigo-950/20 rounded-2xl space-y-2 relative overflow-hidden">
               <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl" />
               <span className="text-[8px] uppercase font-bold text-indigo-400 tracking-wider">
-                Tarefa Associada
+                Configurações da Tarefa
               </span>
-              <h4 className="text-sm font-extrabold text-slate-200">
-                {log.jobName || 'Tarefa Removida'}
-              </h4>
-              <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+              <div className="flex justify-between items-center text-xs text-slate-400 mt-1">
                 <span>Cron: <code className="text-indigo-400 font-bold font-mono">{job?.schedule || 'N/A'}</code></span>
-                <span>Fuso: <span className="font-semibold">{job?.timezone || 'N/A'}</span></span>
+                <span>Fuso: <span className="font-semibold text-slate-350">{job?.timezone || 'N/A'}</span></span>
               </div>
             </div>
 
@@ -182,14 +185,14 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                   )}
                 </div>
               </div>
+              
               <div className="space-y-3 p-4 bg-slate-950/40 border border-indigo-950/40 rounded-2xl">
-                
                 {/* Method & URL */}
                 <div className="flex items-center gap-2">
                   <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${getMethodColor(job?.httpMethod || 'POST')}`}>
                     {job?.httpMethod || 'POST'}
                   </span>
-                  <div className="text-[10px] text-slate-400 font-mono truncate flex-1">
+                  <div className="text-[10px] text-slate-400 font-mono truncate flex-1" title={log.jobUrl}>
                     {log.jobUrl || 'N/A'}
                   </div>
                   <button
@@ -205,7 +208,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                 {/* Headers */}
                 <div className="space-y-1">
                   <span className="text-[9px] font-semibold text-slate-500 uppercase">Headers</span>
-                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-400 max-h-[100px] overflow-auto">
+                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-450 max-h-[100px] overflow-auto">
                     {job?.headers ? (
                       <pre>{JSON.stringify(job.headers, null, 2)}</pre>
                     ) : (
@@ -217,7 +220,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                 {/* Body/Payload */}
                 <div className="space-y-1">
                   <span className="text-[9px] font-semibold text-slate-500 uppercase">Body Payload</span>
-                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-400 max-h-[100px] overflow-auto">
+                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-450 max-h-[100px] overflow-auto">
                     {job?.payload ? (
                       <pre>{JSON.stringify(job.payload, null, 2)}</pre>
                     ) : (
@@ -225,10 +228,12 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                     )}
                   </div>
                 </div>
-
               </div>
             </div>
+          </div>
 
+          {/* RIGHT COLUMN: Response / Execution details */}
+          <div className="space-y-5 text-left">
             {/* Response Block */}
             <div className="space-y-2">
               <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
@@ -243,8 +248,8 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                     {log.httpStatus ? (
                       <span className={`px-2 py-0.5 rounded font-black ${
                         log.httpStatus >= 200 && log.httpStatus < 300
-                          ? 'bg-emerald-500/10 text-emerald-400'
-                          : 'bg-rose-500/10 text-rose-400'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                       }`}>
                         {log.httpStatus}
                       </span>
@@ -271,7 +276,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                       </button>
                     )}
                   </div>
-                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-400 max-h-[140px] overflow-auto neon-glow-inner">
+                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-455 max-h-[140px] overflow-auto neon-glow-inner">
                     {log.responseBody ? (
                       <pre className="whitespace-pre-wrap">{log.responseBody}</pre>
                     ) : (
@@ -279,7 +284,6 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                     )}
                   </div>
                 </div>
-
               </div>
             </div>
 
@@ -320,26 +324,26 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                 ))}
               </div>
             </div>
-
-          </div>
-
-          {/* Footer Toolbar */}
-          <div className="p-4 border-t border-indigo-950/30 bg-indigo-950/10 flex justify-between items-center gap-2">
-            <button
-              onClick={() => handleCopyText(JSON.stringify(log, null, 2), 'Objeto de log completo copiado para o clipboard! 📋')}
-              className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/40 hover:bg-slate-800/80 rounded-xl border border-slate-700/30 transition-all cursor-pointer"
-            >
-              Copiar Log Completo
-            </button>
-            <button
-              onClick={handleClose}
-              className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md neon-glow-primary cursor-pointer"
-            >
-              Fechar Auditoria
-            </button>
           </div>
 
         </div>
+
+        {/* Footer Toolbar */}
+        <div className="p-4 border-t border-indigo-950/30 bg-indigo-950/10 flex justify-between items-center gap-2">
+          <button
+            onClick={() => handleCopyText(JSON.stringify(log, null, 2), 'Objeto de log completo copiado para o clipboard! 📋')}
+            className="px-4 py-2.5 text-xs font-semibold text-slate-350 hover:text-white bg-slate-900/40 hover:bg-slate-900/80 rounded-xl border border-indigo-950/40 transition-all cursor-pointer"
+          >
+            Copiar Log Completo (JSON)
+          </button>
+          <button
+            onClick={handleClose}
+            className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-650/80 hover:bg-indigo-600 rounded-xl border border-indigo-500/20 transition-all shadow-[0_0_20px_rgba(99,102,241,0.25)] cursor-pointer"
+          >
+            Fechar Inspeção
+          </button>
+        </div>
+
       </div>
     </div>
   );
