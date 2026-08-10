@@ -45,53 +45,6 @@ export const LoginGate: React.FC = () => {
     }
   }, [activeTab, isModalOpen]);
 
-  // URL token checker for password reset and OAuth callbacks
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenFromUrl = params.get('token');
-    if (tokenFromUrl) {
-      setResetToken(tokenFromUrl);
-      setActiveTab('reset-password');
-      setIsModalOpen(true);
-      
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-      return;
-    }
-
-    const oauthToken = params.get('oauth_token');
-    const oauthEmail = params.get('oauth_user_email');
-    const oauthId = params.get('oauth_user_id');
-    const oauthApiKey = params.get('oauth_api_key');
-    const oauthError = params.get('oauth_error');
-
-    if (oauthError) {
-      setErrorMsg(`Erro na autenticação OAuth: ${oauthError}`);
-      setIsModalOpen(true);
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-      return;
-    }
-
-    if (oauthToken && oauthEmail && oauthId) {
-      const user = { id: oauthId, email: oauthEmail, plan: 'free' };
-      const project = { id: '', name: 'Meu Workspace' };
-
-      if (oauthApiKey) {
-        setGeneratedKey(oauthApiKey);
-        setSignupSession({ user, token: oauthToken, projects: [project] });
-        setActiveTab('signup');
-        setSignupStep(3); // Mostra a tela final com a chave de API gerada
-        setIsModalOpen(true);
-      } else {
-        login(user, oauthToken, [project]);
-        showToast('Login via OAuth realizado com sucesso!', 'success');
-      }
-
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
-  }, [login, showToast]);
 
   // Password strength checker helper
   const getPasswordStrength = () => {
@@ -159,6 +112,54 @@ export const LoginGate: React.FC = () => {
 
   const { login } = useAuthStore();
   const { toggleTheme, theme, showToast } = useUiStore();
+
+  // URL token checker for password reset and OAuth callbacks
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromUrl = params.get('token');
+    if (tokenFromUrl) {
+      setResetToken(tokenFromUrl);
+      setActiveTab('reset-password');
+      setIsModalOpen(true);
+      
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      return;
+    }
+
+    const oauthToken = params.get('oauth_token');
+    const oauthEmail = params.get('oauth_user_email');
+    const oauthId = params.get('oauth_user_id');
+    const oauthApiKey = params.get('oauth_api_key');
+    const oauthError = params.get('oauth_error');
+
+    if (oauthError) {
+      setErrorMsg(`Erro na autenticação OAuth: ${oauthError}`);
+      setIsModalOpen(true);
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      return;
+    }
+
+    if (oauthToken && oauthEmail && oauthId) {
+      const user = { id: oauthId, email: oauthEmail, plan: 'free' as const, createdAt: new Date().toISOString() };
+      const project = { id: '', name: 'Meu Workspace' };
+
+      if (oauthApiKey) {
+        setGeneratedKey(oauthApiKey);
+        setSignupSession({ user, token: oauthToken, projects: [project] });
+        setActiveTab('signup');
+        setSignupStep(3); // Mostra a tela final com a chave de API gerada
+        setIsModalOpen(true);
+      } else {
+        login(user, oauthToken, [project]);
+        showToast('Login via OAuth realizado com sucesso!', 'success');
+      }
+
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [login, showToast]);
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
