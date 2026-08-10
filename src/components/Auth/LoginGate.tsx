@@ -387,19 +387,19 @@ export const LoginGate: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-6 text-left animate-in fade-in slide-in-from-bottom-8 duration-500">
             
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-widest font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-              SaaS de Agendamentos Recorrentes
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-bold uppercase tracking-widest font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+              ✦ Plataforma de Agendamentos Seguros & IA Conversacional
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] font-mono text-slate-100">
-              Agendamentos <br className="hidden sm:inline"/>
-              de alta precisão para <br className="hidden sm:inline"/>
-              <span className="text-gradient-cyber">Desenvolvedores</span>
+              Crontabs <br className="hidden sm:inline"/>
+              escaláveis com <br className="hidden sm:inline"/>
+              <span className="text-gradient-cyber">Segurança & IA</span>
             </h1>
 
             <p className="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed">
-              Substitua crontabs instáveis em seus servidores. O CronFlow oferece disparos de webhooks com concorrência distribuída, retentativas exponenciais, workflows integrados e monitoramento em tempo real.
+              Deixe para trás scripts crontab instáveis que quebram silenciosamente. O CronFlow oferece concorrência de disparo distribuída por Redis, inteligência artificial integrada, proteção anti-SSRF nativa em sandbox, assinaturas HMAC-SHA256 para webhooks e painéis de observabilidade de latência.
             </p>
 
             <div className="flex flex-wrap gap-4 pt-2 select-none">
@@ -408,13 +408,13 @@ export const LoginGate: React.FC = () => {
                   setActiveTab('signup');
                   setIsModalOpen(true);
                 }}
-                className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200"
+                className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-indigo-650 hover:bg-indigo-600 rounded-xl shadow-[0_0_25px_rgba(99,102,241,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200"
               >
                 Criar Conta Grátis ⚡
               </button>
               <button
                 onClick={() => scrollToSection('architecture')}
-                className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer"
+                className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-900/90 border border-indigo-950/40 rounded-xl transition-all cursor-pointer"
               >
                 Conhecer Arquitetura
               </button>
@@ -499,50 +499,89 @@ export const LoginGate: React.FC = () => {
       {/* 🛠️ FEATURES GRID */}
       <section id="features" className="py-20 border-t border-indigo-950/30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center scroll-mt-10">
         <div className="space-y-4 mb-16">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-400 font-mono">Infraestrutura Developer-First</span>
-          <h2 className="text-3xl font-black tracking-wide font-mono text-slate-100">Desenvolvido para máxima confiabilidade</h2>
-          <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-            Eliminamos a complexidade de gerenciar servidores cron internos e criamos ferramentas de rastreabilidade que sua equipe vai amar.
+          <span className="text-xs uppercase font-extrabold tracking-widest text-indigo-400 font-mono">Diferenciais do CronFlow</span>
+          <h2 className="text-3xl font-black tracking-wide font-mono text-slate-100">Infraestrutura resiliente e focada em segurança</h2>
+          <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+            Eliminamos a complexidade de gerenciar servidores cron internos e criamos ferramentas avançadas de segurança, IA e observabilidade para desenvolvedores.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1 */}
-          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-cyan-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-indigo-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Alta Precisão Sub-Minuto</h3>
+            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Agente de IA Conversacional</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              O Scheduler processa ciclos curtos a cada 30 segundos, garantindo precisão em agendamentos de minutos, horas ou intervalos simplificados.
+              Crie, liste, teste e agende tarefas complexas por linguagem natural utilizando o chatbot integrado no Terminal AI, reduzindo drasticamente a curva de aprendizado.
             </p>
           </div>
 
           {/* Card 2 */}
-          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-cyan-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-indigo-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H12v9" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Retentativas Automáticas (Backoff)</h3>
+            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Proteção Anti-SSRF</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Caso seu endpoint falhe, o Worker executa automaticamente até 3 retentativas com atraso exponencial, disparando webhooks de alerta.
+              Sandbox nativo com lista de bloqueio IP que barra requisições direcionadas a endereços locais (localhost), privados ou de loopback, impedindo explorações maliciosas.
             </p>
           </div>
 
           {/* Card 3 */}
-          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-cyan-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-indigo-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Assinaturas HMAC-SHA256</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Autenticação forte com cabeçalhos <code className="text-indigo-400 font-mono">X-CronFlow-Signature</code> assinados com a chave secreta do projeto, neutralizando ataques de replay.
+            </p>
+          </div>
+
+          {/* Card 4 */}
+          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-indigo-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Gráficos de Latência & Erros</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Painel analítico integrado que rastreia os tempos de resposta de cada execução e classifica erros com precisão (timeouts, DNS, SSRF ou faixas HTTP).
+            </p>
+          </div>
+
+          {/* Card 5 */}
+          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-indigo-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
-            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Encadeamento (Workflows)</h3>
+            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Encadeamento e Workflows</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Conecte jobs em fila. Dispare o Job B no exato milissegundo de sucesso da conclusão do Job A, criando fluxos complexos e dependentes de forma nativa.
+              Configure dependências entre tarefas. Execute o Job B imediatamente após o sucesso do Job A, encadeando workflows de processos em segundo plano.
+            </p>
+          </div>
+
+          {/* Card 6 */}
+          <div className="p-6 rounded-3xl bg-indigo-950/5 border border-indigo-950/30 hover:border-indigo-500/20 hover:bg-indigo-950/10 transition-all duration-300 text-left space-y-4 hover:-translate-y-1">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H12v9" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Retries com Backoff Exponencial</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Tratamento inteligente de falhas com até 3 retentativas automáticas e escalonamento exponencial para não sobrecarregar endpoints instáveis.
             </p>
           </div>
         </div>
