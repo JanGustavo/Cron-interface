@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { StatCard } from '../components/Dashboard/StatCard';
 import { RecentActivity } from '../components/Dashboard/RecentActivity';
 import { useUiStore } from '../store/uiStore';
@@ -110,7 +110,48 @@ export const DashboardPage: React.FC = () => {
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [isJobFilterOpen, setIsJobFilterOpen] = useState(false);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
-  const [activeMetric, setActiveMetric] = useState<'overview' | 'latency' | 'errors'>('overview');
+  const [activeMetric, setActiveMetric] = useState<'overview' | 'latency' | 'errors' | 'queue'>('overview');
+
+  interface QueueMetrics {
+    queues: {
+      name: string;
+      size: number;
+      pending: number;
+      active: number;
+      scheduled: number;
+      retry: number;
+      archived: number;
+      paused: boolean;
+    }[];
+  }
+  const [queueMetrics, setQueueMetrics] = useState<QueueMetrics | null>(null);
+  const [loadingQueue, setLoadingQueue] = useState(false);
+
+  const fetchQueueMetrics = useCallback(async () => {
+    setLoadingQueue(true);
+    try {
+      const res = await api.get('/v1/metrics/queue');
+      setQueueMetrics(res.data);
+    } catch (err) {
+      console.error('Failed to fetch queue metrics', err);
+      showToast('Falha ao obter dados da fila Redis.', 'error');
+    } finally {
+      setLoadingQueue(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    if (activeMetric === 'queue') {
+      const timer = setTimeout(() => {
+        fetchQueueMetrics();
+      }, 0);
+      const interval = setInterval(fetchQueueMetrics, 5000);
+      return () => {
+        clearTimeout(timer);
+        clearInterval(interval);
+      };
+    }
+  }, [activeMetric, fetchQueueMetrics]);
 
   useEffect(() => {
     let active = true;
@@ -491,6 +532,17 @@ export const DashboardPage: React.FC = () => {
                 >
                   Erros
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveMetric('queue')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    activeMetric === 'queue'
+                      ? 'bg-amber-650 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Fila Redis
+                </button>
               </div>
             </div>
 
@@ -618,11 +670,76 @@ export const DashboardPage: React.FC = () => {
                     Requisições Falhas (Barra)
                   </span>
                 )}
+                {activeMetric === 'queue' && (
+                  <span className="flex items-center gap-1.5 text-amber-400">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    Monitoramento da Fila (Redis)
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Dynamic Charts Container */}
             <div className="pt-2">
+              {activeMetric === 'queue' && (
+                <div className="space-y-4">
+                  {loadingQueue && !queueMetrics ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-slate-500 text-xs">
+                      <div className="w-6 h-6 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-2" />
+                      Lendo filas do Redis...
+                    </div>
+                  ) : !queueMetrics || queueMetrics.queues.length === 0 ? (
+                    <div className="flex items-center justify-center h-64 text-slate-500 text-xs">
+                      Nenhuma fila ativa detectada no Redis.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
+                      {queueMetrics.queues.map((q) => (
+                        <div key={q.name} className="p-4 rounded-xl border border-indigo-950/40 bg-[#04060f]/60 hover:bg-[#04060f]/90 transition-all space-y-3 relative group overflow-hidden">
+                          {/* Top row */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fila: {q.name}</span>
+                            <span className={`text-[8px] font-bold uppercase px-2 py-0.5 rounded border ${
+                              q.paused
+                                ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+                                : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                            }`}>
+                              {q.paused ? 'Pausada' : 'Ativa'}
+                            </span>
+                          </div>
+
+                          {/* Stat Grid */}
+                          <div className="grid grid-cols-2 gap-2 text-left">
+                            <div className="bg-slate-950/40 p-2 rounded-lg border border-indigo-950/25">
+                              <p className="text-[9px] text-slate-500 uppercase font-semibold">Pendentes</p>
+                              <p className="text-sm font-bold text-indigo-300 font-mono">{q.pending}</p>
+                            </div>
+                            <div className="bg-slate-950/40 p-2 rounded-lg border border-indigo-950/25">
+                              <p className="text-[9px] text-slate-500 uppercase font-semibold">Ativas</p>
+                              <p className="text-sm font-bold text-emerald-400 font-mono">{q.active}</p>
+                            </div>
+                            <div className="bg-slate-950/40 p-2 rounded-lg border border-indigo-950/25">
+                              <p className="text-[9px] text-slate-500 uppercase font-semibold">Agendadas</p>
+                              <p className="text-sm font-bold text-purple-400 font-mono">{q.scheduled}</p>
+                            </div>
+                            <div className="bg-slate-950/40 p-2 rounded-lg border border-indigo-950/25">
+                              <p className="text-[9px] text-slate-500 uppercase font-semibold">Retentativas</p>
+                              <p className="text-sm font-bold text-rose-400 font-mono">{q.retry}</p>
+                            </div>
+                          </div>
+
+                          {/* Total count */}
+                          <div className="flex items-center justify-between border-t border-indigo-950/20 pt-2.5 mt-1 text-[9px] text-slate-500">
+                            <span>Total de Tarefas</span>
+                            <span className="font-bold text-slate-350 font-mono">{q.size}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {activeMetric === 'overview' && (
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
