@@ -6,9 +6,10 @@ export type BadgeStatus = JobStatus | KanbanStatus | 'success' | 'failed' | 'tim
 interface StatusBadgeProps {
   status: BadgeStatus;
   size?: 'sm' | 'md';
+  attemptNumber?: number;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', attemptNumber }) => {
   const getStatusStyles = () => {
     switch (status) {
       // Active states
@@ -27,11 +28,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
       case 'failing':
       case 'failed':
       case 'timeout':
+        const suffix = attemptNumber ? ` (${attemptNumber}x)` : '';
         return {
           bg: 'bg-rose-500/10',
           text: 'text-rose-400',
           border: 'border-rose-500/20',
-          label: status === 'failing' ? 'Falhando' : status === 'failed' ? 'Falhou' : 'Timeout',
+          label: (status === 'failing' ? 'Falhando' : status === 'failed' ? 'Falhou' : 'Timeout') + suffix,
           dot: 'bg-rose-400',
         };
 

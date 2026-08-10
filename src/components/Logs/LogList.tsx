@@ -79,7 +79,7 @@ export const LogList: React.FC<LogListProps> = ({
                 >
                   {/* Status Badge */}
                   <td className="p-4">
-                    <StatusBadge status={log.status} />
+                    <StatusBadge status={log.status} attemptNumber={log.attemptNumber} />
                   </td>
 
                   {/* Job Name / ID */}

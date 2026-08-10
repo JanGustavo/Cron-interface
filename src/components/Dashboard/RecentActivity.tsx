@@ -84,7 +84,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
                   {/* Status Badges */}
                   <td className="px-5 py-3.5">
                     <div className="flex flex-col gap-1 items-start">
-                      <StatusBadge status={log.status} />
+                      <StatusBadge status={log.status} attemptNumber={log.attemptNumber} />
                       {log.httpStatus && (
                         <span className="text-[9px] font-semibold font-mono text-slate-500 pl-1">
                           HTTP {log.httpStatus}
