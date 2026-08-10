@@ -50,6 +50,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Estratégia Network-First para a navegação principal (documentos HTML)
+  // Isso garante que o usuário sempre receba o index.html mais recente contendo os novos hashes de assets.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request) || caches.match('/index.html');
+        })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {

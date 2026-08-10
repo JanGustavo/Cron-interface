@@ -16,8 +16,12 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+import { ErrorBoundary } from './components/Shared/ErrorBoundary'
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )
