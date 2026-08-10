@@ -208,7 +208,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                 {/* Headers */}
                 <div className="space-y-1">
                   <span className="text-[9px] font-semibold text-slate-500 uppercase">Headers</span>
-                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-450 max-h-[100px] overflow-auto">
+                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-400 max-h-[100px] overflow-auto">
                     {job?.headers ? (
                       <pre>{JSON.stringify(job.headers, null, 2)}</pre>
                     ) : (
@@ -220,7 +220,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                 {/* Body/Payload */}
                 <div className="space-y-1">
                   <span className="text-[9px] font-semibold text-slate-500 uppercase">Body Payload</span>
-                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-450 max-h-[100px] overflow-auto">
+                  <div className="p-3 bg-[#05070e]/85 rounded-xl border border-indigo-950/30 font-mono text-[9px] text-indigo-400 max-h-[100px] overflow-auto">
                     {job?.payload ? (
                       <pre>{JSON.stringify(job.payload, null, 2)}</pre>
                     ) : (
@@ -284,6 +284,43 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Alert Webhook Status Block */}
+            <div className="space-y-2">
+              <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                Notificação de Alerta de Falha
+              </h5>
+              <div className="p-4 bg-slate-950/40 border border-indigo-950/40 rounded-2xl space-y-2 select-text text-[10px] text-left leading-relaxed">
+                {job?.webhookAlertUrl ? (
+                  log.status === 'success' ? (
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                      <span>Não enviado (Tarefa concluída com sucesso)</span>
+                    </div>
+                  ) : log.attemptNumber < 3 && (job.consecutiveFailures || 0) < 3 ? (
+                    <div className="flex items-center gap-2 text-amber-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      <span>Abaixo do limite (Falha temporária: {log.attemptNumber}ª tentativa, o alerta dispara ao atingir 3 falhas consecutivas)</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-emerald-450 font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                        <span>Alerta Enviado com Sucesso 🚀</span>
+                      </div>
+                      <div className="text-[9px] text-slate-500 font-mono break-all bg-[#05070e]/85 p-2.5 rounded-xl border border-indigo-950/30">
+                        Destino: {job.webhookAlertUrl}
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className="flex items-center gap-2 text-slate-500 italic">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                    <span>Nenhum webhook de alerta configurado para esta tarefa</span>
+                  </div>
+                )}
               </div>
             </div>
 
