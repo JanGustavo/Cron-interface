@@ -90,7 +90,7 @@
 }
 
 .text-gradient-cyber {
-  background: linear-gradient(135deg, #00d9ff 0%, #00ff88 100%);
+  background: linear-gradient(135deg, #7b2cbf 0%, #1a75ff 50%, #00f5d4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
