@@ -670,7 +670,11 @@ export const ProfilePage: React.FC = () => {
                 >
                   {tab.label}
                 </button>
-                        {securityTab === 'keys' && (
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-indigo-950/30 bg-[#0a0d1d]/80 p-4">
+              {securityTab === 'keys' && (
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
