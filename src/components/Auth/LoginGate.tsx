@@ -20,6 +20,7 @@ export const LoginGate: React.FC = () => {
   const [signupStep, setSignupStep] = useState(1);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [cpf, setCpf] = useState('');
   const [company, setCompany] = useState('');
   const [role, setRole] = useState('Desenvolvedor Full Stack');
   const [techStack, setTechStack] = useState('Node.js / TypeScript');
@@ -44,7 +45,7 @@ export const LoginGate: React.FC = () => {
     }
   }, [activeTab, isModalOpen]);
 
-  // URL token checker for password reset
+  // URL token checker for password reset and OAuth callbacks
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
@@ -55,8 +56,42 @@ export const LoginGate: React.FC = () => {
       
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
+      return;
     }
-  }, []);
+
+    const oauthToken = params.get('oauth_token');
+    const oauthEmail = params.get('oauth_user_email');
+    const oauthId = params.get('oauth_user_id');
+    const oauthApiKey = params.get('oauth_api_key');
+    const oauthError = params.get('oauth_error');
+
+    if (oauthError) {
+      setErrorMsg(`Erro na autenticação OAuth: ${oauthError}`);
+      setIsModalOpen(true);
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      return;
+    }
+
+    if (oauthToken && oauthEmail && oauthId) {
+      const user = { id: oauthId, email: oauthEmail, plan: 'free' };
+      const project = { id: '', name: 'Meu Workspace' };
+
+      if (oauthApiKey) {
+        setGeneratedKey(oauthApiKey);
+        setSignupSession({ user, token: oauthToken, projects: [project] });
+        setActiveTab('signup');
+        setSignupStep(3); // Mostra a tela final com a chave de API gerada
+        setIsModalOpen(true);
+      } else {
+        login(user, oauthToken, [project]);
+        showToast('Login via OAuth realizado com sucesso!', 'success');
+      }
+
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [login, showToast]);
 
   // Password strength checker helper
   const getPasswordStrength = () => {
@@ -91,6 +126,33 @@ export const LoginGate: React.FC = () => {
   const isConfirmPasswordValid = confirmPassword.length === 0 || password === confirmPassword;
   const isFullNameValid = fullName.trim() === '' || fullName.trim().split(' ').filter(Boolean).length >= 2;
   const isCompanyValid = company.trim() === '' || company.trim().length >= 2;
+
+  const formatCPF = (value: string) => {
+    const clean = value.replace(/\D/g, '');
+    return clean
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+      .substring(0, 14);
+  };
+
+  const isCpfValid = (() => {
+    if (cpf.trim() === '') return true;
+    const clean = cpf.replace(/[^\d]+/g, '');
+    if (clean.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(clean)) return false;
+    let sum = 0;
+    for (let i = 0; i < 9; i++) sum += parseInt(clean.charAt(i)) * (10 - i);
+    let rest = sum % 11;
+    let digit1 = rest < 2 ? 0 : 11 - rest;
+    if (parseInt(clean.charAt(9)) !== digit1) return false;
+    sum = 0;
+    for (let i = 0; i < 10; i++) sum += parseInt(clean.charAt(i)) * (11 - i);
+    rest = sum % 11;
+    let digit2 = rest < 2 ? 0 : 11 - rest;
+    if (parseInt(clean.charAt(10)) !== digit2) return false;
+    return true;
+  })();
 
   // Interactive Sandbox Tab State
   const [activeSandboxTab, setActiveSandboxTab] = useState<'curl' | 'json' | 'agent'>('curl');
@@ -184,7 +246,7 @@ export const LoginGate: React.FC = () => {
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password || !projectName.trim()) {
+    if (!email.trim() || !password || !projectName.trim() || !fullName.trim() || !cpf.trim()) {
       setErrorMsg('Por favor, preencha todos os campos do cadastro.');
       return;
     }
@@ -197,6 +259,8 @@ export const LoginGate: React.FC = () => {
         email: email.trim(),
         password: password,
         projectName: projectName.trim(),
+        full_name: fullName.trim(),
+        cpf: cpf.trim(),
       });
 
       const { token, user, projects, apiKey } = response.data;
@@ -827,6 +891,33 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 >
                   {loading ? 'Entrando...' : 'Entrar no Painel ⚡'}
                 </button>
+
+                <div className="relative flex py-2 items-center select-none">
+                  <div className="flex-grow border-t border-indigo-950/40"></div>
+                  <span className="flex-shrink mx-4 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">ou conectar com</span>
+                  <div className="flex-grow border-t border-indigo-950/40"></div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <a
+                    href={`${api.defaults.baseURL || 'http://localhost:8080'}/v1/auth/oauth/google`}
+                    className="py-2.5 rounded-xl text-xs font-bold text-slate-350 hover:text-white bg-slate-900/60 hover:bg-slate-900/90 border border-indigo-950/40 hover:border-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer no-underline"
+                  >
+                    <svg className="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.147 4.114-3.418 0-6.2-2.782-6.2-6.2 0-3.418 2.782-6.2 6.2-6.2 1.494 0 2.855.534 3.918 1.424l3.116-3.116C19.124 2.052 15.932 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.126 0 11.24-5.033 11.24-11.24 0-.796-.078-1.56-.216-2.285H12.24z"/>
+                    </svg>
+                    Google
+                  </a>
+                  <a
+                    href={`${api.defaults.baseURL || 'http://localhost:8080'}/v1/auth/oauth/github`}
+                    className="py-2.5 rounded-xl text-xs font-bold text-slate-350 hover:text-white bg-slate-900/60 hover:bg-slate-900/90 border border-indigo-950/40 hover:border-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer no-underline"
+                  >
+                    <svg className="w-4 h-4 text-slate-200" viewBox="0 0 24 24" fill="currentColor">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.577.688.48C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                    </svg>
+                    GitHub
+                  </a>
+                </div>
               </form>
             ) : activeTab === 'forgot-password' ? (
               <form onSubmit={handleForgotPassword} className="space-y-5 text-left animate-in fade-in slide-in-from-right-4 duration-250">
@@ -1160,6 +1251,29 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
 
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        CPF (Para Prevenção de Fraudes)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="000.000.000-00"
+                        value={cpf}
+                        onChange={(e) => setCpf(formatCPF(e.target.value))}
+                        className={`w-full px-4 py-3 bg-[#070913]/90 border rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-all duration-300 ${
+                          cpf && !isCpfValid 
+                            ? 'border-rose-500/40 focus:border-rose-500/60 focus:ring-rose-500/20' 
+                            : 'border-indigo-950/60 focus:border-cyan-500/40 focus:ring-cyan-500/20'
+                        }`}
+                        required
+                      />
+                      {cpf && !isCpfValid && (
+                        <span className="text-[9px] font-semibold text-rose-400 mt-1 block">
+                          ⚠️ Digite um CPF válido.
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
                         Nome da Empresa / Organização
                       </label>
                       <input
@@ -1238,7 +1352,7 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                       </button>
                       <button
                         type="button"
-                        disabled={!fullName.trim() || !company.trim() || !isFullNameValid || !isCompanyValid}
+                        disabled={!fullName.trim() || !company.trim() || !cpf.trim() || !isFullNameValid || !isCompanyValid || !isCpfValid}
                         onClick={() => {
                           setErrorMsg(null);
                           setSignupStep(3);
