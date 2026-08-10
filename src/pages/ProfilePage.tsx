@@ -32,7 +32,7 @@ const InfoTip: React.FC<{ text: string }> = ({ text }) => (
 );
 
 export const ProfilePage: React.FC = () => {
-  const { user, activeProject, projects, token } = useAuthStore();
+  const { user, activeProject, projects, token, setActiveProject, setProjects } = useAuthStore();
   const { jobs } = useJobsStore();
   const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen } = useUiStore();
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
@@ -110,6 +110,30 @@ export const ProfilePage: React.FC = () => {
     } catch (err) {
       console.error('Failed to revoke API key', err);
       showToast('Falha ao revogar chave de API.', 'error');
+    }
+  };
+
+  const [rotatingSecret, setRotatingSecret] = useState(false);
+
+  const handleRotateWebhookSecret = async () => {
+    if (!window.confirm('Tem certeza que deseja rotacionar a chave de assinatura? Todos os alertas enviados a partir de agora usarão a nova assinatura HMAC, e integrações antigas que não atualizarem o segredo falharão.')) {
+      return;
+    }
+    setRotatingSecret(true);
+    try {
+      const res = await api.post('/v1/projects/webhook-secret/rotate');
+      const newSecret = res.data.webhookSecret;
+      if (activeProject) {
+        const updatedProject = { ...activeProject, webhookSecret: newSecret };
+        setActiveProject(updatedProject);
+        setProjects(projects.map(p => p.id === activeProject.id ? updatedProject : p));
+      }
+      showToast('Chave de assinatura rotacionada com sucesso!', 'success');
+    } catch (err) {
+      console.error('Failed to rotate webhook secret', err);
+      showToast('Falha ao rotacionar chave de assinatura.', 'error');
+    } finally {
+      setRotatingSecret(false);
     }
   };
 
@@ -864,18 +888,28 @@ export const ProfilePage: React.FC = () => {
                       <p className="text-[10px] text-slate-400">
                         Assinamos o payload de cada webhook enviado com esta chave para que você confirme que a chamada veio do CronFlow.
                       </p>
-                      <div className="flex items-center justify-between gap-2 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-xs text-indigo-300 relative pr-14 select-all">
+                      <div className="flex items-center justify-between gap-2 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-xs text-indigo-300 relative pr-36 select-all">
                         <span className="truncate">{activeProject.webhookSecret}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(activeProject.webhookSecret || '');
-                            showToast('Chave de assinatura copiada!', 'success');
-                          }}
-                          className="absolute right-2 top-1.5 px-2 py-1 text-[8px] font-bold text-indigo-400 hover:text-white bg-indigo-950/40 rounded border border-indigo-900/30 transition-all cursor-pointer"
-                        >
-                          Copiar
-                        </button>
+                        <div className="absolute right-2 top-1.5 flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(activeProject.webhookSecret || '');
+                              showToast('Chave de assinatura copiada!', 'success');
+                            }}
+                            className="px-2 py-1 text-[8px] font-bold text-indigo-400 hover:text-white bg-indigo-950/40 rounded border border-indigo-900/30 transition-all cursor-pointer"
+                          >
+                            Copiar
+                          </button>
+                          <button
+                            type="button"
+                            disabled={rotatingSecret}
+                            onClick={handleRotateWebhookSecret}
+                            className="px-2 py-1 text-[8px] font-bold text-amber-400 hover:text-white bg-amber-950/40 rounded border border-amber-900/30 transition-all cursor-pointer disabled:opacity-50 font-semibold"
+                          >
+                            {rotatingSecret ? '...' : 'Rotacionar'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
