@@ -847,6 +847,31 @@ export const ProfilePage: React.FC = () => {
                       {webhookConfigured ? globalWebhook : 'Nao configurado'}
                     </div>
                   </div>
+
+                  {activeProject?.webhookSecret && (
+                    <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Chave de Assinatura (Webhook Secret)</span>
+                        <span className="text-[8px] font-mono font-bold text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-900/30">HMAC-SHA256</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        Assinamos o payload de cada webhook enviado com esta chave para que você confirme que a chamada veio do CronFlow.
+                      </p>
+                      <div className="flex items-center justify-between gap-2 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-xs text-indigo-300 relative pr-14 select-all">
+                        <span className="truncate">{activeProject.webhookSecret}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(activeProject.webhookSecret || '');
+                            showToast('Chave de assinatura copiada!', 'success');
+                          }}
+                          className="absolute right-2 top-1.5 px-2 py-1 text-[8px] font-bold text-indigo-400 hover:text-white bg-indigo-950/40 rounded border border-indigo-900/30 transition-all cursor-pointer"
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </form>
               )}
 

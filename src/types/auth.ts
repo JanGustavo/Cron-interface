@@ -15,6 +15,7 @@ export interface Project {
   userId: string;
   name: string;
   createdAt: string;
+  webhookSecret?: string;
 }
 
 export interface ApiKey {
