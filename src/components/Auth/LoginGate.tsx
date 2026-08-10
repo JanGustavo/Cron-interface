@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import api from '../../services/api';
+import type { Token, Project } from '../../types/auth';
 
 export const LoginGate: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,16 +144,22 @@ export const LoginGate: React.FC = () => {
 
     if (oauthToken && oauthEmail && oauthId) {
       const user = { id: oauthId, email: oauthEmail, plan: 'free' as const, createdAt: new Date().toISOString() };
-      const project = { id: '', name: 'Meu Workspace' };
+      const project: Project = { id: '', userId: oauthId, name: 'Meu Workspace', createdAt: new Date().toISOString() };
+      const tokenObj: Token = {
+        accessToken: oauthToken,
+        refreshToken: '',
+        tokenType: 'Bearer',
+        expiresIn: 86400
+      };
 
       if (oauthApiKey) {
         setGeneratedKey(oauthApiKey);
-        setSignupSession({ user, token: oauthToken, projects: [project] });
+        setSignupSession({ user, token: tokenObj, projects: [project] });
         setActiveTab('signup');
         setSignupStep(3); // Mostra a tela final com a chave de API gerada
         setIsModalOpen(true);
       } else {
-        login(user, oauthToken, [project]);
+        login(user, tokenObj, [project]);
         showToast('Login via OAuth realizado com sucesso!', 'success');
       }
 
