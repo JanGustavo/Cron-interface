@@ -58,7 +58,6 @@ export const ProfilePage: React.FC = () => {
   const isProPlan = plan === 'paid';
 
   const activeKey = token?.accessToken || localStorage.getItem('cf_token') || '';
-  const maskedKey = activeKey ? `${activeKey.slice(0, 8)}...${activeKey.slice(-4)}` : 'cf_live_prod_5a1f2b3c';
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const webhookConfigured = globalWebhook.trim().length > 0;
@@ -217,20 +216,6 @@ export const ProfilePage: React.FC = () => {
       ),
     },
   ];
-
-  const handleCopyPrimaryKey = () => {
-    if (!activeKey) {
-      showToast('Nenhuma chave ativa encontrada.', 'warning');
-      return;
-    }
-    try {
-      navigator.clipboard.writeText(activeKey);
-      showToast('Chave copiada para a area de transferencia.', 'success');
-    } catch (err) {
-      console.error('Falha ao copiar chave', err);
-      showToast('Nao foi possivel copiar a chave.', 'error');
-    }
-  };
 
   const handleCreateJob = () => {
     setActiveTab('jobs');

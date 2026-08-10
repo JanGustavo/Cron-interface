@@ -5,7 +5,7 @@ import api from '../../services/api';
 
 export const LoginGate: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'forgot-password' | 'reset-password'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -96,7 +96,7 @@ export const LoginGate: React.FC = () => {
   const [activeSandboxTab, setActiveSandboxTab] = useState<'curl' | 'json' | 'agent'>('curl');
 
   const { login } = useAuthStore();
-  const { toggleTheme, theme } = useUiStore();
+  const { toggleTheme, theme, showToast } = useUiStore();
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
