@@ -186,7 +186,7 @@ export const JobModal: React.FC = () => {
                 {activeJob.name}
               </h3>
             )}
-            <StatusBadge status={activeJob.status} />
+            <StatusBadge status={activeJob.status} attemptNumber={activeJob.consecutiveFailures > 0 ? activeJob.consecutiveFailures : undefined} />
           </div>
           <button
             onClick={handleClose}

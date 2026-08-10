@@ -133,7 +133,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
             </div>
             
             {/* Custom Status Badge */}
-            <StatusBadge status={job.kanbanStatus || 'draft'} />
+            <StatusBadge status={job.kanbanStatus || 'draft'} attemptNumber={job.consecutiveFailures > 0 ? job.consecutiveFailures : undefined} />
           </div>
         </div>
       )}
