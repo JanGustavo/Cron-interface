@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useJobsStore } from '../store/jobsStore';
 import { useUiStore } from '../store/uiStore';
+import api from '../services/api';
 
 const formatDate = (value?: string | null) => {
   if (!value) return 'Não informado';
@@ -61,6 +62,62 @@ export const ProfilePage: React.FC = () => {
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const webhookConfigured = globalWebhook.trim().length > 0;
+
+  // API Keys Management states
+  interface APIKeyItem {
+    id: string;
+    projectId: string;
+    prefix: string;
+    createdAt: string;
+  }
+  const [apiKeys, setApiKeys] = useState<APIKeyItem[]>([]);
+  const [loadingKeys, setLoadingKeys] = useState(false);
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+
+  const fetchAPIKeys = async () => {
+    setLoadingKeys(true);
+    try {
+      const res = await api.get('/v1/keys');
+      setApiKeys(res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch API keys', err);
+      showToast('Falha ao listar chaves de API.', 'error');
+    } finally {
+      setLoadingKeys(false);
+    }
+  };
+
+  const handleCreateAPIKey = async () => {
+    try {
+      const res = await api.post('/v1/keys');
+      setNewlyCreatedKey(res.data.apiKey);
+      showToast('Nova chave de API gerada com sucesso!', 'success');
+      fetchAPIKeys();
+    } catch (err) {
+      console.error('Failed to create API key', err);
+      showToast('Falha ao gerar nova chave de API.', 'error');
+    }
+  };
+
+  const handleRevokeAPIKey = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja revogar esta chave de API? Todas as integrações com ela deixarão de funcionar imediatamente.')) {
+      return;
+    }
+    try {
+      await api.delete(`/v1/keys/${id}`);
+      showToast('Chave de API revogada com sucesso.', 'success');
+      fetchAPIKeys();
+    } catch (err) {
+      console.error('Failed to revoke API key', err);
+      showToast('Falha ao revogar chave de API.', 'error');
+    }
+  };
+
+  useEffect(() => {
+    if (securityTab === 'keys') {
+      fetchAPIKeys();
+    }
+  }, [securityTab]);
 
   const getCodeSnippet = () => {
     const key = activeKey || 'SUA_API_KEY_AQUI';
@@ -613,84 +670,105 @@ export const ProfilePage: React.FC = () => {
                 >
                   {tab.label}
                 </button>
-              ))}
-            </div>
-
-            <div className="rounded-2xl border border-indigo-950/30 bg-[#0a0d1d]/80 p-4">
-              {securityTab === 'keys' && (
+                        {securityTab === 'keys' && (
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <span className="text-[10px] uppercase tracking-[0.24em] text-slate-500">
-                        API Keys ({activeKey ? '1 ativa' : '0 ativa'})
+                        API Keys ({apiKeys.length} ativa{apiKeys.length !== 1 ? 's' : ''})
                       </span>
                       <p className="mt-1 text-xs text-slate-400">
                         Use no header Authorization: Bearer em cada request.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleOpenSettings}
-                      className="px-3 py-1.5 text-[10px] uppercase font-bold text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-950/70 rounded-xl border border-indigo-900/40 transition-all"
-                    >
-                      Gerenciar
-                    </button>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex flex-col gap-3 rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold text-slate-200">Chave principal</p>
-                          <p className="text-[10px] font-mono text-indigo-300">{maskedKey}</p>
-                          <p className="text-[9px] text-slate-500">Criada: {memberSince}</p>
-                        </div>
-                        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-300">
-                          Producao
-                        </span>
+                  {newlyCreatedKey && (
+                    <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 space-y-3 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2 text-amber-400">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span className="text-[10px] uppercase font-bold tracking-widest font-mono">Chave Criada — Copie Agora!</span>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <p className="text-[10px] text-slate-350 leading-relaxed">
+                        Por motivos de segurança, esta chave só será exibida <strong>esta única vez</strong>. Certifique-se de copiá-la e salvá-la em um gerenciador de segredos seguro.
+                      </p>
+                      <div className="flex items-center gap-2 bg-[#04060f] p-2.5 rounded-xl border border-amber-500/20 font-mono text-xs text-amber-200 select-all break-all relative pr-14">
+                        <span className="break-all">{newlyCreatedKey}</span>
                         <button
                           type="button"
-                          onClick={handleCopyPrimaryKey}
-                          className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-200 bg-slate-800/50 hover:bg-slate-800/80 rounded-xl border border-slate-700/40 transition-all"
+                          onClick={() => {
+                            navigator.clipboard.writeText(newlyCreatedKey);
+                            showToast('API Key copiada com sucesso!', 'success');
+                          }}
+                          className="absolute right-2 top-2 px-2 py-1 text-[8px] font-bold text-amber-400 hover:text-white bg-amber-950/40 rounded border border-amber-900/30 transition-all"
                         >
                           Copiar
                         </button>
-                        <button
-                          type="button"
-                          disabled
-                          title="Disponível no Plano Pro"
-                          className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800/40 opacity-60 cursor-not-allowed"
-                        >
-                          Rotar
-                        </button>
-                        <button
-                          type="button"
-                          disabled
-                          title="Disponível no Plano Pro"
-                          className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800/40 opacity-60 cursor-not-allowed"
-                        >
-                          Deletar
-                        </button>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setNewlyCreatedKey(null)}
+                        className="w-full py-1.5 text-[9px] uppercase font-bold text-amber-200 hover:text-white bg-amber-950/20 hover:bg-amber-950/50 rounded-xl border border-amber-900/20 transition-all"
+                      >
+                        Entendi, fechar alerta
+                      </button>
                     </div>
+                  )}
 
-                    <div className="flex items-start justify-between rounded-2xl border border-indigo-950/40 bg-slate-950/30 p-4">
-                      <div className="space-y-1">
-                        <p className="text-xs font-semibold text-slate-200">Chave de Staging</p>
-                        <p className="text-[10px] font-mono text-slate-500">cf_staging_demo_4c2a</p>
-                        <p className="text-[9px] text-slate-600">Gerada automaticamente para testes locais</p>
+                  <div className="space-y-2.5">
+                    {loadingKeys ? (
+                      <div className="flex flex-col items-center justify-center py-6 text-slate-500 text-xs">
+                        <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-2" />
+                        Carregando chaves...
                       </div>
-                      <span className="rounded-full border border-slate-700/50 bg-slate-900/40 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                        Staging
-                      </span>
-                    </div>
+                    ) : apiKeys.length === 0 ? (
+                      <div className="text-center py-6 text-slate-500 text-[11px]">
+                        Nenhuma chave de API de integração cadastrada.
+                      </div>
+                    ) : (
+                      apiKeys.map((key) => (
+                        <div key={key.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4">
+                          <div className="space-y-1">
+                            <p className="text-xs font-semibold text-slate-200">Chave de Integração</p>
+                            <p className="text-[10px] font-mono text-indigo-300">
+                              {key.prefix}........................
+                            </p>
+                            <p className="text-[9px] text-slate-500 font-mono">
+                              ID: {key.id}
+                            </p>
+                            <p className="text-[9px] text-slate-500">
+                              Criada em: {formatDate(key.createdAt)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(key.prefix);
+                                showToast('Prefixo copiado com sucesso.', 'info');
+                              }}
+                              className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-350 hover:text-white bg-slate-800/40 hover:bg-slate-800/80 rounded-xl border border-slate-700/30 transition-all"
+                            >
+                              Prefixo
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRevokeAPIKey(key.id)}
+                              className="px-3 py-1.5 text-[10px] uppercase font-bold text-rose-400 hover:text-white hover:bg-rose-950/30 rounded-xl border border-rose-950/40 hover:border-rose-900/55 transition-all"
+                            >
+                              Revogar
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => showToast('Geração de novas chaves sob demanda disponível no Plano Pro.', 'info')}
+                    onClick={handleCreateAPIKey}
                     className="w-full px-4 py-2 text-[10px] uppercase font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-500/30"
                   >
                     Gerar nova chave
