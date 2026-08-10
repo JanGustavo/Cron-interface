@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { useJobsStore } from '../store/jobsStore';
 import api from '../services/api';
 import { PixModal } from '../components/Shared/PixModal';
+import { OnboardingTour } from '../components/Shared/OnboardingTour';
 import {
   ComposedChart,
   Bar,
@@ -725,6 +726,7 @@ export const DashboardPage: React.FC = () => {
         </>
       )}
       <PixModal isOpen={isPixModalOpen} onClose={() => setIsPixModalOpen(false)} />
+      <OnboardingTour />
     </div>
   );
 };
