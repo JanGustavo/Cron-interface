@@ -68,6 +68,7 @@ export const ProfilePage: React.FC = () => {
     projectId: string;
     prefix: string;
     createdAt: string;
+    lastUsedAt?: string | null;
   }
   const [apiKeys, setApiKeys] = useState<APIKeyItem[]>([]);
   const [loadingKeys, setLoadingKeys] = useState(false);
@@ -732,6 +733,9 @@ export const ProfilePage: React.FC = () => {
                             </p>
                             <p className="text-[9px] text-slate-500">
                               Criada em: {formatDate(key.createdAt)}
+                            </p>
+                            <p className="text-[9px] text-slate-500">
+                              Último uso: {key.lastUsedAt ? formatDate(key.lastUsedAt) : 'Nunca utilizada'}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
