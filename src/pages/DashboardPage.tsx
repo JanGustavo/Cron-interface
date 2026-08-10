@@ -174,7 +174,7 @@ export const DashboardPage: React.FC = () => {
     };
     allRecentLogs.forEach((log) => {
       if (log.status === 'failed') {
-        const msg = (log.errorMessage || '').toLowerCase();
+        const msg = (log.responseBody || '').toLowerCase();
         if (msg.includes('ssrf')) counts.ssrf++;
         else if (msg.includes('timeout') || msg.includes('deadline')) counts.timeout++;
         else if (msg.includes('lookup') || msg.includes('dns') || msg.includes('no such host')) counts.dns++;
