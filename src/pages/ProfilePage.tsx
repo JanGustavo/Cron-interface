@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useJobsStore } from '../store/jobsStore';
 import { useUiStore } from '../store/uiStore';
@@ -73,7 +73,7 @@ export const ProfilePage: React.FC = () => {
   const [loadingKeys, setLoadingKeys] = useState(false);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
 
-  const fetchAPIKeys = async () => {
+  const fetchAPIKeys = useCallback(async () => {
     setLoadingKeys(true);
     try {
       const res = await api.get('/v1/keys');
@@ -84,7 +84,7 @@ export const ProfilePage: React.FC = () => {
     } finally {
       setLoadingKeys(false);
     }
-  };
+  }, [showToast]);
 
   const handleCreateAPIKey = async () => {
     try {
@@ -114,9 +114,12 @@ export const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (securityTab === 'keys') {
-      fetchAPIKeys();
+      const timer = setTimeout(() => {
+        fetchAPIKeys();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [securityTab]);
+  }, [securityTab, fetchAPIKeys]);
 
   const getCodeSnippet = () => {
     const key = activeKey || 'SUA_API_KEY_AQUI';

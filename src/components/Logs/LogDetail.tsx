@@ -39,8 +39,9 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
     try {
       await triggerJob(job.id);
       showToast(`Replay de execução manual iniciado para: ${job.name} 🚀`, 'success');
-    } catch (err: any) {
-      showToast(`Falha ao fazer replay: ${err.message || 'erro interno'}`, 'error');
+    } catch (err) {
+      const errorObj = err as { message?: string };
+      showToast(`Falha ao fazer replay: ${errorObj.message || 'erro interno'}`, 'error');
     }
   };
 

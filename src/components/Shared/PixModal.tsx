@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import { useUiStore } from '../../store/uiStore';
 
@@ -12,6 +12,29 @@ interface PixModalProps {
 	onClose: () => void;
 }
 
+interface Particle {
+	id: number;
+	left: string;
+	background: string;
+	duration: string;
+	delay: string;
+	size: string;
+}
+
+interface Confetti {
+	id: number;
+	left: string;
+	top: string;
+	background: string;
+	width: string;
+	height: string;
+	borderRadius: string;
+	duration: string;
+	delay: string;
+}
+
+const COLORS = ['#6200EE', '#9c42f5', '#c084fc', '#818cf8', '#00BCD4', '#f472b6', '#facc15', '#34d399', '#60a5fa'];
+
 export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 	const { showToast } = useUiStore();
 	const [valores, setValores] = useState<SugestaoValor[]>([]);
@@ -24,54 +47,32 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 	const [thanksEmoji, setThanksEmoji] = useState('🎉');
 
 	// Partículas e Confetes gerados dinamicamente
-	const [particles, setParticles] = useState<any[]>([]);
-	const [confettis, setConfettis] = useState<any[]>([]);
+	const [particles, setParticles] = useState<Particle[]>([]);
+	const [confettis, setConfettis] = useState<Confetti[]>([]);
 
-	const colors = ['#6200EE', '#9c42f5', '#c084fc', '#818cf8', '#00BCD4', '#f472b6', '#facc15', '#34d399', '#60a5fa'];
-
-	useEffect(() => {
-		if (isOpen) {
-			setShowThanks(false);
-			loadValores();
-			generateParticles();
-			document.body.style.overflow = 'hidden';
-		} else {
-			document.body.style.overflow = '';
-		}
-		return () => {
-			document.body.style.overflow = '';
-		};
-	}, [isOpen]);
-
-	useEffect(() => {
-		if (isOpen && currentValor) {
-			loadQR(currentValor);
-		}
-	}, [isOpen, currentValor]);
-
-	const generateParticles = () => {
-		const newParticles = [];
+	const generateParticles = useCallback(() => {
+		const newParticles: Particle[] = [];
 		for (let i = 0; i < 18; i++) {
 			newParticles.push({
 				id: i,
 				left: `${Math.random() * 100}%`,
-				background: colors[Math.floor(Math.random() * colors.length)],
+				background: COLORS[Math.floor(Math.random() * COLORS.length)],
 				duration: `${4 + Math.random() * 6}s`,
 				delay: `${Math.random() * 4}s`,
 				size: `${4 + Math.random() * 6}px`
 			});
 		}
 		setParticles(newParticles);
-	};
+	}, []);
 
-	const generateConfetti = () => {
-		const newConfetti = [];
+	const generateConfetti = useCallback(() => {
+		const newConfetti: Confetti[] = [];
 		for (let i = 0; i < 60; i++) {
 			newConfetti.push({
 				id: i,
 				left: `${Math.random() * 100}%`,
 				top: `${-10 - Math.random() * 20}px`,
-				background: colors[Math.floor(Math.random() * colors.length)],
+				background: COLORS[Math.floor(Math.random() * COLORS.length)],
 				width: `${6 + Math.random() * 8}px`,
 				height: `${6 + Math.random() * 8}px`,
 				borderRadius: Math.random() > 0.5 ? '50%' : '2px',
@@ -80,9 +81,9 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 			});
 		}
 		setConfettis(newConfetti);
-	};
+	}, []);
 
-	const loadValores = async () => {
+	const loadValores = useCallback(async () => {
 		setLoadingValores(true);
 		try {
 			const res = await api.get('/v1/pix/valores');
@@ -102,14 +103,14 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 		} finally {
 			setLoadingValores(false);
 		}
-	};
+	}, []);
 
-	const loadQR = async (valor: string) => {
+	const loadQR = useCallback(async (valor: string) => {
 		setLoadingQR(true);
 		try {
 			const res = await api.get(`/v1/pix/qr?valor=${valor}`);
-			const data = res.data as { qrCode: string; payload: string };
-			setQrB64(data.qrCode || (data as any).qr_code);
+			const data = res.data as { qrCode?: string; qr_code?: string; payload: string };
+			setQrB64(data.qrCode || data.qr_code || '');
 			setPayload(data.payload);
 		} catch (err) {
 			console.error(err);
@@ -117,11 +118,11 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 		} finally {
 			setLoadingQR(false);
 		}
-	};
+	}, [showToast]);
 
 	const initAudio = () => {
 		try {
-			const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+			const AudioContextClass = window.AudioContext || (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 			if (AudioContextClass) {
 				const ctx = new AudioContextClass();
 				const playNote = (freq: number, start: number, duration: number, gain = 0.3) => {
@@ -170,6 +171,32 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 			showToast('Código PIX Copia e Cola copiado! 📋', 'success');
 		}
 	};
+
+	useEffect(() => {
+		if (isOpen) {
+			document.body.style.overflow = 'hidden';
+			const timer = setTimeout(() => {
+				setShowThanks(false);
+				loadValores();
+				generateParticles();
+			}, 0);
+			return () => {
+				clearTimeout(timer);
+				document.body.style.overflow = '';
+			};
+		} else {
+			document.body.style.overflow = '';
+		}
+	}, [isOpen, loadValores, generateParticles]);
+
+	useEffect(() => {
+		if (isOpen && currentValor) {
+			const timer = setTimeout(() => {
+				loadQR(currentValor);
+			}, 0);
+			return () => clearTimeout(timer);
+		}
+	}, [isOpen, currentValor, loadQR]);
 
 	if (!isOpen) return null;
 

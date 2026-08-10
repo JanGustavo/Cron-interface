@@ -54,7 +54,16 @@ export const ImportJobModal: React.FC = () => {
     setLoading(true);
 
     try {
-      let parsed: any;
+      let parsed: {
+        name?: string;
+        schedule?: string;
+        url?: string;
+        timezone?: string;
+        httpMethod?: string;
+        headers?: Record<string, string>;
+        payload?: Record<string, unknown> | string;
+        webhookAlertUrl?: string;
+      };
       const text = jsonText.trim();
       if (text.startsWith('curl')) {
         const curlParsed = parseCurl(text);
@@ -65,8 +74,9 @@ export const ImportJobModal: React.FC = () => {
       } else {
         try {
           parsed = JSON.parse(text);
-        } catch (err: any) {
-          throw new Error(`JSON inválido: ${err.message}`);
+        } catch (err) {
+          const errorObj = err as Error;
+          throw new Error(`JSON inválido: ${errorObj.message}`, { cause: err });
         }
       }
 
@@ -99,9 +109,10 @@ export const ImportJobModal: React.FC = () => {
 
       showToast('Tarefa importada e criada com sucesso! 🚀', 'success');
       handleClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || 'Erro ao importar a tarefa.');
+      const errorObj = err as Error;
+      setErrorMsg(errorObj.message || 'Erro ao importar a tarefa.');
     } finally {
       setLoading(false);
     }

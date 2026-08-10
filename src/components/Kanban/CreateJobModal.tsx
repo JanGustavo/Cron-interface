@@ -24,7 +24,10 @@ export const CreateJobModal: React.FC = () => {
 
   useEffect(() => {
     if (isCreateModalOpen) {
-      setWebhookAlertUrl(localStorage.getItem('cf_global_webhook') || '');
+      const timer = setTimeout(() => {
+        setWebhookAlertUrl(localStorage.getItem('cf_global_webhook') || '');
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isCreateModalOpen]);
 

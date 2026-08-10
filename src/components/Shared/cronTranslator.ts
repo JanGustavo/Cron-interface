@@ -55,7 +55,7 @@ export const parseCurl = (curl: string) => {
   let method = 'GET';
   let url = '';
   const headers: Record<string, string> = {};
-  let payload: any = undefined;
+  let payload: Record<string, unknown> | string | undefined = undefined;
   
   const urlMatch = curl.match(/(?:https?:\/\/[^\s"'`]+)/);
   if (urlMatch) {

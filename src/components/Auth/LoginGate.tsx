@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import api from '../../services/api';
-import type { Token, Project } from '../../types/auth';
+import type { Token, Project, User } from '../../types/auth';
 
 export const LoginGate: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,7 +15,7 @@ export const LoginGate: React.FC = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [signupSession, setSignupSession] = useState<{ user: any; token: any; projects: any } | null>(null);
+  const [signupSession, setSignupSession] = useState<{ user: User; token: Token; projects: Project[] } | null>(null);
   
   // Signup Wizard States
   const [signupStep, setSignupStep] = useState(1);
@@ -41,8 +41,11 @@ export const LoginGate: React.FC = () => {
   // Reset step wizard on tab change
   useEffect(() => {
     if (activeTab === 'signup') {
-      setSignupStep(1);
-      setErrorMsg(null);
+      const timer = setTimeout(() => {
+        setSignupStep(1);
+        setErrorMsg(null);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [activeTab, isModalOpen]);
 
@@ -98,12 +101,12 @@ export const LoginGate: React.FC = () => {
     let sum = 0;
     for (let i = 0; i < 9; i++) sum += parseInt(clean.charAt(i)) * (10 - i);
     let rest = sum % 11;
-    let digit1 = rest < 2 ? 0 : 11 - rest;
+    const digit1 = rest < 2 ? 0 : 11 - rest;
     if (parseInt(clean.charAt(9)) !== digit1) return false;
     sum = 0;
     for (let i = 0; i < 10; i++) sum += parseInt(clean.charAt(i)) * (11 - i);
     rest = sum % 11;
-    let digit2 = rest < 2 ? 0 : 11 - rest;
+    const digit2 = rest < 2 ? 0 : 11 - rest;
     if (parseInt(clean.charAt(10)) !== digit2) return false;
     return true;
   })();
@@ -119,13 +122,15 @@ export const LoginGate: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
-      setResetToken(tokenFromUrl);
-      setActiveTab('reset-password');
-      setIsModalOpen(true);
+      const timer = setTimeout(() => {
+        setResetToken(tokenFromUrl);
+        setActiveTab('reset-password');
+        setIsModalOpen(true);
+      }, 0);
       
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
-      return;
+      return () => clearTimeout(timer);
     }
 
     const oauthToken = params.get('oauth_token');
@@ -135,11 +140,13 @@ export const LoginGate: React.FC = () => {
     const oauthError = params.get('oauth_error');
 
     if (oauthError) {
-      setErrorMsg(`Erro na autenticação OAuth: ${oauthError}`);
-      setIsModalOpen(true);
+      const timer = setTimeout(() => {
+        setErrorMsg(`Erro na autenticação OAuth: ${oauthError}`);
+        setIsModalOpen(true);
+      }, 0);
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
-      return;
+      return () => clearTimeout(timer);
     }
 
     if (oauthToken && oauthEmail && oauthId) {
@@ -153,18 +160,27 @@ export const LoginGate: React.FC = () => {
       };
 
       if (oauthApiKey) {
-        setGeneratedKey(oauthApiKey);
-        setSignupSession({ user, token: tokenObj, projects: [project] });
-        setActiveTab('signup');
-        setSignupStep(3); // Mostra a tela final com a chave de API gerada
-        setIsModalOpen(true);
+        const timer = setTimeout(() => {
+          setGeneratedKey(oauthApiKey);
+          setSignupSession({ user, token: tokenObj, projects: [project] });
+          setActiveTab('signup');
+          setSignupStep(3); // Mostra a tela final com a chave de API gerada
+          setIsModalOpen(true);
+        }, 0);
+        
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        return () => clearTimeout(timer);
       } else {
-        login(user, tokenObj, [project]);
-        showToast('Login via OAuth realizado com sucesso!', 'success');
+        const timer = setTimeout(() => {
+          login(user, tokenObj, [project]);
+          showToast('Login via OAuth realizado com sucesso!', 'success');
+        }, 0);
+        
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        return () => clearTimeout(timer);
       }
-
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
     }
   }, [login, showToast]);
 

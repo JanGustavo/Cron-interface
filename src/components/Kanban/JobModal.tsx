@@ -4,12 +4,12 @@ import { useUiStore } from '../../store/uiStore';
 import { StatusBadge } from '../Dashboard/StatusBadge';
 import { translateSchedule } from '../Shared/cronTranslator';
 import api from '../../services/api';
-import type { Job } from '../../types/jobs';
+import type { Job, JobLog } from '../../types/jobs';
 
 export const JobModal: React.FC = () => {
   const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob, jobs } = useJobsStore();
   const { isJobModalOpen, setJobModalOpen, showToast } = useUiStore();
-  const [jobLogs, setJobLogs] = useState<any[]>([]);
+  const [jobLogs, setJobLogs] = useState<JobLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [lastTriggerStatus, setLastTriggerStatus] = useState<{ code: number | null; ok: boolean } | null>(null);
 
@@ -28,31 +28,37 @@ export const JobModal: React.FC = () => {
 
   useEffect(() => {
     if (!activeJob || !isJobModalOpen) return;
-    setLoadingLogs(true);
-    api.get(`/v1/jobs/${activeJob.id}/executions?limit=5`)
-      .then((res) => {
-        setJobLogs(res.data || []);
-      })
-      .catch((err) => {
-        console.error("Erro ao carregar execuções do job:", err);
-      })
-      .finally(() => {
-        setLoadingLogs(false);
-      });
+    const timer = setTimeout(() => {
+      setLoadingLogs(true);
+      api.get(`/v1/jobs/${activeJob.id}/executions?limit=5`)
+        .then((res) => {
+          setJobLogs(res.data || []);
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar execuções do job:", err);
+        })
+        .finally(() => {
+          setLoadingLogs(false);
+        });
+    }, 0);
+    return () => clearTimeout(timer);
   }, [activeJob, isJobModalOpen]);
 
   useEffect(() => {
     if (activeJob && !isEditing) {
-      setEditName(activeJob.name || '');
-      setEditSchedule(activeJob.schedule || '');
-      setEditTimezone(activeJob.timezone || 'UTC');
-      setEditMethod(activeJob.httpMethod || 'GET');
-      setEditUrl(activeJob.url || '');
-      setEditHeaders(activeJob.headers ? JSON.stringify(activeJob.headers, null, 2) : '');
-      setEditPayload(activeJob.payload ? JSON.stringify(activeJob.payload, null, 2) : '');
-      setEditWebhookAlertUrl(activeJob.webhookAlertUrl || '');
-      setEditNextJobId(activeJob.nextJobId || '');
-      setEditTagsInput(activeJob.tags ? activeJob.tags.join(', ') : '');
+      const timer = setTimeout(() => {
+        setEditName(activeJob.name || '');
+        setEditSchedule(activeJob.schedule || '');
+        setEditTimezone(activeJob.timezone || 'UTC');
+        setEditMethod(activeJob.httpMethod || 'GET');
+        setEditUrl(activeJob.url || '');
+        setEditHeaders(activeJob.headers ? JSON.stringify(activeJob.headers, null, 2) : '');
+        setEditPayload(activeJob.payload ? JSON.stringify(activeJob.payload, null, 2) : '');
+        setEditWebhookAlertUrl(activeJob.webhookAlertUrl || '');
+        setEditNextJobId(activeJob.nextJobId || '');
+        setEditTagsInput(activeJob.tags ? activeJob.tags.join(', ') : '');
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [activeJob, isEditing]);
 
@@ -89,11 +95,12 @@ export const JobModal: React.FC = () => {
       const result = await triggerJob(activeJob.id);
       setLastTriggerStatus({ code: result.status, ok: result.status >= 200 && result.status < 300 });
       showToast(`Disparo de webhook manual iniciado para ${activeJob.url}`, 'success');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const status = typeof err?.status === 'number' ? err.status : null;
+      const errorObj = err as { status?: number; message?: string };
+      const status = typeof errorObj?.status === 'number' ? errorObj.status : null;
       setLastTriggerStatus({ code: status, ok: false });
-      showToast(`Falha ao disparar tarefa: ${err.message || 'erro interno'}`, 'error');
+      showToast(`Falha ao disparar tarefa: ${errorObj.message || 'erro interno'}`, 'error');
     }
   };
 
@@ -119,8 +126,9 @@ export const JobModal: React.FC = () => {
           showToast('Headers deve ser um objeto JSON válido', 'error');
           return;
         }
-      } catch (e: any) {
-        showToast(`Erro nos Headers JSON: ${e.message}`, 'error');
+      } catch (e) {
+        const errorObj = e as Error;
+        showToast(`Erro nos Headers JSON: ${errorObj.message}`, 'error');
         return;
       }
     }
@@ -129,8 +137,9 @@ export const JobModal: React.FC = () => {
     if (editPayload.trim() && editMethod !== 'GET') {
       try {
         parsedPayload = JSON.parse(editPayload);
-      } catch (e: any) {
-        showToast(`Erro no Payload JSON: ${e.message}`, 'error');
+      } catch (e) {
+        const errorObj = e as Error;
+        showToast(`Erro no Payload JSON: ${errorObj.message}`, 'error');
         return;
       }
     }
@@ -153,9 +162,10 @@ export const JobModal: React.FC = () => {
       await updateJob(updatedJob);
       setIsEditing(false);
       showToast('Tarefa atualizada com sucesso!', 'success');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      showToast(`Erro ao salvar tarefa: ${err.message || 'erro interno'}`, 'error');
+      const errorObj = err as { message?: string };
+      showToast(`Erro ao salvar tarefa: ${errorObj.message || 'erro interno'}`, 'error');
     }
   };
 

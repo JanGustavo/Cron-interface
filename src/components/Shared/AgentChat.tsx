@@ -3,10 +3,27 @@ import { AnimatePresence, motion } from 'framer-motion';
 import api from '../../services/api';
 import { useJobsStore } from '../../store/jobsStore';
 
+interface GeminiPart {
+  text?: string;
+  functionCall?: {
+    name: string;
+    args?: Record<string, unknown>;
+  };
+  functionResponse?: {
+    name: string;
+    response?: Record<string, unknown>;
+  };
+}
+
+interface GeminiMessage {
+  role: 'user' | 'model' | 'tool';
+  parts: GeminiPart[];
+}
+
 interface Message {
   role: 'user' | 'model' | 'tool';
   text: string;
-  parts?: any[];
+  parts?: GeminiPart[];
 }
 
 export const AgentChat: React.FC = () => {
@@ -46,7 +63,7 @@ export const AgentChat: React.FC = () => {
 
     try {
       // Mapeia o histórico local para a estrutura de GeminiMessage que o backend espera
-      const geminiHistory = messages.map(msg => ({
+      const geminiHistory: GeminiMessage[] = messages.map(msg => ({
         role: msg.role,
         parts: msg.parts || [{ text: msg.text }]
       }));
@@ -60,22 +77,15 @@ export const AgentChat: React.FC = () => {
       
       // Atualiza as mensagens com o histórico atualizado vindo do backend
       if (data.history) {
-        const newMsgs = data.history.map((h: any) => {
-          let text = '';
-          const textPart = h.parts.find((p: any) => p.text);
-          if (textPart) {
-            text = textPart.text;
-          } else {
-            const funcCall = h.parts.find((p: any) => p.functionCall);
-            if (funcCall) {
-              text = `🔧 Executou chamada: ${funcCall.functionCall.name}`;
-            } else {
-              text = `🔧 Resposta de ferramenta recebida`;
-            }
-          }
+        const newMsgs = (data.history as GeminiMessage[]).map((h) => {
+          const textPart = h.parts.find((p) => p.text);
+          const textVal = textPart?.text || (() => {
+            const funcCall = h.parts.find((p) => p.functionCall);
+            return funcCall?.functionCall ? `🔧 Executou chamada: ${funcCall.functionCall.name}` : `🔧 Resposta de ferramenta recebida`;
+          })();
           return {
             role: h.role,
-            text: text,
+            text: textVal,
             parts: h.parts
           };
         });
@@ -85,8 +95,8 @@ export const AgentChat: React.FC = () => {
       }
 
       // Verifica se houve modificação ou disparo de jobs no histórico retornado pelo backend
-      const hasJobModification = data.history?.some((h: any) => 
-        h.parts?.some((p: any) => 
+      const hasJobModification = (data.history as GeminiMessage[] | undefined)?.some((h) => 
+        h.parts?.some((p) => 
           p.functionCall && (p.functionCall.name === 'createJob' || p.functionCall.name === 'triggerJob')
         )
       );
@@ -96,9 +106,10 @@ export const AgentChat: React.FC = () => {
         fetchJobs();
       }
 
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const backendError = err.response?.data?.error || err.response?.data?.reason;
+      const errorObj = err as { response?: { data?: { error?: string; reason?: string } } };
+      const backendError = errorObj.response?.data?.error || errorObj.response?.data?.reason;
       const errorMessage = backendError 
         ? `❌ Erro: ${backendError}` 
         : '❌ Ops, ocorreu um erro ao processar sua solicitação. Certifique-se de que o backend está ativo.';
@@ -188,7 +199,7 @@ export const AgentChat: React.FC = () => {
               {messages.map((msg, index) => {
                 // Não exibe mensagens de ferramentas cruas ou chamadas internas na bolha do chat
                 if (msg.role === 'tool') return null;
-                const hasFunction = msg.parts?.some((p: any) => p.functionCall || p.functionResponse);
+                const hasFunction = msg.parts?.some((p) => p.functionCall || p.functionResponse);
                 if (hasFunction) return null;
 
                 const isUser = msg.role === 'user';
@@ -205,7 +216,7 @@ export const AgentChat: React.FC = () => {
                       <div
                         className={`rounded-xl px-3 py-2 text-xs leading-relaxed border ${
                           isUser
-                            ? 'bg-indigo-600/15 text-slate-200 border-indigo-500/20 rounded-tr-none shadow-sm font-medium'
+                            ? 'bg-indigo-650/15 text-slate-200 border-indigo-500/20 rounded-tr-none shadow-sm font-medium'
                             : 'bg-slate-900/40 text-slate-350 border-slate-800/40 rounded-tl-none shadow-[0_2px_10px_rgba(0,0,0,0.15)]'
                         }`}
                       >

@@ -27,7 +27,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
       // Failed or critical states
       case 'failing':
       case 'failed':
-      case 'timeout':
+      case 'timeout': {
         const suffix = attemptNumber ? ` (${attemptNumber}x)` : '';
         return {
           bg: 'bg-rose-500/10',
@@ -36,6 +36,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
           label: (status === 'failing' ? 'Falhando' : status === 'failed' ? 'Falhou' : 'Timeout') + suffix,
           dot: 'bg-rose-400',
         };
+      }
 
       // Executing or running states
       case 'executing':
