@@ -26,6 +26,16 @@ export const LoginGate: React.FC = () => {
   const [timezone, setTimezone] = useState('America/Sao_Paulo');
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
 
+  // Recovery States
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [recoveryLink, setRecoveryLink] = useState<string | null>(null);
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   // Reset step wizard on tab change
   useEffect(() => {
     if (activeTab === 'signup') {
@@ -33,6 +43,20 @@ export const LoginGate: React.FC = () => {
       setErrorMsg(null);
     }
   }, [activeTab, isModalOpen]);
+
+  // URL token checker for password reset
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromUrl = params.get('token');
+    if (tokenFromUrl) {
+      setResetToken(tokenFromUrl);
+      setActiveTab('reset-password');
+      setIsModalOpen(true);
+      
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, []);
 
   // Password strength checker helper
   const getPasswordStrength = () => {
@@ -101,6 +125,58 @@ export const LoginGate: React.FC = () => {
       } else {
         setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim()) return;
+
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await api.post('/v1/auth/forgot-password', {
+        email: recoveryEmail.trim(),
+      });
+      setRecoverySuccess(true);
+      if (res.data.link) {
+        setRecoveryLink(res.data.link);
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Falha ao processar solicitação de recuperação de senha.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetToken || !newPassword || newPassword !== confirmNewPassword) return;
+
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      await api.post('/v1/auth/reset-password', {
+        token: resetToken,
+        newPassword: newPassword,
+      });
+      setResetSuccess(true);
+      showToast('Senha redefinida com sucesso!', 'success');
+      setTimeout(() => {
+        setResetSuccess(false);
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setResetToken('');
+        setRecoverySuccess(false);
+        setRecoveryLink(null);
+        setActiveTab('login');
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Falha ao redefinir a senha. O token pode ser inválido ou ter expirado.');
     } finally {
       setLoading(false);
     }
@@ -577,12 +653,16 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-950/40 border border-cyan-500/20 shadow-lg p-1.5">
                   <img src="/logo.svg" alt="Logo CronFlow" className="w-full h-full object-contain" />
                 </div>
-                <h3 className="text-lg font-black text-slate-100 uppercase tracking-widest font-mono">Conectar ao CronFlow</h3>
+                <h3 className="text-lg font-black text-slate-100 uppercase tracking-widest font-mono">
+                  {activeTab === 'forgot-password' && 'Recuperar Senha'}
+                  {activeTab === 'reset-password' && 'Redefinir Senha'}
+                  {activeTab !== 'forgot-password' && activeTab !== 'reset-password' && 'Conectar ao CronFlow'}
+                </h3>
               </div>
             )}
 
             {/* Tabs Selector */}
-            {!generatedKey && (
+            {!generatedKey && activeTab !== 'forgot-password' && activeTab !== 'reset-password' && (
               <div className="flex border-b border-indigo-950/20 mb-6 font-mono">
                 <button
                   type="button"
@@ -720,6 +800,18 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                       )}
                     </button>
                   </div>
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('forgot-password');
+                        setErrorMsg(null);
+                      }}
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold transition-colors cursor-pointer"
+                    >
+                      Esqueci minha senha?
+                    </button>
+                  </div>
                 </div>
 
                 {errorMsg && (
@@ -735,6 +827,161 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 >
                   {loading ? 'Entrando...' : 'Entrar no Painel ⚡'}
                 </button>
+              </form>
+            ) : activeTab === 'forgot-password' ? (
+              <form onSubmit={handleForgotPassword} className="space-y-5 text-left animate-in fade-in slide-in-from-right-4 duration-250">
+                {!recoverySuccess ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        E-mail Cadastrado
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="dev@empresa.com"
+                        value={recoveryEmail}
+                        onChange={(e) => setRecoveryEmail(e.target.value)}
+                        className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    {errorMsg && (
+                      <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] text-rose-400 font-semibold text-center select-text">
+                        ⚠️ {errorMsg}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full py-3.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {loading ? 'Processando...' : 'Enviar Link de Recuperação 📧'}
+                    </button>
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-1.5 text-left">
+                      <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">E-mail Enviado!</span>
+                      <p className="text-xs text-slate-300">
+                        Um link de redefinição de senha foi gerado e enviado (simulado) para o console do servidor.
+                      </p>
+                    </div>
+
+                    {recoveryLink && (
+                      <div className="p-4 bg-indigo-950/20 border border-indigo-900/30 rounded-2xl space-y-3">
+                        <span className="text-[9px] uppercase font-mono font-bold tracking-widest text-indigo-400 block">Atalho de Teste (Mock):</span>
+                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                          Para fins de teste e avaliação do fluxo do onboarding seguro sem precisar acessar os logs do terminal, clique no botão abaixo para ir direto à redefinição de senha:
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const urlParams = new URL(recoveryLink).searchParams;
+                            const tok = urlParams.get('token') || '';
+                            setResetToken(tok);
+                            setActiveTab('reset-password');
+                            setErrorMsg(null);
+                          }}
+                          className="w-full py-2 text-[10px] uppercase font-bold text-cyan-400 hover:text-white bg-cyan-950/20 hover:bg-cyan-950/50 rounded-xl border border-cyan-900/40 transition-all cursor-pointer"
+                        >
+                          Ir para Redefinição de Senha ➔
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('login');
+                    setRecoverySuccess(false);
+                    setRecoveryLink(null);
+                    setErrorMsg(null);
+                  }}
+                  className="w-full text-center text-[10px] text-slate-500 hover:text-slate-400 font-semibold cursor-pointer pt-2"
+                >
+                  Voltar ao Login
+                </button>
+              </form>
+            ) : activeTab === 'reset-password' ? (
+              <form onSubmit={handleResetPassword} className="space-y-5 text-left animate-in fade-in slide-in-from-right-4 duration-250">
+                {!resetSuccess ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Nova Senha
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          placeholder="Mínimo 6 caracteres"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                          disabled={loading}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                        >
+                          {showNewPassword ? (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.204.214-2.357.606-3.427m3.2 6.427a4 4 0 116.388 3.25M15 12a3 3 0 00-3-3 M3 3l18 18" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                        Confirmar Nova Senha
+                      </label>
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    {newPassword && confirmNewPassword && newPassword !== confirmNewPassword && (
+                      <p className="text-[10px] text-rose-500 font-bold font-mono">⚠️ As senhas não coincidem</p>
+                    )}
+
+                    {errorMsg && (
+                      <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] text-rose-400 font-semibold text-center select-text">
+                        ⚠️ {errorMsg}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={loading || newPassword.length < 6 || newPassword !== confirmNewPassword}
+                      className="w-full py-3.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {loading ? 'Salvando...' : 'Salvar Nova Senha 🔒'}
+                    </button>
+                  </>
+                ) : (
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-1 text-left">
+                    <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Sucesso!</span>
+                    <p className="text-xs text-slate-300">Sua senha foi redefinida com sucesso. Redirecionando para o login...</p>
+                  </div>
+                )}
               </form>
             ) : (
               <div className="space-y-4 text-left">
