@@ -113,7 +113,7 @@ export const LogList: React.FC<LogListProps> = ({
 
                   {/* Duration */}
                   <td className="p-4 text-center font-mono text-slate-400 font-bold">
-                    {log.durationMs ? `${log.durationMs}ms` : '-'}
+                    {log.durationMs !== undefined && log.durationMs !== null ? `${log.durationMs}ms` : '-'}
                   </td>
 
                   {/* Timestamp */}

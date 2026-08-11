@@ -2,9 +2,17 @@ import { create } from 'zustand';
 import type { Job, KanbanStatus } from '../types/jobs';
 import api from '../services/api';
 
-const mapStatusToKanban = (status: string, consecutiveFailures: number): KanbanStatus => {
+const mapStatusToKanban = (
+  status: string,
+  consecutiveFailures: number,
+  lastRunAt?: string | null,
+  lastRunStatus?: string | null
+): KanbanStatus => {
   if (status === 'paused') return 'draft';
-  if (status === 'failing' || consecutiveFailures > 0) return 'failed';
+  if (status === 'failing' || consecutiveFailures > 0 || lastRunStatus === 'failed' || lastRunStatus === 'timeout') {
+    return 'failed';
+  }
+  if (lastRunAt) return 'success';
   return 'scheduled';
 };
 
@@ -72,7 +80,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
             delete updatedExecutingJobs[job.id];
             return {
               ...job,
-              kanbanStatus: mapStatusToKanban(job.status, job.consecutiveFailures || 0),
+              kanbanStatus: mapStatusToKanban(job.status, job.consecutiveFailures || 0, job.lastRunAt, job.lastRunStatus),
             };
           } else {
             return {
@@ -84,7 +92,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
         
         return {
           ...job,
-          kanbanStatus: mapStatusToKanban(job.status, job.consecutiveFailures || 0),
+          kanbanStatus: mapStatusToKanban(job.status, job.consecutiveFailures || 0, job.lastRunAt, job.lastRunStatus),
         };
       });
 
@@ -113,7 +121,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       const newJob = response.data as Job;
       const mappedJob = {
         ...newJob,
-        kanbanStatus: mapStatusToKanban(newJob.status, newJob.consecutiveFailures || 0),
+        kanbanStatus: mapStatusToKanban(newJob.status, newJob.consecutiveFailures || 0, newJob.lastRunAt, newJob.lastRunStatus),
       };
       set((state) => ({
         jobs: [mappedJob, ...state.jobs],
@@ -227,14 +235,14 @@ export const useJobsStore = create<JobsState>((set, get) => ({
           return {
             jobs: state.jobs.map((j) =>
               j.id === jobId
-                ? { ...j, kanbanStatus: mapStatusToKanban(j.status, j.consecutiveFailures || 0) }
+                ? { ...j, kanbanStatus: mapStatusToKanban(j.status, j.consecutiveFailures || 0, j.lastRunAt, j.lastRunStatus) }
                 : j
             ),
             activeJob:
               state.activeJob?.id === jobId
                 ? {
                     ...state.activeJob,
-                    kanbanStatus: mapStatusToKanban(state.activeJob.status, state.activeJob.consecutiveFailures || 0),
+                    kanbanStatus: mapStatusToKanban(state.activeJob.status, state.activeJob.consecutiveFailures || 0, state.activeJob.lastRunAt, state.activeJob.lastRunStatus),
                   }
                 : state.activeJob,
             executingJobs: nextExecuting,

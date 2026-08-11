@@ -28,6 +28,7 @@ export interface Job {
   nextRunAt: string;
   lastRunAt?: string | null;
   consecutiveFailures: number;
+  lastRunStatus?: 'success' | 'failed' | 'timeout' | null;
   createdAt: string;
   webhookAlertUrl?: string;
   nextJobId?: string | null;

@@ -15,17 +15,17 @@ const formatDate = (value?: string | null) => {
 };
 
 const InfoTip: React.FC<{ text: string }> = ({ text }) => (
-  <span className="relative inline-flex items-center group">
+  <span className="relative inline-flex items-center group ml-1.5">
     <button
       type="button"
-      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-indigo-500/20 bg-indigo-950/40 text-indigo-300 hover:text-white hover:bg-indigo-900/60 transition-colors"
-      aria-label="Mais informacoes"
+      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-indigo-500/20 bg-indigo-950/40 text-indigo-300 hover:text-white hover:bg-indigo-900/60 transition-colors"
+      aria-label="Mais informações"
     >
-      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" />
+      <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" />
       </svg>
     </button>
-    <span className="absolute left-1/2 top-full mt-2 w-60 -translate-x-1/2 rounded-lg border border-indigo-500/20 bg-[#0a0d1d]/95 p-2 text-[9px] text-slate-300 shadow-xl opacity-0 pointer-events-none translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-200">
+    <span className="absolute bottom-full left-1/2 mb-2 w-52 -translate-x-1/2 rounded-xl border border-indigo-500/20 bg-[#070913]/98 p-2.5 text-[10px] leading-normal text-slate-300 shadow-xl opacity-0 pointer-events-none translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50">
       {text}
     </span>
   </span>
@@ -38,7 +38,7 @@ export const ProfilePage: React.FC = () => {
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
 
   // Load custom profile details saved during onboarding
-  const fullName = localStorage.getItem('cf_user_name') || '';
+  const fullName = localStorage.getItem('cf_user_name') || user?.fullName || '';
   const company = localStorage.getItem('cf_user_company') || '';
   const role = localStorage.getItem('cf_user_role') || '';
   const techStack = localStorage.getItem('cf_user_tech_stack') || 'Node.js / TypeScript';
@@ -192,58 +192,8 @@ export const ProfilePage: React.FC = () => {
     : jobs;
 
   const activeJobs = workspaceJobs.filter((job) => job.status === 'active').length;
-  const pausedJobs = workspaceJobs.filter((job) => job.status === 'paused').length;
-  const failingJobs = workspaceJobs.filter((job) => job.status === 'failing').length;
   const maxJobsLimit = isProPlan ? 20 : 5;
   const jobsUsagePercent = maxJobsLimit > 0 ? Math.min(100, Math.round((activeJobs / maxJobsLimit) * 100)) : 0;
-
-  const profileStats = [
-    {
-      label: 'Projetos',
-      value: projects.length.toString().padStart(2, '0'),
-      helper: 'Workspaces vinculados à conta',
-      tone: 'indigo',
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Jobs ativos',
-      value: activeJobs.toString().padStart(2, '0'),
-      helper: 'Em execução no workspace atual',
-      tone: 'emerald',
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Jobs pausados',
-      value: pausedJobs.toString().padStart(2, '0'),
-      helper: 'Disponíveis para reativação',
-      tone: 'amber',
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Jobs em falha',
-      value: failingJobs.toString().padStart(2, '0'),
-      helper: 'Precisam de atenção imediata',
-      tone: 'rose',
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      ),
-    },
-  ];
 
   const handleCreateJob = () => {
     setActiveTab('jobs');
@@ -276,13 +226,13 @@ export const ProfilePage: React.FC = () => {
       id: 'connect-api',
       title: 'Conectar API Key',
       done: Boolean(activeKey),
-      detail: activeKey ? `Feito em ${memberSince}` : 'Conecte sua chave para autenticar as requisicoes.',
+      detail: activeKey ? `Configurado e ativo` : 'Conecte sua chave para autenticar as requisições.',
     },
     {
       id: 'first-job',
       title: 'Criar primeira tarefa',
       done: workspaceJobs.length > 0,
-      detail: workspaceJobs.length > 0 ? `${workspaceJobs.length}/1 criada` : '0/1 criada',
+      detail: workspaceJobs.length > 0 ? `${workspaceJobs.length} tarefa cadastrada` : 'Nenhuma tarefa cadastrada no momento',
       action: {
         label: 'Criar tarefa',
         onClick: handleCreateJob,
@@ -292,19 +242,19 @@ export const ProfilePage: React.FC = () => {
       id: 'webhook',
       title: 'Configurar webhook',
       done: webhookConfigured,
-      detail: webhookConfigured ? 'Webhook configurado' : 'Nao configurado',
+      detail: webhookConfigured ? 'Webhook ativo para falhas' : 'Não configurado',
       action: {
-        label: 'Ir',
+        label: 'Configurar',
         onClick: handleOpenWebhooks,
       },
     },
     {
       id: 'manual-trigger',
-      title: 'Disparar execucao manual',
+      title: 'Disparar execução manual',
       done: false,
       detail: 'Teste o fluxo disparando um job manualmente.',
       action: {
-        label: 'Abrir jobs',
+        label: 'Ir para tarefas',
         onClick: handleOpenJobs,
       },
     },
@@ -313,413 +263,224 @@ export const ProfilePage: React.FC = () => {
   const completedSteps = onboardingSteps.filter((step) => step.done).length;
   const progressPercent = Math.round((completedSteps / onboardingSteps.length) * 100);
 
-  const quickStatStyles: Record<string, string> = {
-    indigo: 'border-indigo-500/10 bg-indigo-500/5 hover:border-indigo-500/40 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] text-indigo-400',
-    emerald: 'border-emerald-500/10 bg-emerald-500/5 hover:border-emerald-500/40 hover:shadow-[0_0_15px_rgba(16,185,129,0.15)] text-emerald-400',
-    amber: 'border-amber-500/10 bg-amber-500/5 hover:border-amber-500/40 hover:shadow-[0_0_15px_rgba(245,158,11,0.15)] text-amber-400',
-    cyan: 'border-cyan-500/10 bg-cyan-500/5 hover:border-cyan-500/40 hover:shadow-[0_0_15px_rgba(6,182,212,0.15)] text-cyan-400',
-    slate: 'border-slate-800 bg-slate-950/20 hover:border-slate-700 hover:shadow-[0_0_15px_rgba(148,163,184,0.1)] text-slate-400',
-  };
-
-  const quickStats = [
-    {
-      label: 'Plano',
-      value: isProPlan ? 'PRO' : 'FREE',
-      helper: isProPlan ? 'Limite 20 jobs' : 'Limite 5 jobs',
-      tone: isProPlan ? 'indigo' : 'slate',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.907c.961 0 1.36 1.236.588 1.81l-3.974 2.89a1 1 0 00-.364 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.89a1 1 0 00-1.176 0l-3.976 2.89c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.364-1.118L2.49 11.1c-.773-.574-.374-1.81.588-1.81h4.907a1 1 0 00.95-.69l1.519-4.674z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'API Keys',
-      value: activeKey ? '1 ativa' : '0 ativa',
-      helper: activeKey ? 'Pronta para uso' : 'Configure em Settings',
-      tone: activeKey ? 'emerald' : 'amber',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 7a2 2 0 012 2m-2 4a5 5 0 110-10 5 5 0 010 10zM19 19a2 2 0 01-2 2h-1.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 0113 18.586V17h-2v-2H9v-2H7v-2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Uso de jobs',
-      value: `${activeJobs}/${maxJobsLimit}`,
-      helper: `${jobsUsagePercent}% do limite`,
-      tone: jobsUsagePercent >= 90 ? 'amber' : 'cyan',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Membro ha',
-      value: memberDays ? `${memberDays} dias` : 'hoje',
-      helper: `Desde ${memberSince}`,
-      tone: 'slate',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Workspace',
-      value: workspaceName,
-      helper: `${projects.length} projeto${projects.length === 1 ? '' : 's'}`,
-      tone: 'indigo',
-      title: workspaceName,
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Status',
-      value: 'Ativo',
-      helper: 'Sessao autenticada',
-      tone: 'emerald',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
-      ),
-    },
-  ];
-
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <span className="text-xs font-extrabold uppercase tracking-[0.3em] text-indigo-400">
-          Perfil & Acesso
+      {/* Header section consistent with Dashboard & Logs */}
+      <div>
+        <span className="text-xs uppercase font-extrabold tracking-wider text-indigo-400">
+          Painel de Controle
         </span>
-        <h2 className="text-2xl md:text-3xl font-black tracking-wide text-slate-100">
-          Conta, workspace e segurança
+        <h2 className="text-3xl font-extrabold mt-1 text-slate-100">
+          Configurações da Conta
         </h2>
-        <p className="text-sm text-slate-400 max-w-3xl">
-          A tela foi alinhada à visão do CronFlow: múltiplos projetos por usuário, API Keys por projeto e contexto do workspace ativo sempre visível.
+        <p className="text-xs text-slate-400 mt-1 max-w-3xl">
+          Gerencie seu perfil de desenvolvedor, chaves de API, webhooks globais de observabilidade e sintonize seu workspace ativo.
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)]">
-        <div className="space-y-6">
-          <div
-            className="relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/15 via-[#0a0d1d] to-cyan-500/10 p-6 md:p-7 shadow-[0_0_45px_rgba(99,102,241,0.18)] transition-all duration-300 hover:border-indigo-400/60 hover:shadow-[0_0_65px_rgba(99,102,241,0.25)] animate-in fade-in slide-in-from-bottom-4"
-            style={{ animationDelay: '40ms' }}
-          >
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 opacity-90" />
-            <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl" />
-            <div className="absolute -left-16 -bottom-16 h-44 w-44 rounded-full bg-indigo-500/10 blur-3xl" />
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* LEFT COLUMN - Profile Card & Workspace Status */}
+        <div className="lg:col-span-5 space-y-6 flex flex-col">
+          
+          {/* USER CARD (Glassmorphic) */}
+          <div className="relative overflow-hidden rounded-3xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/10 via-[#0a0c1a] to-cyan-500/5 p-6 shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 opacity-80" />
+            <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-cyan-500/5 blur-3xl" />
+            <div className="absolute -left-20 -bottom-20 h-40 w-40 rounded-full bg-indigo-500/5 blur-3xl" />
 
-            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/25 to-cyan-500/10 text-xl font-black text-indigo-200 shadow-[0_0_28px_rgba(99,102,241,0.20)]">
+            <div className="relative space-y-6">
+              {/* Profile Avatar / Title Section */}
+              <div className="flex items-center gap-4.5">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/20 to-cyan-500/10 text-xl font-extrabold text-indigo-200 shadow-[0_0_24px_rgba(99,102,241,0.15)] relative">
                   {avatarLabel}
+                  <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#090b17]" />
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-indigo-400">
-                      Conta CronFlow
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full border border-indigo-500/20 bg-indigo-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
+                      {plan === 'paid' ? 'PRO' : 'STARTER'}
                     </span>
-                    <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-300">
-                      Ativa
-                    </span>
-                    <span
-                      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] ${
-                        isProPlan
-                          ? 'border-indigo-500/20 bg-indigo-500/15 text-indigo-300'
-                          : 'border-slate-700/50 bg-slate-900/40 text-slate-400'
-                      }`}
-                    >
-                      {isProPlan ? 'PRO' : 'FREE'}
+                    <span className="text-[10px] text-slate-500 font-semibold font-mono">
+                      #{userHandle}
                     </span>
                   </div>
-
-                  <h3 className="text-2xl font-bold text-slate-100">{fullName || userEmail}</h3>
-                  {fullName && (
-                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-indigo-400 font-bold font-mono">
-                      <span>{userEmail}</span>
-                      {role && (
-                        <>
-                          <span className="text-slate-650 font-sans">•</span>
-                          <span className="text-slate-300">{role}{company && ` em ${company}`}</span>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  <p className="max-w-2xl text-sm text-slate-400 leading-relaxed">
-                    Membro ativo desde {memberSince}. Esta conta opera sob a arquitetura multitenant do CronFlow, garantindo isolamento total por projeto, controle integrado de workspaces e observabilidade em tempo real dos seus disparos de agendamentos.
-                  </p>
-
-                  <div className="flex flex-wrap gap-2.5 pt-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-500/25 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-300 shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                      Workspace: <strong className="text-indigo-200">{workspaceName}</strong>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/50 bg-slate-950/40 px-3 py-1.5 text-xs font-semibold text-slate-300 shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-                      <strong className="text-slate-200">{projects.length}</strong> projeto{projects.length === 1 ? '' : 's'}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/25 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                      <strong className="text-cyan-200">{workspaceJobs.length}</strong> job{workspaceJobs.length === 1 ? '' : 's'} no workspace
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-violet-500/25 bg-violet-500/10 px-3 py-1.5 text-xs font-semibold text-violet-300 shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-                      Timezone: <strong className="text-violet-200">{timezone}</strong>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-300 shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400" />
-                      Stack: <strong className="text-fuchsia-200">{techStack}</strong>
-                    </span>
-                  </div>
+                  <h3 className="text-xl font-bold text-slate-100 mt-1">{fullName || 'CronFlow User'}</h3>
+                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">{userEmail}</p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('jobs')}
-                  className="px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary min-w-[132px]"
-                >
-                  Ver Jobs
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSecurityTab('keys')}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 rounded-xl border border-slate-700/50 transition-all"
-                >
-                  Gerenciar Chaves
-                </button>
+              {/* Dev Info Grid */}
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-indigo-950/40 text-left">
+                <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block">Fuso Horário</span>
+                  <span className="text-[11px] font-semibold text-slate-350 block mt-1 truncate">{timezone}</span>
+                </div>
+                <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block">Stack Preferida</span>
+                  <span className="text-[11px] font-semibold text-slate-350 block mt-1 truncate">{techStack}</span>
+                </div>
+                {role && (
+                  <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block">Cargo</span>
+                    <span className="text-[11px] font-semibold text-slate-350 block mt-1 truncate">{role}</span>
+                  </div>
+                )}
+                {company && (
+                  <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block">Empresa</span>
+                    <span className="text-[11px] font-semibold text-slate-350 block mt-1 truncate">{company}</span>
+                  </div>
+                )}
+                <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl col-span-2">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block">Cadastro</span>
+                  <span className="text-[11px] font-semibold text-slate-350 block mt-1 truncate">
+                    Membro há {memberDays} {memberDays === 1 ? 'dia' : 'dias'} (Desde {memberSince})
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div
-            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 animate-in fade-in slide-in-from-bottom-4"
-            style={{ animationDelay: '120ms' }}
-          >
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-200">Visao geral da conta</h3>
-              <InfoTip text="Resumo rapido do plano, chaves e uso atual do workspace." />
-            </div>
-            <p className="mt-1 text-xs text-slate-400">
-              Indicadores essenciais para tomada de decisao rapida.
-            </p>
-
-            <div className="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-3">
-              {quickStats.map((stat, index) => (
-                <div
-                  key={stat.label}
-                  title={stat.title || stat.value}
-                  style={{ animationDelay: `${140 + index * 40}ms` }}
-                  className={`rounded-2xl border p-3.5 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 hover:bg-slate-900/60 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 flex flex-col justify-between group ${quickStatStyles[stat.tone]}`}
-                >
-                  <div className="flex items-center justify-between gap-1.5 w-full">
-                    <span className="text-[9px] uppercase tracking-[0.24em] text-slate-500 font-bold group-hover:text-slate-400 transition-colors">
-                      {stat.label}
-                    </span>
-                    <span className="text-slate-500 group-hover:text-slate-350 transition-colors duration-300">
-                      {stat.icon}
-                    </span>
-                  </div>
-                  <div className="mt-3.5 text-sm font-bold text-slate-100 truncate">
-                    {stat.value}
-                  </div>
-                  {stat.helper && (
-                    <div className="mt-1 text-[9px] text-slate-500 font-medium group-hover:text-slate-400 transition-colors">
-                      {stat.helper}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-            {profileStats.map((stat, index) => {
-              const statTones: Record<string, string> = {
-                indigo: 'border-indigo-500/10 bg-indigo-500/5 hover:border-indigo-500/40 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]',
-                emerald: 'border-emerald-500/10 bg-emerald-500/5 hover:border-emerald-500/40 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]',
-                amber: 'border-amber-500/10 bg-amber-500/5 hover:border-amber-500/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]',
-                rose: 'border-rose-500/10 bg-rose-500/5 hover:border-rose-500/40 hover:shadow-[0_0_20px_rgba(244,63,94,0.15)]',
-              };
-              
-              const iconColors: Record<string, string> = {
-                indigo: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
-                emerald: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-                amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-                rose: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
-              };
-
-              return (
-                <div
-                  key={stat.label}
-                  style={{ animationDelay: `${200 + index * 60}ms` }}
-                  className={`rounded-2xl border p-4.5 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 animate-in fade-in slide-in-from-bottom-4 flex flex-col justify-between group ${statTones[stat.tone]}`}
-                >
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <span className="text-[10px] uppercase tracking-[0.24em] text-slate-400 font-bold group-hover:text-slate-200 transition-colors">
-                      {stat.label}
-                    </span>
-                    <div className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-transform duration-300 group-hover:rotate-6 ${iconColors[stat.tone]}`}>
-                      {stat.icon}
-                    </div>
-                  </div>
-                  <div className="mt-2 text-3xl font-black text-slate-100 tracking-tight font-mono">{stat.value}</div>
-                  <p className="mt-2 text-xs text-slate-500 font-medium group-hover:text-slate-400 transition-colors">{stat.helper}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div
-            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 animate-in fade-in slide-in-from-bottom-4"
-            style={{ animationDelay: '320ms' }}
-          >
-            <div className="flex items-center justify-between gap-3">
+          {/* WORKSPACE & LIMITS STATUS */}
+          <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-4 text-left flex-1">
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-200">Projetos vinculados</h3>
-                <p className="text-xs text-slate-400">
-                  Cada workspace mantém isolamento total e sua própria API Key.
-                </p>
+                <h4 className="text-sm font-bold text-slate-200">Workspace & Limites</h4>
+                <p className="text-[10px] text-slate-500 mt-0.5">Uso de recursos dentro do projeto ativo.</p>
               </div>
-              <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-300">
-                Workspace
+              <span className="text-[10px] font-bold font-mono text-cyan-400 bg-cyan-950/20 px-2 py-0.5 rounded-lg border border-cyan-500/10">
+                {workspaceName}
               </span>
             </div>
 
-            <div className="mt-5 grid gap-3">
-              {projects.length > 0 ? (
-                projects.map((project) => {
-                  const isActiveProject = activeProject?.id === project.id;
+            {/* Jobs Limit Progress */}
+            <div className="space-y-2.5 p-4 bg-[#060812]/50 border border-indigo-950/40 rounded-2xl">
+              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                <span>Limite de Tarefas</span>
+                <span className="text-indigo-400 font-mono">{activeJobs} / {maxJobsLimit} Jobs</span>
+              </div>
+              <div className="h-2 rounded-full bg-slate-950/70 overflow-hidden relative">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 rounded-full transition-all duration-500"
+                  style={{ width: `${jobsUsagePercent}%` }}
+                />
+              </div>
+              <p className="text-[9px] text-slate-500 leading-normal">
+                Você está utilizando {jobsUsagePercent}% do limite total de jobs permitidos para o plano {isProPlan ? 'PRO' : 'STARTER'} neste workspace.
+              </p>
+            </div>
 
+            {/* Workspaces List (Cleaned Up) */}
+            <div className="space-y-2 text-left">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Projetos Disponíveis ({projects.length})</span>
+              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-indigo-950 scrollbar-track-transparent">
+                {projects.map((project) => {
+                  const isActive = project.id === activeProject?.id;
                   return (
                     <div
                       key={project.id}
-                      className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition-all duration-300 hover:bg-indigo-950/40 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/20 ${
-                        isActiveProject
-                          ? 'border-indigo-500/30 bg-indigo-500/10'
-                          : 'border-indigo-950/30 bg-slate-950/30'
+                      onClick={() => !isActive && setActiveProject(project)}
+                      className={`flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 ${
+                        isActive
+                          ? 'border-indigo-500/30 bg-indigo-500/5'
+                          : 'border-indigo-950/30 bg-slate-950/20 hover:border-indigo-500/20 hover:bg-[#070914] cursor-pointer'
                       }`}
                     >
                       <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-100">{project.name}</p>
-                        <p className="text-xs text-slate-500">Criado em {formatDate(project.createdAt)}</p>
+                        <span className="text-[11px] font-bold text-slate-200 block truncate">{project.name}</span>
+                        <span className="text-[9px] text-slate-500 font-mono block truncate">ID: {project.id}</span>
                       </div>
-
-                      <div className="flex flex-col items-end gap-1">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] ${
-                            isActiveProject
-                              ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                              : 'border border-slate-700/50 bg-slate-900/50 text-slate-400'
-                          }`}
-                        >
-                          {isActiveProject ? 'Ativo' : 'Secundário'}
-                        </span>
-                        <span className="text-[10px] text-slate-500">ID {project.id}</span>
-                      </div>
+                      <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                        isActive
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-slate-950/50 text-slate-500 border-slate-800'
+                      }`}>
+                        {isActive ? 'Ativo' : 'Trocar'}
+                      </span>
                     </div>
                   );
-                })
-              ) : (
-                <div className="rounded-2xl border border-dashed border-indigo-950/30 bg-slate-950/20 p-5 text-sm text-slate-500">
-                  Nenhum projeto encontrado no estado atual.
-                </div>
-              )}
+                })}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div
-            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 space-y-5 animate-in fade-in slide-in-from-bottom-4"
-            style={{ animationDelay: '160ms' }}
-          >
-            <div className="flex items-start justify-between gap-3">
+        {/* RIGHT COLUMN - Tabbed Security Settings & Roadmap */}
+        <div className="lg:col-span-7 space-y-6">
+          
+          {/* TABBED SECURITY PANEL */}
+          <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-5 text-left">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-indigo-950/30 pb-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-slate-200">Seguranca & Acesso</h3>
-                  <InfoTip text="Organize chaves, webhooks e controles de sessao do workspace." />
-                </div>
-                <p className="mt-1 text-xs text-slate-400">
-                  Centralize chaves, webhooks, sessoes e recursos de seguranca do workspace.
-                </p>
+                <h4 className="text-base font-bold text-slate-250">Segurança & Integrações</h4>
+                <p className="text-xs text-slate-400 mt-0.5">Gerencie os acessos, conexões externas e APIs do sistema.</p>
               </div>
 
-              <span className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] ${
-                isProPlan
-                  ? 'border-indigo-500/20 bg-indigo-500/10 text-indigo-300'
-                  : 'border-indigo-500/20 bg-indigo-500/10 text-indigo-300'
-              }`}>
-                {isProPlan ? 'PRO' : 'STARTER'}
-              </span>
+              {/* Sleek Switcher Tabs */}
+              <div className="flex gap-1.5 bg-[#05070e] p-1.5 rounded-xl border border-indigo-950/60 self-start sm:self-auto select-none">
+                {[
+                  { id: 'keys', label: 'Chaves API' },
+                  { id: 'webhooks', label: 'Webhooks' },
+                  { id: 'sessions', label: 'Sessões' },
+                  { id: 'twoFactor', label: 'MFA' },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setSecurityTab(t.id as 'keys' | 'webhooks' | 'sessions' | 'twoFactor')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      securityTab === t.id
+                        ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 shadow-md'
+                        : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-1">
-              {[
-                { id: 'keys', label: 'API Keys' },
-                { id: 'webhooks', label: 'Webhooks' },
-                { id: 'sessions', label: 'Sessoes' },
-                { id: 'twoFactor', label: '2FA' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setSecurityTab(tab.id as 'keys' | 'webhooks' | 'sessions' | 'twoFactor')}
-                  className={`px-3 py-1.5 rounded-xl text-[10px] uppercase font-bold tracking-[0.24em] transition-all ${
-                    securityTab === tab.id
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
-                      : 'text-slate-400 hover:text-white hover:bg-indigo-950/40'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="rounded-2xl border border-indigo-950/30 bg-[#0a0d1d]/80 p-4">
+            {/* TAB CONTENTS */}
+            <div className="min-h-[300px]">
+              
+              {/* API KEYS TAB */}
               {securityTab === 'keys' && (
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-3">
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  <div className="flex justify-between items-center gap-4">
                     <div>
-                      <span className="text-[10px] uppercase tracking-[0.24em] text-slate-500">
-                        API Keys ({apiKeys.length} ativa{apiKeys.length !== 1 ? 's' : ''})
-                      </span>
-                      <p className="mt-1 text-xs text-slate-400">
-                        Use no header Authorization: Bearer em cada request.
-                      </p>
+                      <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">API Keys de Integração</h5>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Utilize estas chaves para criar e monitorar tarefas através do SDK ou chamadas HTTP rest.</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={handleCreateAPIKey}
+                      className="px-3 py-2 text-[10px] uppercase font-black tracking-wider text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
+                    >
+                      + Nova Chave
+                    </button>
                   </div>
 
+                  {/* Secret copy warning box */}
                   {newlyCreatedKey && (
-                    <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 space-y-3 animate-in fade-in duration-200">
+                    <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 space-y-3 animate-in slide-in-from-top-4 duration-300 select-text">
                       <div className="flex items-center gap-2 text-amber-400">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
-                        <span className="text-[10px] uppercase font-bold tracking-widest font-mono">Chave Criada — Copie Agora!</span>
+                        <span className="text-[10px] uppercase font-bold tracking-widest font-mono">Guarde o Segredo Seguro!</span>
                       </div>
                       <p className="text-[10px] text-slate-350 leading-relaxed">
-                        Por motivos de segurança, esta chave só será exibida <strong>esta única vez</strong>. Certifique-se de copiá-la e salvá-la em um gerenciador de segredos seguro.
+                        Esta chave de API será exibida <strong>apenas uma vez</strong>. Copie o valor abaixo e guarde-o em seu gerenciador de variáveis de ambiente.
                       </p>
-                      <div className="flex items-center gap-2 bg-[#04060f] p-2.5 rounded-xl border border-amber-500/20 font-mono text-xs text-amber-200 select-all break-all relative pr-14">
+                      <div className="flex items-center gap-2 bg-[#04060f] p-2.5 rounded-xl border border-amber-500/20 font-mono text-xs text-amber-250 select-all break-all relative pr-16">
                         <span className="break-all">{newlyCreatedKey}</span>
                         <button
                           type="button"
                           onClick={() => {
                             navigator.clipboard.writeText(newlyCreatedKey);
-                            showToast('API Key copiada com sucesso!', 'success');
+                            showToast('Chave copiada para a área de transferência! 📋', 'success');
                           }}
-                          className="absolute right-2 top-2 px-2 py-1 text-[8px] font-bold text-amber-400 hover:text-white bg-amber-950/40 rounded border border-amber-900/30 transition-all"
+                          className="absolute right-2 top-2 px-2.5 py-1 text-[9px] font-bold text-amber-400 hover:text-white bg-amber-950/40 rounded border border-amber-900/30 transition-all cursor-pointer"
                         >
                           Copiar
                         </button>
@@ -727,56 +488,59 @@ export const ProfilePage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setNewlyCreatedKey(null)}
-                        className="w-full py-1.5 text-[9px] uppercase font-bold text-amber-200 hover:text-white bg-amber-950/20 hover:bg-amber-950/50 rounded-xl border border-amber-900/20 transition-all"
+                        className="w-full py-1.5 text-[9px] uppercase font-bold text-amber-200 hover:text-white bg-amber-950/20 hover:bg-amber-950/50 rounded-xl border border-amber-900/20 transition-all cursor-pointer"
                       >
-                        Entendi, fechar alerta
+                        Entendi, fechar aviso
                       </button>
                     </div>
                   )}
 
-                  <div className="space-y-2.5">
+                  {/* Keys List */}
+                  <div className="space-y-3.5">
                     {loadingKeys ? (
-                      <div className="flex flex-col items-center justify-center py-6 text-slate-500 text-xs">
+                      <div className="flex flex-col items-center justify-center py-10 text-slate-500 text-xs">
                         <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-2" />
-                        Carregando chaves...
+                        Listando chaves...
                       </div>
                     ) : apiKeys.length === 0 ? (
-                      <div className="text-center py-6 text-slate-500 text-[11px]">
-                        Nenhuma chave de API de integração cadastrada.
+                      <div className="text-center py-10 text-slate-500 text-[11px] italic bg-[#05070e]/20 border border-indigo-950/30 rounded-2xl">
+                        Nenhuma chave ativa gerada para este workspace.
                       </div>
                     ) : (
                       apiKeys.map((key) => (
-                        <div key={key.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4">
+                        <div key={key.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/40 transition-colors hover:bg-slate-950/60 text-left">
                           <div className="space-y-1">
-                            <p className="text-xs font-semibold text-slate-200">Chave de Integração</p>
-                            <p className="text-[10px] font-mono text-indigo-300">
-                              {key.prefix}........................
-                            </p>
-                            <p className="text-[9px] text-slate-500 font-mono">
-                              ID: {key.id}
-                            </p>
-                            <p className="text-[9px] text-slate-500">
-                              Criada em: {formatDate(key.createdAt)}
-                            </p>
-                            <p className="text-[9px] text-slate-500">
-                              Último uso: {key.lastUsedAt ? formatDate(key.lastUsedAt) : 'Nunca utilizada'}
-                            </p>
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Chave Ativa</span>
+                            <div className="text-xs font-mono font-bold text-indigo-300">
+                              {key.prefix}••••••••••••••••••••••••
+                            </div>
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-slate-500 mt-1">
+                              <span>ID: <code className="font-mono">{key.id.slice(0, 8)}</code></span>
+                              <span>•</span>
+                              <span>Gerada em: {formatDate(key.createdAt)}</span>
+                              {key.lastUsedAt && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-indigo-400">Último uso: {formatDate(key.lastUsedAt)}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
                               onClick={() => {
                                 navigator.clipboard.writeText(key.prefix);
-                                showToast('Prefixo copiado com sucesso.', 'info');
+                                showToast('Prefixo copiado!', 'info');
                               }}
-                              className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-350 hover:text-white bg-slate-800/40 hover:bg-slate-800/80 rounded-xl border border-slate-700/30 transition-all"
+                              className="px-2.5 py-1.5 text-[9px] uppercase font-bold text-slate-350 hover:text-white bg-slate-900/60 rounded-xl border border-slate-800 transition-all cursor-pointer"
                             >
-                              Prefixo
+                              Copiar Prefixo
                             </button>
                             <button
                               type="button"
                               onClick={() => handleRevokeAPIKey(key.id)}
-                              className="px-3 py-1.5 text-[10px] uppercase font-bold text-rose-400 hover:text-white hover:bg-rose-950/30 rounded-xl border border-rose-950/40 hover:border-rose-900/55 transition-all"
+                              className="px-2.5 py-1.5 text-[9px] uppercase font-bold text-rose-400 hover:text-white hover:bg-rose-950/30 rounded-xl border border-rose-950/40 hover:border-rose-900/60 transition-all cursor-pointer"
                             >
                               Revogar
                             </button>
@@ -786,41 +550,23 @@ export const ProfilePage: React.FC = () => {
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleCreateAPIKey}
-                    className="w-full px-4 py-2 text-[10px] uppercase font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-500/30"
-                  >
-                    Gerar nova chave
-                  </button>
-
-                  {/* Quickstart Integration Code Snippet based on user's Stack */}
-                  <div className="mt-6 pt-4 border-t border-indigo-950/40 space-y-3 text-left">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[9px] uppercase tracking-[0.24em] text-indigo-400 font-bold font-mono">
-                          Integração Rápida ({techStack})
-                        </span>
-                        <p className="mt-0.5 text-[10px] text-slate-500">
-                          Use esta chamada HTTP para registrar jobs programaticamente.
-                        </p>
-                      </div>
-                      <span className="text-[8px] font-mono font-bold text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-900/30">
-                        {timezone}
-                      </span>
+                  {/* Integration Snippet */}
+                  <div className="pt-4 border-t border-indigo-950/30 space-y-3">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="uppercase tracking-wider text-slate-500">Exemplo de Código ({techStack})</span>
+                      <span className="font-mono text-cyan-400 bg-cyan-950/20 px-2 py-0.5 rounded border border-cyan-500/10">POST /v1/jobs</span>
                     </div>
-
-                    <div className="relative rounded-xl overflow-hidden border border-indigo-950/80 bg-[#04060f]/90 p-3.5 font-mono text-[10px] leading-relaxed text-slate-350 select-text">
-                      <pre className="overflow-x-auto select-all whitespace-pre pr-12">
+                    <div className="relative rounded-2xl overflow-hidden border border-indigo-950/80 bg-[#04060f]/90 p-4 font-mono text-[10px] leading-relaxed text-slate-300">
+                      <pre className="overflow-x-auto select-all whitespace-pre pr-14 text-left">
                         {getCodeSnippet()}
                       </pre>
                       <button
                         type="button"
                         onClick={() => {
                           navigator.clipboard.writeText(getCodeSnippet());
-                          showToast('Código de exemplo copiado!', 'success');
+                          showToast('Código de integração copiado!', 'success');
                         }}
-                        className="absolute right-2 top-2 px-2 py-1 text-[8px] font-bold text-slate-400 hover:text-white bg-slate-900 rounded border border-slate-800 transition-colors"
+                        className="absolute right-3 top-3 px-2 py-1 text-[9px] font-bold text-slate-400 hover:text-white bg-slate-900 rounded border border-slate-800 transition-all cursor-pointer"
                       >
                         Copiar
                       </button>
@@ -829,18 +575,12 @@ export const ProfilePage: React.FC = () => {
                 </div>
               )}
 
+              {/* WEBHOOKS ALERTS TAB */}
               {securityTab === 'webhooks' && (
-                <form onSubmit={handleUpdateWebhook} className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase tracking-[0.24em] text-slate-500">
-                        Webhook de alerta padrao
-                      </span>
-                      <InfoTip text="Usado quando um job falha 3 vezes seguidas." />
-                    </div>
-                    <p className="text-xs text-slate-400">
-                      Configure uma URL padrao para notificacoes de falha do workspace.
-                    </p>
+                <form onSubmit={handleUpdateWebhook} className="space-y-5 animate-in fade-in duration-200">
+                  <div>
+                    <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações Globais</h5>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Webhook de alerta centralizado. O CronFlow enviará um POST com os detalhes caso alguma tarefa falhe 3 vezes.</p>
                   </div>
 
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -849,113 +589,123 @@ export const ProfilePage: React.FC = () => {
                       placeholder="https://sua-api.com/alertas-webhook"
                       value={globalWebhook}
                       onChange={(e) => setGlobalWebhook(e.target.value)}
-                      className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40"
+                      className="flex-1 px-4 py-3 bg-[#05070e] border border-indigo-950/60 rounded-2xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40 font-mono"
                     />
                     <button
                       type="submit"
-                      className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer ${
+                      className={`px-5 py-3 text-xs font-bold rounded-2xl transition-all shadow-md cursor-pointer shrink-0 ${
                         updateSuccess
                           ? 'bg-emerald-600 text-white'
                           : 'bg-indigo-600 hover:bg-indigo-500 text-white neon-glow-primary'
                       }`}
                     >
-                      {updateSuccess ? 'Salvo! ✓' : 'Atualizar'}
+                      {updateSuccess ? 'Salvo! ✓' : 'Salvar Webhook'}
                     </button>
                   </div>
 
-                  <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Status</span>
-                      <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] ${
-                        webhookConfigured
-                          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                          : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
-                      }`}>
-                        {webhookConfigured ? 'Ativo' : 'Pendente'}
-                      </span>
-                    </div>
-                    <div className="text-[10px] font-mono text-indigo-300 break-all">
-                      {webhookConfigured ? globalWebhook : 'Nao configurado'}
-                    </div>
-                  </div>
-
-                  {activeProject?.webhookSecret && (
-                    <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2">
+                  <div className="grid gap-3.5 md:grid-cols-2">
+                    <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Chave de Assinatura (Webhook Secret)</span>
-                        <span className="text-[8px] font-mono font-bold text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-900/30">HMAC-SHA256</span>
+                        <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Status do Webhook</span>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                          webhookConfigured
+                            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                            : 'border-amber-500/20 bg-amber-500/10 text-amber-400'
+                        }`}>
+                          {webhookConfigured ? 'Ativo' : 'Pendente'}
+                        </span>
                       </div>
-                      <p className="text-[10px] text-slate-400">
-                        Assinamos o payload de cada webhook enviado com esta chave para que você confirme que a chamada veio do CronFlow.
-                      </p>
-                      <div className="flex items-center justify-between gap-2 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-xs text-indigo-300 relative pr-36 select-all">
-                        <span className="truncate">{activeProject.webhookSecret}</span>
-                        <div className="absolute right-2 top-1.5 flex gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(activeProject.webhookSecret || '');
-                              showToast('Chave de assinatura copiada!', 'success');
-                            }}
-                            className="px-2 py-1 text-[8px] font-bold text-indigo-400 hover:text-white bg-indigo-950/40 rounded border border-indigo-900/30 transition-all cursor-pointer"
-                          >
-                            Copiar
-                          </button>
-                          <button
-                            type="button"
-                            disabled={rotatingSecret}
-                            onClick={handleRotateWebhookSecret}
-                            className="px-2 py-1 text-[8px] font-bold text-amber-400 hover:text-white bg-amber-950/40 rounded border border-amber-900/30 transition-all cursor-pointer disabled:opacity-50 font-semibold"
-                          >
-                            {rotatingSecret ? '...' : 'Rotacionar'}
-                          </button>
+                      <div className="text-[10px] font-mono text-indigo-300 break-all bg-[#04060f]/60 p-2.5 border border-indigo-950/40 rounded-xl">
+                        {webhookConfigured ? globalWebhook : 'Nenhum webhook global ativo'}
+                      </div>
+                    </div>
+
+                    {activeProject?.webhookSecret && (
+                      <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Assinatura HMAC (webhook_secret)</span>
+                          <span className="text-[8px] font-mono font-bold text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/15">HMAC-SHA256</span>
+                        </div>
+                        <p className="text-[9.5px] text-slate-500 leading-normal">
+                          Utilize o segredo abaixo para decodificar e atestar a integridade do remetente (CronFlow) no seu backend.
+                        </p>
+                        <div className="flex items-center justify-between gap-3 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-[10.5px] text-indigo-350 relative pr-36 select-all">
+                          <span className="truncate">{activeProject.webhookSecret}</span>
+                          <div className="absolute right-1.5 top-1.5 flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(activeProject.webhookSecret || '');
+                                showToast('Chave HMAC copiada!', 'success');
+                              }}
+                              className="px-2 py-1 text-[8px] font-bold text-indigo-400 hover:text-white bg-indigo-950/40 rounded border border-indigo-900/30 transition-all cursor-pointer"
+                            >
+                              Copiar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={rotatingSecret}
+                              onClick={handleRotateWebhookSecret}
+                              className="px-2 py-1 text-[8px] font-bold text-amber-400 hover:text-white bg-amber-950/40 rounded border border-amber-900/30 transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              {rotatingSecret ? '...' : 'Rotacionar'}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </form>
               )}
 
+              {/* ACTIVE SESSIONS TAB */}
               {securityTab === 'sessions' && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in duration-200">
                   <div>
-                    <span className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Sessoes ativas</span>
-                    <p className="mt-1 text-xs text-slate-400">
-                      Controle de acesso por dispositivo e contexto de login.
-                    </p>
+                    <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Sessões Ativas</h5>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Gerencie os acessos de login autorizados para a sua conta.</p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4">
-                      <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Sessao atual</p>
-                      <p className="mt-2 text-xs font-semibold text-slate-200">{userEmail}</p>
-                      <p className="mt-1 text-[10px] text-slate-500">Ultimo acesso: {formatDate(new Date().toISOString())}</p>
+                  <div className="divide-y divide-indigo-950/30 rounded-2xl border border-indigo-950/40 bg-slate-950/40 overflow-hidden">
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-200">Navegador Atual (Chrome/Linux)</span>
+                          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider">Esta Sessão</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500">IP: <code className="font-mono text-indigo-400">127.0.0.1 (Localhost)</code> • Última atividade: Agora</p>
+                      </div>
                     </div>
-                    <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4">
-                      <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Workspace</p>
-                      <p className="mt-2 text-xs font-semibold text-slate-200">{workspaceName}</p>
-                      <p className="mt-1 text-[10px] text-slate-500">Status: Ativo</p>
+                    <div className="p-4 flex items-center justify-between bg-indigo-950/5">
+                      <div className="space-y-1">
+                        <span className="text-xs font-semibold text-slate-400">Integração API (Token de Acesso)</span>
+                        <p className="text-[10px] text-slate-500">Chave base para requisições no endpoint REST • Status: Ativo</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
+              {/* 2FA MULTIFACTOR TAB */}
               {securityTab === 'twoFactor' && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in duration-200">
                   <div>
-                    <span className="text-[10px] uppercase tracking-[0.24em] text-slate-500">2FA</span>
-                    <p className="mt-1 text-xs text-slate-400">
-                      Proteja sua conta com verificacao adicional em duas etapas.
-                    </p>
+                    <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Autenticação de Dois Fatores (MFA)</h5>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Adicione uma camada extra de proteção exigindo um código TOTP no login.</p>
                   </div>
-                  <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-200">Disponível no Plano Enterprise</span>
+                  <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                      <span className="text-xs font-bold text-slate-250 block">MFA Avançado & TOTP</span>
+                      <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+                        A proteção via aplicativos autenticadores (Google Authenticator, Microsoft Authenticator) requer o plano Enterprise.
+                      </p>
+                    </div>
                     <button
                       type="button"
                       disabled
-                      className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800/40 opacity-60 cursor-not-allowed"
+                      className="px-3.5 py-2 text-[9px] uppercase font-black text-slate-500 bg-slate-900 border border-slate-800 rounded-xl cursor-not-allowed shrink-0"
                     >
-                      Enterprise
+                      Indisponível (Free/Pro)
                     </button>
                   </div>
                 </div>
@@ -963,60 +713,55 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          <div
-            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4"
-            style={{ animationDelay: '240ms' }}
-          >
+          {/* ROADMAP / INTEGRATION GUIDE (Stepper Style) */}
+          <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-5 text-left">
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-slate-200">Seu Roadmap CronFlow</h3>
-                <InfoTip text="Complete os passos minimos para liberar o fluxo completo de execucoes." />
-              </div>
-              <p className="mt-1 text-xs text-slate-400">
-                Conclua os passos essenciais para ativar todo o potencial do workspace.
-              </p>
+              <h4 className="text-base font-bold text-slate-250">Guia de Integração Rápida</h4>
+              <p className="text-xs text-slate-400 mt-0.5">Conclua os passos fundamentais para colocar o CronFlow para trabalhar.</p>
             </div>
 
+            {/* Stepper progress */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.24em] text-slate-500">
-                <span>Progresso</span>
-                <span>{progressPercent}%</span>
+              <div className="flex items-center justify-between text-[9px] font-black uppercase text-slate-500 tracking-wider">
+                <span>Passos Concluídos</span>
+                <span className="text-indigo-400 font-mono">{completedSteps} / {onboardingSteps.length} ({progressPercent}%)</span>
               </div>
-              <div className="h-2 rounded-full bg-slate-950/40 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-slate-950 overflow-hidden relative">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500"
+                  className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 rounded-full transition-all duration-300"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
 
-            <div className="space-y-3">
+            {/* Step list */}
+            <div className="space-y-3.5 pt-1">
               {onboardingSteps.map((step, index) => (
                 <div
                   key={step.id}
-                  className="flex items-center justify-between rounded-2xl border border-indigo-950/30 bg-slate-950/30 px-4 py-3 transition-all duration-300 hover:bg-slate-900/50 hover:border-indigo-500/40"
+                  className="flex items-center justify-between p-3.5 rounded-2xl border border-indigo-950/45 bg-slate-950/30 transition-all hover:bg-slate-900/40 hover:border-indigo-500/25"
                 >
-                  <div className="flex items-start gap-3">
-                    <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-black border ${
                       step.done
-                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'
-                        : 'bg-indigo-950/40 text-indigo-300 border border-indigo-950/50'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-indigo-950/40 text-indigo-400 border-indigo-950/60'
                     }`}>
-                      {step.done ? 'OK' : index + 1}
+                      {step.done ? '✓' : index + 1}
                     </span>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-100">{step.title}</p>
-                      <p className="text-[10px] text-slate-500">{step.detail}</p>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-200 truncate">{step.title}</p>
+                      <p className="text-[10px] text-slate-500 truncate mt-0.5">{step.detail}</p>
                     </div>
                   </div>
 
                   {step.done ? (
-                    <span className="text-[10px] font-bold uppercase text-emerald-300">Concluido</span>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 shrink-0 select-none">OK</span>
                   ) : step.action ? (
                     <button
                       type="button"
                       onClick={step.action.onClick}
-                      className="px-3 py-1.5 text-[10px] uppercase font-bold text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-950/70 rounded-xl border border-indigo-900/40 transition-all"
+                      className="px-2.5 py-1 text-[9px] uppercase font-black tracking-wider text-indigo-400 hover:text-white bg-indigo-950/40 hover:bg-indigo-950/70 rounded-lg border border-indigo-900/30 transition-all cursor-pointer shrink-0"
                     >
                       {step.action.label}
                     </button>
@@ -1026,60 +771,40 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          <div
-            className="rounded-2xl glass-panel border border-indigo-950/30 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4"
-            style={{ animationDelay: '320ms' }}
-          >
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-200">Acoes rapidas</h3>
-              <InfoTip text="Atalhos para tarefas, logs e configuracoes essenciais." />
+          {/* QUICK LINKS GRID */}
+          <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-4 text-left">
+            <div>
+              <h4 className="text-sm font-bold text-slate-200">Links de Atalho</h4>
+              <p className="text-[10px] text-slate-500 mt-0.5">Acesse rapidamente outras telas e recursos do painel.</p>
             </div>
-            <p className="text-xs text-slate-400">
-              Pule direto para o que importa sem sair do perfil.
-            </p>
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3.5">
               <button
                 type="button"
                 onClick={handleCreateJob}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30"
+                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-indigo-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/50 rounded-xl border border-indigo-500/15 transition-all cursor-pointer"
               >
-                Criar tarefa
+                Novo Job
               </button>
               <button
                 type="button"
                 onClick={handleOpenLogs}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-cyan-300 bg-cyan-950/30 hover:bg-cyan-950/60 border border-cyan-500/20 rounded-xl transition-all"
+                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-cyan-300 hover:text-white bg-cyan-950/20 hover:bg-cyan-950/50 rounded-xl border border-cyan-500/15 transition-all cursor-pointer"
               >
-                Ver logs
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenSettings}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-emerald-300 bg-emerald-950/30 hover:bg-emerald-950/60 border border-emerald-500/20 rounded-xl transition-all"
-              >
-                Gerar chave
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenWebhooks}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-amber-300 bg-amber-950/30 hover:bg-amber-950/60 border border-amber-500/20 rounded-xl transition-all"
-              >
-                Configurar
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenSupport}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-violet-300 bg-violet-950/30 hover:bg-violet-950/60 border border-violet-500/20 rounded-xl transition-all"
-              >
-                Suporte
+                Logs
               </button>
               <button
                 type="button"
                 onClick={handleOpenDocs}
-                className="px-4 py-2 text-[10px] uppercase font-bold text-indigo-300 bg-indigo-950/30 hover:bg-indigo-950/60 border border-indigo-500/20 rounded-xl transition-all"
+                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-violet-300 hover:text-white bg-violet-950/20 hover:bg-violet-950/50 rounded-xl border border-violet-500/15 transition-all cursor-pointer"
               >
                 Docs
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenSupport}
+                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-emerald-300 hover:text-white bg-emerald-950/20 hover:bg-emerald-950/50 rounded-xl border border-emerald-500/15 transition-all cursor-pointer col-span-3"
+              >
+                Solicitar Suporte (Fale Conosco) ✉
               </button>
             </div>
           </div>

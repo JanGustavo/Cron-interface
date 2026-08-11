@@ -449,20 +449,29 @@ export const JobModal: React.FC = () => {
                 <div className="p-4 text-center text-slate-500 animate-pulse bg-indigo-950/5">Carregando execuções...</div>
               ) : jobLogs.length > 0 ? (
                 jobLogs.map((log) => (
-                  <div key={log.id} className="p-3.5 bg-indigo-950/10 border-b border-indigo-950/20 last:border-0 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                        log.status === 'success'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                      }`}>
-                        {log.httpStatus || 'ERR'} {log.status === 'success' ? 'SUCCESS' : log.status.toUpperCase()}
-                      </span>
-                      <span className="text-slate-400 font-mono text-[10px]">
-                        {new Date(log.triggeredAt).toLocaleString('pt-BR')}
+                  <div key={log.id} className="p-3.5 bg-indigo-950/10 border-b border-indigo-950/20 last:border-0 flex flex-col gap-2">
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                          log.status === 'success'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                        }`}>
+                          {log.httpStatus || 'ERR'} {log.status === 'success' ? 'SUCCESS' : log.status.toUpperCase()}
+                        </span>
+                        <span className="text-slate-400 font-mono text-[10px]">
+                          {new Date(log.triggeredAt).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                      <span className="font-mono text-slate-500 text-[10px]">
+                        {log.durationMs !== undefined && log.durationMs !== null ? `${log.durationMs}ms` : '-'}
                       </span>
                     </div>
-                    <span className="font-mono text-slate-500 text-[10px]">{log.durationMs}ms</span>
+                    {log.status !== 'success' && log.responseBody && (
+                      <div className="text-[10px] text-rose-400/90 font-mono bg-rose-950/10 border border-rose-500/15 rounded-lg p-2 mt-1 break-all text-left select-text">
+                        {log.responseBody}
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (

@@ -7,6 +7,7 @@ export interface User {
   id: string;
   email: string;
   plan: 'free' | 'paid';
+  fullName?: string;
   createdAt: string;
 }
 

@@ -122,15 +122,13 @@ export const LoginGate: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
-      const timer = setTimeout(() => {
-        setResetToken(tokenFromUrl);
-        setActiveTab('reset-password');
-        setIsModalOpen(true);
-      }, 0);
+      setResetToken(tokenFromUrl);
+      setActiveTab('reset-password');
+      setIsModalOpen(true);
       
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
-      return () => clearTimeout(timer);
+      return;
     }
 
     const oauthToken = params.get('oauth_token');
@@ -140,13 +138,12 @@ export const LoginGate: React.FC = () => {
     const oauthError = params.get('oauth_error');
 
     if (oauthError) {
-      const timer = setTimeout(() => {
-        setErrorMsg(`Erro na autenticação OAuth: ${oauthError}`);
-        setIsModalOpen(true);
-      }, 0);
+      setErrorMsg(`Erro na autenticação OAuth: ${oauthError}`);
+      setIsModalOpen(true);
+      
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
-      return () => clearTimeout(timer);
+      return;
     }
 
     if (oauthToken && oauthEmail && oauthId) {
@@ -160,26 +157,20 @@ export const LoginGate: React.FC = () => {
       };
 
       if (oauthApiKey) {
-        const timer = setTimeout(() => {
-          setGeneratedKey(oauthApiKey);
-          setSignupSession({ user, token: tokenObj, projects: [project] });
-          setActiveTab('signup');
-          setSignupStep(3); // Mostra a tela final com a chave de API gerada
-          setIsModalOpen(true);
-        }, 0);
+        setGeneratedKey(oauthApiKey);
+        setSignupSession({ user, token: tokenObj, projects: [project] });
+        setActiveTab('signup');
+        setSignupStep(3); // Mostra a tela final com a chave de API gerada
+        setIsModalOpen(true);
         
         const newUrl = window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
-        return () => clearTimeout(timer);
       } else {
-        const timer = setTimeout(() => {
-          login(user, tokenObj, [project]);
-          showToast('Login via OAuth realizado com sucesso!', 'success');
-        }, 0);
+        login(user, tokenObj, [project]);
+        showToast('Login via OAuth realizado com sucesso!', 'success');
         
         const newUrl = window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
-        return () => clearTimeout(timer);
       }
     }
   }, [login, showToast]);
