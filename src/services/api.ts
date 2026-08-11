@@ -15,6 +15,9 @@ const pascalToCamel = (str: string): string => {
   if (str === 'LastRunAt' || str === 'last_run_at') return 'lastRunAt';
   if (str === 'ConsecutiveFailures' || str === 'consecutive_failures') return 'consecutiveFailures';
   if (str === 'WebhookAlertURL' || str === 'webhook_alert_url') return 'webhookAlertUrl';
+  if (str === 'EmailAlertsEnabled' || str === 'email_alerts_enabled') return 'emailAlertsEnabled';
+  if (str === 'DailyDigestEnabled' || str === 'daily_digest_enabled') return 'dailyDigestEnabled';
+  if (str === 'DigestHour' || str === 'digest_hour') return 'digestHour';
   if (str === 'CreatedAt' || str === 'created_at') return 'createdAt';
   if (str === 'UpdatedAt' || str === 'updated_at') return 'updatedAt';
   if (str === 'JobID' || str === 'job_id') return 'jobId';
@@ -46,6 +49,9 @@ const camelToPascal = (str: string): string => {
   if (str === 'lastRunAt') return 'last_run_at';
   if (str === 'consecutiveFailures') return 'consecutive_failures';
   if (str === 'webhookAlertUrl') return 'webhook_alert_url';
+  if (str === 'emailAlertsEnabled') return 'email_alerts_enabled';
+  if (str === 'dailyDigestEnabled') return 'daily_digest_enabled';
+  if (str === 'digestHour') return 'digest_hour';
   if (str === 'createdAt') return 'created_at';
   if (str === 'updatedAt') return 'updated_at';
   if (str === 'jobId') return 'job_id';

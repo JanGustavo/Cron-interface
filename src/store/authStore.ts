@@ -12,7 +12,7 @@ interface AuthState {
   // Actions
   login: (user: User, token: Token, projects: Project[]) => void;
   logout: () => void;
-  setActiveProject: (project: Project | null) => void;
+  setActiveProject: (project: Project | null, token?: string) => void;
   setProjects: (projects: Project[]) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
@@ -55,7 +55,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  setActiveProject: (project) => set({ activeProject: project }),
+  setActiveProject: (project, token) => {
+    if (token) {
+      localStorage.setItem('cf_token', token);
+      set((state) => ({
+        activeProject: project,
+        token: state.token
+          ? { ...state.token, accessToken: token }
+          : { accessToken: token, refreshToken: '', tokenType: 'Bearer', expiresIn: 86400 },
+      }));
+    } else {
+      set({ activeProject: project });
+    }
+  },
 
   setProjects: (projects) => {
     set((state) => {

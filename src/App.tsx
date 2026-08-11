@@ -189,7 +189,7 @@ const parseJwt = (token: string) => {
 
 const App: React.FC = () => {
   const { activeTab, setActiveTab, isDocsOpen, setDocsOpen, setJobModalOpen } = useUiStore();
-  const { isAuthenticated, login, logout } = useAuthStore();
+  const { isAuthenticated, login, logout, activeProject } = useAuthStore();
   const { fetchJobs, jobs, setActiveJob } = useJobsStore();
   const [authChecking, setAuthChecking] = useState(true);
 
@@ -229,24 +229,35 @@ const App: React.FC = () => {
           // Set temporary localstorage for api interceptor
           localStorage.setItem('cf_token', savedToken);
           
-          // Test saved token against backend
-          const response = await api.get('/v1/jobs');
-          const jobs = response.data || [];
-          const extractedProjectId = jobs[0]?.projectId || '0fe9fb93-3fa0-44b6-b5d8-a5c5b62148a1';
-
+          // Load fresh profile and project list from backend
+          const profileResponse = await api.get('/v1/users/profile');
+          const profile = profileResponse.data;
+          
           const decoded = parseJwt(savedToken);
-          const email = decoded?.email || 'admin@cronflow.sh';
-          const userId = decoded?.user_id || 'user-admin';
-          const plan = decoded?.plan || 'free';
-          const projectId = decoded?.project_id || extractedProjectId;
+          const email = decoded?.email || profile.email;
+          const userId = decoded?.user_id || profile.id;
+          const plan = profile.plan || decoded?.plan || 'free';
           const iat = decoded?.iat;
           const userCreatedAt = iat ? new Date(iat * 1000).toISOString() : new Date().toISOString();
 
+          // Set the workspace plan state in localStorage
+          localStorage.setItem('cf_user_plan', plan);
+
+          // Get the active project from token claims, fallback to first project or default
+          const activeProjID = decoded?.project_id || (profile.projects && profile.projects[0]?.id) || '0fe9fb93-3fa0-44b6-b5d8-a5c5b62148a1';
+          
+          const projectsList = profile.projects || [];
+          const activeProj = projectsList.find((p: any) => p.id === activeProjID) || projectsList[0] || { id: activeProjID, userId: userId, name: 'Projeto Principal', createdAt: userCreatedAt };
+
           login(
-            { id: userId, email: email, plan: plan, createdAt: userCreatedAt },
+            { id: userId, email: email, plan: plan, createdAt: userCreatedAt, fullName: profile.fullName },
             { accessToken: savedToken, refreshToken: '', tokenType: 'Bearer', expiresIn: 86400 },
-            [{ id: projectId, userId: userId, name: 'Projeto Principal', createdAt: userCreatedAt }]
+            projectsList.length > 0 ? projectsList : [activeProj]
           );
+
+          // Update active project if it wasn't set correctly by login (to ensure it matches activeProjID)
+          const state = useAuthStore.getState();
+          state.setActiveProject(activeProj);
         } catch (err) {
           console.error('Auto login verification failed', err);
           logout();
@@ -267,7 +278,24 @@ const App: React.FC = () => {
       }, 10000);
       return () => clearInterval(interval);
     }
-  }, [isAuthenticated, fetchJobs]);
+  }, [isAuthenticated, fetchJobs, activeProject?.id]);
+
+  useEffect(() => {
+    const syncProfileMetrics = async () => {
+      if (isAuthenticated) {
+        try {
+          const res = await api.get('/v1/users/profile');
+          if (res.data) {
+            localStorage.setItem('cf_total_jobs_created', String(res.data.totalJobsCreated));
+            localStorage.setItem('cf_profile_active_jobs_count', String(jobs.length));
+          }
+        } catch (err) {
+          console.error('Failed to sync profile metrics', err);
+        }
+      }
+    };
+    syncProfileMetrics();
+  }, [isAuthenticated, activeProject?.id, jobs.length]);
 
   useEffect(() => {
     if (isAuthenticated && jobs.length > 0) {

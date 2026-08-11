@@ -311,26 +311,36 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       }
 
       await api.patch(`/v1/jobs/${jobId}`, { status: backendStatus });
-      set((state) => ({
-        jobs: state.jobs.map((job) =>
-          job.id === jobId
-            ? {
-                ...job,
-                status: backendStatus,
-                kanbanStatus: newKanbanStatus,
-              }
-            : job
-        ),
-        activeJob:
-          state.activeJob?.id === jobId
-            ? {
-                ...state.activeJob,
-                status: backendStatus,
-                kanbanStatus: newKanbanStatus,
-              }
-            : state.activeJob,
-        executingJobs,
-      }));
+      set((state) => {
+        const resetFields = newKanbanStatus === 'scheduled' ? {
+          consecutiveFailures: 0,
+          lastRunAt: null,
+          lastRunStatus: null,
+        } : {};
+
+        return {
+          jobs: state.jobs.map((job) =>
+            job.id === jobId
+              ? {
+                  ...job,
+                  status: backendStatus,
+                  kanbanStatus: newKanbanStatus,
+                  ...resetFields,
+                }
+              : job
+          ),
+          activeJob:
+            state.activeJob?.id === jobId
+              ? {
+                  ...state.activeJob,
+                  status: backendStatus,
+                  kanbanStatus: newKanbanStatus,
+                  ...resetFields,
+                }
+              : state.activeJob,
+          executingJobs,
+        };
+      });
     } catch (err) {
       console.error(err);
       const errResponse = err as ErrorWithResponse;

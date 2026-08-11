@@ -191,7 +191,6 @@ export const DashboardPage: React.FC = () => {
     return () => { active = false; };
   }, [jobs]);
 
-  const activeCount = jobs.filter((j) => j.status === 'active').length;
   const totalExecutions = allRecentLogs.length;
   const successExecutions = allRecentLogs.filter((log) => log.status === 'success').length;
   const successRate = totalExecutions > 0 ? ((successExecutions / totalExecutions) * 100).toFixed(2) : '-';
@@ -228,9 +227,16 @@ export const DashboardPage: React.FC = () => {
     return counts;
   })();
 
-  const plan = user?.plan || 'free';
-  const maxJobsLimit = plan === 'paid' ? 20 : 5;
-  const isLimitReached = activeCount >= maxJobsLimit;
+  const plan = localStorage.getItem('cf_user_plan') || user?.plan || 'free';
+  const isProPlan = plan === 'paid';
+  const globalMaxLimit = isProPlan ? 20 : 5;
+  const storedTotalJobsCreated = Number(localStorage.getItem('cf_total_jobs_created') || '0');
+  const baselineActiveJobsCount = Number(localStorage.getItem('cf_profile_active_jobs_count') || '0');
+  const diff = jobs.length - baselineActiveJobsCount;
+  const currentTotalJobsCreated = storedTotalJobsCreated + diff;
+  const maxJobsLimit = Math.max(0, globalMaxLimit - currentTotalJobsCreated);
+  const createdJobsCount = jobs.length;
+  const isLimitReached = currentTotalJobsCreated >= globalMaxLimit;
 
   // Prepare chart data chronologically (oldest to newest)
   const chartData = (() => {
@@ -453,10 +459,10 @@ export const DashboardPage: React.FC = () => {
           {/* Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard
-              title="Tarefas Ativas"
-              value={`${activeCount} / ${maxJobsLimit}`}
+              title="Tarefas Cadastradas"
+              value={`${createdJobsCount} / ${maxJobsLimit}`}
               color="indigo"
-              description={plan === 'paid' ? 'Plano Pro (20 tarefas máx)' : 'Plano Gratuito (5 tarefas máx)'}
+              description={isProPlan ? 'Plano Pro (20 tarefas máx global)' : 'Plano Gratuito (5 tarefas máx global)'}
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

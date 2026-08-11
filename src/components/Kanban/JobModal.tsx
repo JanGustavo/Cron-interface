@@ -5,6 +5,8 @@ import { StatusBadge } from '../Dashboard/StatusBadge';
 import { translateSchedule } from '../Shared/cronTranslator';
 import api from '../../services/api';
 import type { Job, JobLog } from '../../types/jobs';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 export const JobModal: React.FC = () => {
   const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob, jobs } = useJobsStore();
@@ -84,10 +86,34 @@ export const JobModal: React.FC = () => {
   };
 
   const handleDelete = () => {
-    if (confirm(`Tem certeza que deseja deletar a tarefa "${activeJob.name}"?`)) {
-      deleteJob(activeJob.id);
-      handleClose();
-    }
+    if (!activeJob) return;
+
+    Swal.fire({
+      title: 'Excluir tarefa?',
+      text: `Tem certeza que deseja deletar permanentemente a tarefa "${activeJob.name}"? Esta ação não pode ser desfeita.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, excluir!',
+      cancelButtonText: 'Não, cancelar',
+      background: '#0a0f1d',
+      color: '#cbd5e1',
+      iconColor: '#f43f5e',
+      customClass: {
+        popup: 'border border-indigo-950/60 rounded-3xl shadow-2xl bg-[#090c15] text-left font-sans',
+        title: 'text-base font-bold text-slate-100 px-6 pt-6',
+        htmlContainer: 'text-xs text-slate-400 font-medium leading-normal px-6 pb-4',
+        actions: 'px-6 pb-6 flex justify-end gap-2',
+        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-all shadow-md cursor-pointer',
+        cancelButton: 'px-4 py-2 text-xs font-semibold text-slate-450 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer',
+      },
+      buttonsStyling: false,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteJob(activeJob.id);
+        handleClose();
+        showToast('Tarefa excluída com sucesso.', 'success');
+      }
+    });
   };
 
   const handleTriggerNow = async () => {
@@ -504,12 +530,14 @@ export const JobModal: React.FC = () => {
             </>
           ) : (
             <>
-              {/* Left Deletar Action */}
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 text-xs font-semibold text-rose-400 hover:text-white bg-rose-950/10 hover:bg-rose-950/40 border border-rose-950/30 rounded-xl transition-all"
+                className="px-4 py-2 text-xs font-bold text-rose-400 hover:text-rose-200 bg-[#12070c] hover:bg-[#200a14] border border-rose-950/40 hover:border-rose-500/45 rounded-xl transition-all duration-300 flex items-center gap-1.5 cursor-pointer hover:shadow-[0_0_15px_rgba(244,63,94,0.15)]"
               >
-                Deletar Tarefa
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>Deletar Tarefa</span>
               </button>
 
               {/* Right Action Stack */}

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import Swal from 'sweetalert2';
 import { useAuthStore } from '../store/authStore';
 import { useJobsStore } from '../store/jobsStore';
 import { useUiStore } from '../store/uiStore';
@@ -14,6 +15,8 @@ const formatDate = (value?: string | null) => {
   }).format(new Date(value));
 };
 
+/*
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const InfoTip: React.FC<{ text: string }> = ({ text }) => (
   <span className="relative inline-flex items-center group ml-1.5">
     <button
@@ -30,15 +33,16 @@ const InfoTip: React.FC<{ text: string }> = ({ text }) => (
     </span>
   </span>
 );
+*/
 
 export const ProfilePage: React.FC = () => {
   const { user, activeProject, projects, token, setActiveProject, setProjects } = useAuthStore();
-  const { jobs } = useJobsStore();
+  const { jobs, fetchJobs } = useJobsStore();
   const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen } = useUiStore();
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
 
   // Load custom profile details saved during onboarding
-  const fullName = localStorage.getItem('cf_user_name') || user?.fullName || '';
+  const [profileFullName, setProfileFullName] = useState(() => localStorage.getItem('cf_user_name') || user?.fullName || '');
   const company = localStorage.getItem('cf_user_company') || '';
   const role = localStorage.getItem('cf_user_role') || '';
   const techStack = localStorage.getItem('cf_user_tech_stack') || 'Node.js / TypeScript';
@@ -48,19 +52,35 @@ export const ProfilePage: React.FC = () => {
   const userHandle = userEmail.split('@')[0] || 'cronflow';
   
   // Custom avatar initials if full name exists
-  const avatarLabel = fullName
-    ? fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+  const avatarLabel = profileFullName
+    ? profileFullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
     : userHandle.slice(0, 2).toUpperCase();
 
   const memberSince = formatDate(user?.createdAt);
   const workspaceName = activeProject?.name || 'Projeto Pessoal';
-  const plan = localStorage.getItem('cf_user_plan') || user?.plan || 'free';
-  const isProPlan = plan === 'paid';
+  const [profilePlan, setProfilePlan] = useState(() => localStorage.getItem('cf_user_plan') || user?.plan || 'free');
+  const isProPlan = profilePlan === 'paid';
 
   const activeKey = token?.accessToken || localStorage.getItem('cf_token') || '';
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const webhookConfigured = globalWebhook.trim().length > 0;
+
+  // Email Preferences States
+  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(false);
+  const [dailyDigestEnabled, setDailyDigestEnabled] = useState(false);
+  const [profileTimezone, setProfileTimezone] = useState(() => localStorage.getItem('cf_user_timezone') || 'America/Sao_Paulo');
+  const [digestHour, setDigestHour] = useState(18);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Project Creation States
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [totalJobsCreated, setTotalJobsCreated] = useState(() => Number(localStorage.getItem('cf_total_jobs_created') || '0'));
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingProjectName, setEditingProjectName] = useState('');
 
   // API Keys Management states
   interface APIKeyItem {
@@ -179,6 +199,149 @@ export const ProfilePage: React.FC = () => {
     showToast('Webhook atualizado com sucesso.', 'success');
     setTimeout(() => setUpdateSuccess(false), 2000);
   };
+
+  const fetchProfile = useCallback(async () => {
+    setLoadingProfile(true);
+    try {
+      const res = await api.get('/v1/users/profile');
+      if (res.data) {
+        setEmailAlertsEnabled(res.data.emailAlertsEnabled);
+        setDailyDigestEnabled(res.data.dailyDigestEnabled);
+        if (res.data.fullName) {
+          setProfileFullName(res.data.fullName);
+          localStorage.setItem('cf_user_name', res.data.fullName);
+        }
+        if (res.data.plan) {
+          setProfilePlan(res.data.plan);
+          localStorage.setItem('cf_user_plan', res.data.plan);
+        }
+        if (res.data.totalJobsCreated !== undefined) {
+          setTotalJobsCreated(res.data.totalJobsCreated);
+          localStorage.setItem('cf_total_jobs_created', String(res.data.totalJobsCreated));
+          localStorage.setItem('cf_profile_active_jobs_count', String(jobs.length));
+        }
+        if (res.data.timezone) {
+          setProfileTimezone(res.data.timezone);
+          localStorage.setItem('cf_user_timezone', res.data.timezone);
+        }
+        setDigestHour(res.data.digestHour !== undefined ? res.data.digestHour : 18);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar perfil do usuário:', err);
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleUpdateProfilePreferences = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      await api.put('/v1/users/profile', {
+        emailAlertsEnabled,
+        dailyDigestEnabled,
+        timezone: profileTimezone,
+        digestHour,
+      });
+      localStorage.setItem('cf_user_timezone', profileTimezone);
+      showToast('Preferências de notificação salvas!', 'success');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao salvar preferências.';
+      showToast(errorMsg, 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectName.trim()) return;
+    setCreatingProject(true);
+    try {
+      const res = await api.post('/v1/projects', { name: newProjectName.trim() });
+      if (res.data) {
+        const updatedProjects = [...projects, res.data];
+        setProjects(updatedProjects);
+        showToast('Novo projeto criado com sucesso!', 'success');
+        setNewProjectName('');
+        setCreateProjectOpen(false);
+      }
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao criar projeto.';
+      showToast(errorMsg, 'error');
+    } finally {
+      setCreatingProject(false);
+    }
+  };
+
+  const handleRenameProject = async (e: React.FormEvent, projectId: string) => {
+    e.preventDefault();
+    if (!editingProjectName.trim()) return;
+    try {
+      await api.put(`/v1/projects/${projectId}`, { name: editingProjectName.trim() });
+      const updatedProjects = projects.map((p) =>
+        p.id === projectId ? { ...p, name: editingProjectName.trim() } : p
+      );
+      setProjects(updatedProjects);
+      if (activeProject?.id === projectId) {
+        setActiveProject({ ...activeProject, name: editingProjectName.trim() });
+      }
+      showToast('Projeto renomeado com sucesso!', 'success');
+      setEditingProjectId(null);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao renomear projeto.';
+      showToast(errorMsg, 'error');
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string, projectName: string) => {
+    const result = await Swal.fire({
+      title: 'Excluir Projeto?',
+      html: `Tem certeza que deseja excluir o projeto <b>${projectName}</b>?<br/><span style="color:#e11d48;font-size:11px;margin-top:5px;display:block;">Aviso: Todos os jobs e logs deste projeto serão permanentemente excluídos!</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, Excluir',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
+        title: 'text-slate-100 font-extrabold text-base',
+        htmlContainer: 'text-slate-400 text-xs leading-relaxed mt-2',
+        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-all shadow-md',
+        cancelButton: 'px-4 py-2 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all ml-2',
+      },
+      buttonsStyling: false,
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await api.delete(`/v1/projects/${projectId}`);
+        const updatedProjects = projects.filter((p) => p.id !== projectId);
+        setProjects(updatedProjects);
+        showToast('Projeto excluído com sucesso!', 'success');
+        fetchProfile();
+      } catch (err: any) {
+        const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao excluir projeto.';
+        showToast(errorMsg, 'error');
+      }
+    }
+  };
+
+  const handleSwitchProject = async (project: any) => {
+    try {
+      const res = await api.post(`/v1/projects/${project.id}/switch`);
+      if (res.data && res.data.token) {
+        setActiveProject(project, res.data.token);
+        showToast(`Alternado para o workspace: ${project.name}`, 'success');
+        fetchJobs();
+      }
+    } catch (err: any) {
+      showToast('Erro ao alternar de workspace.', 'error');
+    }
+  };
   
   const memberDays = useMemo(() => {
     if (!user?.createdAt) return 0;
@@ -191,16 +354,20 @@ export const ProfilePage: React.FC = () => {
     ? jobs.filter((job) => job.projectId === activeProject.id)
     : jobs;
 
-  const activeJobs = workspaceJobs.filter((job) => job.status === 'active').length;
-  const maxJobsLimit = isProPlan ? 20 : 5;
-  const jobsUsagePercent = maxJobsLimit > 0 ? Math.min(100, Math.round((activeJobs / maxJobsLimit) * 100)) : 0;
+  const activeJobs = workspaceJobs.length; // total jobs (active, paused, failing)
+  const globalMaxLimit = isProPlan ? 20 : 5;
+  const baselineActiveJobsCount = Number(localStorage.getItem('cf_profile_active_jobs_count') || '0');
+  const diff = jobs.length - baselineActiveJobsCount;
+  const currentTotalJobsCreated = totalJobsCreated + diff;
+  const maxJobsLimit = Math.max(0, globalMaxLimit - currentTotalJobsCreated);
+  const jobsUsagePercent = globalMaxLimit > 0 ? Math.min(100, Math.round((currentTotalJobsCreated / globalMaxLimit) * 100)) : 0;
 
   const handleCreateJob = () => {
     setActiveTab('jobs');
     setCreateModalOpen(true);
   };
 
-  const handleOpenSettings = () => setSecurityTab('keys');
+  // const handleOpenSettings = () => setSecurityTab('keys');
   const handleOpenWebhooks = () => setSecurityTab('webhooks');
   const handleOpenJobs = () => setActiveTab('jobs');
   const handleOpenLogs = () => setActiveTab('logs');
@@ -297,14 +464,20 @@ export const ProfilePage: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-indigo-500/20 bg-indigo-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
-                      {plan === 'paid' ? 'PRO' : 'STARTER'}
-                    </span>
+                    {isProPlan ? (
+                      <span className="relative inline-flex items-center gap-1 rounded-full border-2 border-[#ffd700]/50 bg-gradient-to-r from-[#856404] via-[#ffdf7e] to-[#856404] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#2d2200] shadow-[0_2px_6px_rgba(0,0,0,0.6),0_0_12px_rgba(255,215,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] transform hover:scale-105 transition-all select-none">
+                        <span className="text-[9.5px]">👑</span> PRO
+                      </span>
+                    ) : (
+                      <span className="rounded-full border border-indigo-500/20 bg-indigo-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
+                        STARTER
+                      </span>
+                    )}
                     <span className="text-[10px] text-slate-500 font-semibold font-mono">
                       #{userHandle}
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-100 mt-1">{fullName || 'CronFlow User'}</h3>
+                  <h3 className="text-xl font-bold text-slate-100 mt-1">{profileFullName || 'CronFlow User'}</h3>
                   <p className="text-[11px] text-slate-400 font-mono mt-0.5">{userEmail}</p>
                 </div>
               </div>
@@ -371,32 +544,118 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* Workspaces List (Cleaned Up) */}
-            <div className="space-y-2 text-left">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Projetos Disponíveis ({projects.length})</span>
+            <div className="space-y-3 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Projetos Disponíveis ({projects.length})</span>
+                {isProPlan ? (
+                  <button
+                    onClick={() => setCreateProjectOpen(!createProjectOpen)}
+                    className="text-[9px] font-extrabold uppercase tracking-wider text-indigo-400 hover:text-indigo-200 transition-colors cursor-pointer"
+                  >
+                    {createProjectOpen ? 'Cancelar' : '+ Novo Projeto'}
+                  </button>
+                ) : (
+                  <span className="text-[8px] font-extrabold uppercase tracking-wider text-rose-500/80 bg-rose-950/20 px-2 py-0.5 rounded border border-rose-900/30 flex items-center gap-1 select-none">
+                    <span>👑</span> PRO
+                  </span>
+                )}
+              </div>
+
+              {createProjectOpen && (
+                <form onSubmit={handleCreateProject} className="flex gap-2 p-3 bg-slate-950/40 border border-indigo-950/60 rounded-2xl animate-in slide-in-from-top-2 duration-200">
+                  <input
+                    type="text"
+                    placeholder="Nome do novo workspace..."
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-[#05070e] border border-indigo-950/60 rounded-xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={creatingProject || !newProjectName.trim()}
+                    className="px-3.5 py-2 text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-600 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {creatingProject ? '...' : 'Criar'}
+                  </button>
+                </form>
+              )}
+
               <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-indigo-950 scrollbar-track-transparent">
                 {projects.map((project) => {
                   const isActive = project.id === activeProject?.id;
                   return (
                     <div
                       key={project.id}
-                      onClick={() => !isActive && setActiveProject(project)}
-                      className={`flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 ${
+                      onClick={() => !isActive && handleSwitchProject(project)}
+                      className={`flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 group/item ${
                         isActive
                           ? 'border-indigo-500/30 bg-indigo-500/5'
                           : 'border-indigo-950/30 bg-slate-950/20 hover:border-indigo-500/20 hover:bg-[#070914] cursor-pointer'
                       }`}
                     >
-                      <div className="min-w-0">
-                        <span className="text-[11px] font-bold text-slate-200 block truncate">{project.name}</span>
-                        <span className="text-[9px] text-slate-500 font-mono block truncate">ID: {project.id}</span>
+                      {editingProjectId === project.id ? (
+                        <form
+                          onSubmit={(e) => handleRenameProject(e, project.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1.5 flex-1 min-w-0 mr-2"
+                        >
+                          <input
+                            type="text"
+                            value={editingProjectName}
+                            onChange={(e) => setEditingProjectName(e.target.value)}
+                            className="px-2 py-1 bg-slate-900 border border-indigo-500/40 rounded text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 w-full"
+                            required
+                            autoFocus
+                          />
+                          <button type="submit" className="text-emerald-400 hover:text-emerald-300 font-bold text-xs p-1 cursor-pointer">✓</button>
+                          <button type="button" onClick={() => setEditingProjectId(null)} className="text-rose-450 hover:text-rose-350 font-bold text-xs p-1 cursor-pointer">✗</button>
+                        </form>
+                      ) : (
+                        <div className="min-w-0 flex-1 group/item flex items-center gap-2 pr-2">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[11px] font-bold text-slate-200 block truncate">{project.name}</span>
+                            <span className="text-[9px] text-slate-500 font-mono block truncate">ID: {project.id}</span>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingProjectId(project.id);
+                              setEditingProjectName(project.name);
+                            }}
+                            className="opacity-0 group-hover/item:opacity-100 p-1 text-indigo-400/85 hover:text-indigo-300 transition-all cursor-pointer shrink-0"
+                            title="Editar Nome"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <span
+                          onClick={() => !isActive && handleSwitchProject(project)}
+                          className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                            isActive
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                              : 'bg-slate-950/50 text-slate-500 border-slate-800 hover:border-indigo-500/30 hover:text-slate-350 cursor-pointer'
+                          }`}
+                        >
+                          {isActive ? 'Ativo' : 'Trocar'}
+                        </span>
+                        {!isActive && (
+                          <button
+                            onClick={() => handleDeleteProject(project.id, project.name)}
+                            className="p-1 text-rose-400/70 hover:text-rose-450 hover:bg-rose-950/20 rounded border border-transparent hover:border-rose-950/30 transition-all cursor-pointer"
+                            title="Excluir Projeto"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
-                      <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                        isActive
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : 'bg-slate-950/50 text-slate-500 border-slate-800'
-                      }`}>
-                        {isActive ? 'Ativo' : 'Trocar'}
-                      </span>
                     </div>
                   );
                 })}
@@ -420,7 +679,7 @@ export const ProfilePage: React.FC = () => {
               <div className="flex gap-1.5 bg-[#05070e] p-1.5 rounded-xl border border-indigo-950/60 self-start sm:self-auto select-none">
                 {[
                   { id: 'keys', label: 'Chaves API' },
-                  { id: 'webhooks', label: 'Webhooks' },
+                  { id: 'webhooks', label: 'Alertas / Webhooks' },
                   { id: 'sessions', label: 'Sessões' },
                   { id: 'twoFactor', label: 'MFA' },
                 ].map((t) => (
@@ -577,85 +836,192 @@ export const ProfilePage: React.FC = () => {
 
               {/* WEBHOOKS ALERTS TAB */}
               {securityTab === 'webhooks' && (
-                <form onSubmit={handleUpdateWebhook} className="space-y-5 animate-in fade-in duration-200">
-                  <div>
-                    <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações Globais</h5>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Webhook de alerta centralizado. O CronFlow enviará um POST com os detalhes caso alguma tarefa falhe 3 vezes.</p>
-                  </div>
-
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <input
-                      type="url"
-                      placeholder="https://sua-api.com/alertas-webhook"
-                      value={globalWebhook}
-                      onChange={(e) => setGlobalWebhook(e.target.value)}
-                      className="flex-1 px-4 py-3 bg-[#05070e] border border-indigo-950/60 rounded-2xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40 font-mono"
-                    />
-                    <button
-                      type="submit"
-                      className={`px-5 py-3 text-xs font-bold rounded-2xl transition-all shadow-md cursor-pointer shrink-0 ${
-                        updateSuccess
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-indigo-600 hover:bg-indigo-500 text-white neon-glow-primary'
-                      }`}
-                    >
-                      {updateSuccess ? 'Salvo! ✓' : 'Salvar Webhook'}
-                    </button>
-                  </div>
-
-                  <div className="grid gap-3.5 md:grid-cols-2">
-                    <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Status do Webhook</span>
-                        <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                          webhookConfigured
-                            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                            : 'border-amber-500/20 bg-amber-500/10 text-amber-400'
-                        }`}>
-                          {webhookConfigured ? 'Ativo' : 'Pendente'}
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-mono text-indigo-300 break-all bg-[#04060f]/60 p-2.5 border border-indigo-950/40 rounded-xl">
-                        {webhookConfigured ? globalWebhook : 'Nenhum webhook global ativo'}
-                      </div>
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <form onSubmit={handleUpdateWebhook} className="space-y-5">
+                    <div>
+                      <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações Globais</h5>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Webhook de alerta centralizado. O CronFlow enviará um POST com os detalhes caso alguma tarefa falhe 3 vezes.</p>
                     </div>
 
-                    {activeProject?.webhookSecret && (
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <input
+                        type="url"
+                        placeholder="https://sua-api.com/alertas-webhook"
+                        value={globalWebhook}
+                        onChange={(e) => setGlobalWebhook(e.target.value)}
+                        className="flex-1 px-4 py-3 bg-[#05070e] border border-indigo-950/60 rounded-2xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40 font-mono"
+                      />
+                      <button
+                        type="submit"
+                        className={`px-5 py-3 text-xs font-bold rounded-2xl transition-all shadow-md cursor-pointer shrink-0 ${
+                          updateSuccess
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white neon-glow-primary'
+                        }`}
+                      >
+                        {updateSuccess ? 'Salvo! ✓' : 'Salvar Webhook'}
+                      </button>
+                    </div>
+
+                    <div className="grid gap-3.5 md:grid-cols-2">
                       <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Assinatura HMAC (webhook_secret)</span>
-                          <span className="text-[8px] font-mono font-bold text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/15">HMAC-SHA256</span>
+                          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Status do Webhook</span>
+                          <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                            webhookConfigured
+                              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                              : 'border-amber-500/20 bg-amber-500/10 text-amber-400'
+                          }`}>
+                            {webhookConfigured ? 'Ativo' : 'Pendente'}
+                          </span>
                         </div>
-                        <p className="text-[9.5px] text-slate-500 leading-normal">
-                          Utilize o segredo abaixo para decodificar e atestar a integridade do remetente (CronFlow) no seu backend.
-                        </p>
-                        <div className="flex items-center justify-between gap-3 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-[10.5px] text-indigo-350 relative pr-36 select-all">
-                          <span className="truncate">{activeProject.webhookSecret}</span>
-                          <div className="absolute right-1.5 top-1.5 flex gap-1">
+                        <div className="text-[10px] font-mono text-indigo-300 break-all bg-[#04060f]/60 p-2.5 border border-indigo-950/40 rounded-xl">
+                          {webhookConfigured ? globalWebhook : 'Nenhum webhook global ativo'}
+                        </div>
+                      </div>
+
+                      {activeProject?.webhookSecret && (
+                        <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Assinatura HMAC (webhook_secret)</span>
+                            <span className="text-[8px] font-mono font-bold text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/15">HMAC-SHA256</span>
+                          </div>
+                          <p className="text-[9.5px] text-slate-500 leading-normal">
+                            Utilize o segredo abaixo para decodificar e atestar a integridade do remetente (CronFlow) no seu backend.
+                          </p>
+                          <div className="flex items-center justify-between gap-3 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-[10.5px] text-indigo-350 relative pr-36 select-all">
+                            <span className="truncate">{activeProject.webhookSecret}</span>
+                            <div className="absolute right-1.5 top-1.5 flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(activeProject.webhookSecret || '');
+                                  showToast('Chave HMAC copiada!', 'success');
+                                }}
+                                className="px-2 py-1 text-[8px] font-bold text-indigo-400 hover:text-white bg-indigo-950/40 rounded border border-indigo-900/30 transition-all cursor-pointer"
+                              >
+                                Copiar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={rotatingSecret}
+                                onClick={handleRotateWebhookSecret}
+                                className="px-2 py-1 text-[8px] font-bold text-amber-400 hover:text-white bg-amber-950/40 rounded border border-amber-900/30 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                {rotatingSecret ? '...' : 'Rotacionar'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </form>
+
+                  {/* EMAIL ALERTS PREFERENCES SECTION */}
+                  <div className="pt-6 border-t border-indigo-950/30">
+                    <form onSubmit={handleUpdateProfilePreferences} className="space-y-5">
+                      <div>
+                        <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações por E-mail</h5>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Configure como e quando você deseja receber alertas de falha no seu e-mail de cadastro.</p>
+                      </div>
+
+                      {loadingProfile ? (
+                        <div className="text-xs text-slate-500 font-mono py-2">Carregando preferências...</div>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* Immediate Alerts Option - Paid Only */}
+                          <div className="flex items-start justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/20">
+                            <div className="space-y-1 pr-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-200">Alertas Imediatos</span>
+                                {!isProPlan && (
+                                  <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-[#ff006e]/10 border border-[#ff006e]/30 text-[#ff006e] tracking-wider">PRO</span>
+                                )}
+                              </div>
+                              <p className="text-[10.5px] text-slate-500 leading-normal">
+                                Envia um e-mail de aviso imediatamente no instante em que qualquer job falhar 3 vezes seguidas e for forçado a pausar.
+                              </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                              <input
+                                type="checkbox"
+                                checked={emailAlertsEnabled}
+                                disabled={!isProPlan}
+                                onChange={(e) => setEmailAlertsEnabled(e.target.checked)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-[#0a0f1d] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-650 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white peer-disabled:opacity-45"></div>
+                            </label>
+                          </div>
+
+                          {/* Daily Digest Option - Free Tier Option */}
+                          <div className="flex items-start justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/20">
+                            <div className="space-y-1 pr-4">
+                              <span className="text-xs font-bold text-slate-200">Resumo Diário (Daily Digest)</span>
+                              <p className="text-[10.5px] text-slate-500 leading-normal">
+                                Receba um único consolidado diário com todos os erros ocorridos em suas tarefas nas últimas 24 horas. Ideal para o plano Free.
+                              </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                              <input
+                                type="checkbox"
+                                checked={dailyDigestEnabled}
+                                onChange={(e) => setDailyDigestEnabled(e.target.checked)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-[#0a0f1d] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-650 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+                            </label>
+                          </div>
+
+                          {/* Timezone and hour configuration fields */}
+                          {dailyDigestEnabled && (
+                            <div className="grid gap-4 sm:grid-cols-2 p-4 rounded-2xl border border-indigo-950/60 bg-[#050811] animate-in slide-in-from-top-2 duration-200">
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fuso Horário do Perfil</label>
+                                <select
+                                  value={profileTimezone}
+                                  onChange={(e) => setProfileTimezone(e.target.value)}
+                                  className="w-full px-3.5 py-2.5 bg-[#0b0f19] border border-indigo-950/80 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40 cursor-pointer font-mono"
+                                >
+                                  <option value="America/Sao_Paulo">America/Sao_Paulo (GMT-3)</option>
+                                  <option value="UTC">UTC (Universal Coordinated Time)</option>
+                                  <option value="America/New_York">America/New_York (EST/EDT)</option>
+                                  <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                                  <option value="Europe/London">Europe/London (GMT/BST)</option>
+                                  <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                                </select>
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Horário do Disparo (Final do Dia)</label>
+                                <select
+                                  value={digestHour}
+                                  onChange={(e) => setDigestHour(Number(e.target.value))}
+                                  className="w-full px-3.5 py-2.5 bg-[#0b0f19] border border-indigo-950/80 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40 cursor-pointer font-mono"
+                                >
+                                  {Array.from({ length: 24 }).map((_, idx) => (
+                                    <option key={idx} value={idx}>
+                                      {idx.toString().padStart(2, '0')}:00 ({idx >= 18 ? 'Noite' : idx >= 12 ? 'Tarde' : 'Manhã'})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex justify-end pt-2">
                             <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(activeProject.webhookSecret || '');
-                                showToast('Chave HMAC copiada!', 'success');
-                              }}
-                              className="px-2 py-1 text-[8px] font-bold text-indigo-400 hover:text-white bg-indigo-950/40 rounded border border-indigo-900/30 transition-all cursor-pointer"
+                              type="submit"
+                              disabled={savingProfile}
+                              className="px-5 py-2.5 text-xs font-bold rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white transition-all shadow-md cursor-pointer neon-glow-primary disabled:opacity-50"
                             >
-                              Copiar
-                            </button>
-                            <button
-                              type="button"
-                              disabled={rotatingSecret}
-                              onClick={handleRotateWebhookSecret}
-                              className="px-2 py-1 text-[8px] font-bold text-amber-400 hover:text-white bg-amber-950/40 rounded border border-amber-900/30 transition-all cursor-pointer disabled:opacity-50"
-                            >
-                              {rotatingSecret ? '...' : 'Rotacionar'}
+                              {savingProfile ? 'Salvando...' : 'Salvar Preferências'}
                             </button>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </form>
                   </div>
-                </form>
+                </div>
               )}
 
               {/* ACTIVE SESSIONS TAB */}

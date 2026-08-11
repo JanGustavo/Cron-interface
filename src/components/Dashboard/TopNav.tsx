@@ -1,11 +1,26 @@
 import React, { useState } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
+import { useJobsStore } from '../../store/jobsStore';
+import api from '../../services/api';
 
 export const TopNav: React.FC = () => {
   const { theme, toggleTheme, activeTab, toggleSidebar } = useUiStore();
   const { activeProject, projects, setActiveProject, user } = useAuthStore();
+  const { fetchJobs } = useJobsStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const handleSwitchProject = async (project: any) => {
+    try {
+      const res = await api.post(`/v1/projects/${project.id}/switch`);
+      if (res.data && res.data.token) {
+        setActiveProject(project, res.data.token);
+        fetchJobs();
+      }
+    } catch (err) {
+      console.error('Failed to switch workspace', err);
+    }
+  };
 
   const userEmail = user?.email || 'admin@cronflow.sh';
   const userHandle = userEmail.split('@')[0] || 'cronflow';
@@ -108,7 +123,7 @@ export const TopNav: React.FC = () => {
                       <button
                         key={proj.id}
                         onClick={() => {
-                          setActiveProject(proj);
+                          handleSwitchProject(proj);
                           setDropdownOpen(false);
                         }}
                         className={`w-full flex items-center justify-between text-left px-3.5 py-2 text-xs transition-colors ${
