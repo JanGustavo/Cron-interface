@@ -199,19 +199,19 @@ export const LoginGate: React.FC = () => {
               Substitua crontabs espalhados e webhooks sem diagnóstico por uma camada confiável para suas tarefas recorrentes. O CronFlow agenda execuções, tenta novamente quando necessário, assina seus webhooks e mostra o histórico completo de cada resultado.
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-2 select-none">
+            <div className="grid gap-4 pt-2 select-none sm:grid-cols-2">
               <button
                 onClick={() => {
                   setActiveTab('signup');
                   setIsModalOpen(true);
                 }}
-                className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200"
+                className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200"
               >
                 Criar meu primeiro job grátis ⚡
               </button>
               <button
                 onClick={() => scrollToSection('failure-lifecycle')}
-                className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer"
+                className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer"
               >
                 Ver uma execução por dentro
               </button>
@@ -351,36 +351,44 @@ export const LoginGate: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-left">
           {/* Passo 1 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300 relative">
-            <span className="absolute top-4 right-4 font-mono text-[9px] uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/20">PASSO 1</span>
-            <div className="text-xs font-black text-slate-200 font-mono mb-2">1. Disparo de Agendamento</div>
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">1. Disparo de Agendamento</div>
+              <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 1</span>
+            </div>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
               O job é disparado precisamente no horário definido (cron ou intervalo) a partir de instâncias desacopladas do Scheduler.
             </p>
           </div>
 
           {/* Passo 2 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300 relative">
-            <span className="absolute top-4 right-4 font-mono text-[9px] uppercase px-2 py-0.5 rounded bg-rose-500/10 text-rose-455 font-bold border border-rose-500/20">PASSO 2</span>
-            <div className="text-xs font-black text-slate-200 font-mono mb-2">2. Resposta com Falha</div>
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">2. Resposta com Falha</div>
+              <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-rose-455 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 2</span>
+            </div>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
               Seu endpoint responde com instabilidades temporárias, erros de rede (HTTP 5xx) ou timeouts inesperados de resposta.
             </p>
           </div>
 
           {/* Passo 3 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300 relative">
-            <span className="absolute top-4 right-4 font-mono text-[9px] uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold border border-amber-500/20">PASSO 3</span>
-            <div className="text-xs font-black text-slate-200 font-mono mb-2">3. Retries Inteligentes</div>
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">3. Retries Inteligentes</div>
+              <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-amber-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 3</span>
+            </div>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
               O Worker enfileira automaticamente a tarefa para re-executar com backoff exponencial (3x), amortecendo flutuações temporárias.
             </p>
           </div>
 
           {/* Passo 4 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300 relative">
-            <span className="absolute top-4 right-4 font-mono text-[9px] uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">PASSO 4</span>
-            <div className="text-xs font-black text-slate-200 font-mono mb-2">4. Alerta & Telemetria</div>
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">4. Alerta & Telemetria</div>
+              <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-emerald-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 4</span>
+            </div>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
               Se o erro persistir, você recebe um webhook assinado ou alerta SMTP com os logs completos de cada tentativa realizada.
             </p>
@@ -548,8 +556,8 @@ export const LoginGate: React.FC = () => {
           {/* API */}
           <div className="p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 relative flex flex-col justify-between min-h-[180px]">
             <div className="space-y-3">
-              <span className="text-[9px] uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/20">API REST</span>
-              <div className="text-xs font-black text-slate-200 font-mono">1. API (cmd/api)</div>
+              <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">API REST</span>
+              <div className="text-xs font-black text-slate-200 font-mono leading-tight">1. API (cmd/api)</div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                 Escrita em Go usando Chi Router, cuida da autenticação por chaves API em hashes timing-safe. Focada em baixíssima latência nas requisições do SDK.
               </p>
@@ -562,8 +570,8 @@ export const LoginGate: React.FC = () => {
           {/* Scheduler */}
           <div className="p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 relative flex flex-col justify-between min-h-[180px]">
             <div className="space-y-3">
-              <span className="text-[9px] uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/20">SCHEDULER</span>
-              <div className="text-xs font-black text-slate-200 font-mono">2. Scheduler (cmd/scheduler)</div>
+              <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">SCHEDULER</span>
+              <div className="text-xs font-black text-slate-200 font-mono leading-tight">2. Scheduler (cmd/scheduler)</div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                 Processo em loop isolado que lê tarefas prontas. Resolve as timezones e distribui o lock com locks exclusivos de Redis para evitar dupla execução.
               </p>
@@ -576,8 +584,8 @@ export const LoginGate: React.FC = () => {
           {/* Worker */}
           <div className="p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 relative flex flex-col justify-between min-h-[180px]">
             <div className="space-y-3">
-              <span className="text-[9px] uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/20">WORKER</span>
-              <div className="text-xs font-black text-slate-200 font-mono">3. Worker (cmd/worker)</div>
+              <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">WORKER</span>
+              <div className="text-xs font-black text-slate-200 font-mono leading-tight">3. Worker (cmd/worker)</div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                 Executa requisições de forma concorrente em Goroutines através de filas Asynq. Gerencia limites de concorrência por plano e fila.
               </p>
@@ -590,8 +598,8 @@ export const LoginGate: React.FC = () => {
           {/* Lock/Logs */}
           <div className="p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 relative flex flex-col justify-between min-h-[180px]">
             <div className="space-y-3">
-              <span className="text-[9px] uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/20">TELEMETRIA</span>
-              <div className="text-xs font-black text-slate-200 font-mono">4. Logs de Tentativas</div>
+              <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">TELEMETRIA</span>
+              <div className="text-xs font-black text-slate-200 font-mono leading-tight">4. Logs de Tentativas</div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                 Persistência de logs imutáveis e estatísticas detalhadas de cada tentativa de execução no Postgres para auditoria.
               </p>

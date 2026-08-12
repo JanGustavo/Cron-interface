@@ -171,14 +171,14 @@ export const OnboardingTour: React.FC = () => {
               {step.action ? (
                 <button
                   onClick={step.action}
-                  className="px-3.5 py-1.5 rounded-lg bg-indigo-650 text-slate-100 font-bold hover:bg-indigo-550 transition-all text-[10px] uppercase tracking-wider cursor-pointer shadow-md"
+                  className="inline-flex min-w-[160px] items-center justify-center whitespace-nowrap px-3.5 py-1.5 rounded-lg bg-indigo-650 text-slate-100 font-bold hover:bg-indigo-550 transition-all text-[10px] uppercase tracking-wider cursor-pointer shadow-md"
                 >
                   {step.actionLabel || 'Executar'}
                 </button>
               ) : (
                 <button
                   onClick={handleNext}
-                  className="px-3.5 py-1.5 rounded-lg bg-indigo-650 text-slate-100 font-bold hover:bg-indigo-550 transition-all text-[10px] uppercase tracking-wider cursor-pointer shadow-md"
+                  className="inline-flex min-w-[160px] items-center justify-center whitespace-nowrap px-3.5 py-1.5 rounded-lg bg-indigo-650 text-slate-100 font-bold hover:bg-indigo-550 transition-all text-[10px] uppercase tracking-wider cursor-pointer shadow-md"
                 >
                   {currentStep === steps.length - 1 ? 'Finalizar' : (step.actionLabel || 'Próximo')}
                 </button>
