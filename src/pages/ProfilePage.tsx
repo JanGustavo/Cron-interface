@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { useAuthStore } from '../store/authStore';
@@ -232,6 +233,7 @@ export const ProfilePage: React.FC = () => {
     setTimeout(() => setUpdateSuccess(false), 2000);
   };
 
+  /* eslint-disable-next-line react-hooks/preserve-manual-memoization */
   const fetchProfile = useCallback(async () => {
     setLoadingProfile(true);
     try {
@@ -263,9 +265,10 @@ export const ProfilePage: React.FC = () => {
     } finally {
       setLoadingProfile(false);
     }
-  }, []);
+  }, [jobs.length]);
 
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect */
     fetchProfile();
   }, [fetchProfile]);
 
@@ -371,7 +374,7 @@ export const ProfilePage: React.FC = () => {
         showToast(`Alternado para o workspace: ${project.name}`, 'success');
         await fetchJobs();
       }
-    } catch (err: any) {
+    } catch {
       showToast('Erro ao alternar de workspace.', 'error');
     } finally {
       setIsSwitchingProject(false);

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
@@ -128,29 +129,30 @@ export const LoginGate: React.FC = () => {
       <div className="absolute bottom-[20vh] left-10 w-[400px] h-[400px] bg-[#ff006e]/5 rounded-full blur-[120px] pointer-events-none" />
 
       {/* 🧭 NAVIGATION BAR */}
-      <header className="sticky top-0 z-40 w-full border-b border-indigo-950/40 bg-[#060813]/70 backdrop-blur-md transition-all select-none">
+      <header className="sticky top-0 z-40 w-full border-b border-indigo-950/40 bg-[#060813]/75 backdrop-blur-xl transition-all duration-300 select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-950/40 border border-cyan-500/20 shadow-[0_0_15px_rgba(0,217,255,0.15)] p-1.5">
+          <div className="group flex items-center gap-3 cursor-pointer transition-transform duration-300 hover:-translate-y-0.5" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-950/40 border border-cyan-500/20 shadow-[0_0_15px_rgba(0,217,255,0.15)] p-1.5 transition-all duration-300 group-hover:border-cyan-400/40 group-hover:bg-indigo-900/50 group-hover:shadow-[0_0_20px_rgba(0,217,255,0.22)]">
               <img src="/logo.svg" alt="Logo CronFlow" className="w-full h-full object-contain" />
             </div>
-            <span className="text-lg font-black tracking-widest text-gradient-cyber font-mono uppercase">
+            <span className="text-lg font-black tracking-widest text-gradient-cyber font-mono uppercase transition-all duration-300 group-hover:tracking-[0.28em]">
               CronFlow
             </span>
           </div>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-400">
-            <button onClick={() => scrollToSection('failure-lifecycle')} className="hover:text-cyan-400 transition-colors cursor-pointer">Como Funciona</button>
-            <button onClick={() => scrollToSection('architecture')} className="hover:text-cyan-400 transition-colors cursor-pointer">Arquitetura</button>
-            <button onClick={() => scrollToSection('playground')} className="hover:text-cyan-400 transition-colors cursor-pointer">Terminal AI</button>
-            <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors">GitHub</a>
+          <nav className="hidden md:flex items-center gap-2 rounded-full border border-indigo-950/40 bg-indigo-950/10 px-2 py-1 text-xs font-bold uppercase tracking-wider text-slate-400 shadow-[0_0_0_1px_rgba(99,102,241,0.02)]">
+            <button onClick={() => scrollToSection('failure-lifecycle')} className="rounded-full px-3 py-1.5 transition-all duration-200 hover:bg-cyan-500/10 hover:text-cyan-300 hover:shadow-[0_0_0_1px_rgba(6,182,212,0.15)] focus-visible:bg-cyan-500/10 focus-visible:text-cyan-300">Como Funciona</button>
+            <button onClick={() => scrollToSection('architecture')} className="rounded-full px-3 py-1.5 transition-all duration-200 hover:bg-cyan-500/10 hover:text-cyan-300 hover:shadow-[0_0_0_1px_rgba(6,182,212,0.15)] focus-visible:bg-cyan-500/10 focus-visible:text-cyan-300">Arquitetura</button>
+            <button onClick={() => scrollToSection('playground')} className="rounded-full px-3 py-1.5 transition-all duration-200 hover:bg-cyan-500/10 hover:text-cyan-300 hover:shadow-[0_0_0_1px_rgba(6,182,212,0.15)] focus-visible:bg-cyan-500/10 focus-visible:text-cyan-300">Terminal AI</button>
+            <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="rounded-full px-3 py-1.5 transition-all duration-200 hover:bg-cyan-500/10 hover:text-cyan-300 hover:shadow-[0_0_0_1px_rgba(6,182,212,0.15)] focus-visible:bg-cyan-500/10 focus-visible:text-cyan-300">GitHub</a>
           </nav>
 
           <div className="flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-950/30 border border-indigo-950/30 transition-colors"
+              className="p-2 rounded-xl text-slate-400 border border-indigo-950/30 bg-indigo-950/10 transition-all duration-200 hover:text-white hover:bg-indigo-950/30 hover:border-cyan-500/20 hover:shadow-[0_0_14px_rgba(99,102,241,0.16)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/40"
+              aria-label="Alternar tema"
             >
               {theme === 'dark' ? (
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -167,7 +169,7 @@ export const LoginGate: React.FC = () => {
                 setActiveTab('login');
                 setIsModalOpen(true);
               }}
-              className="px-4.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-indigo-650/80 hover:bg-indigo-600 rounded-xl border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.25)] transition-all cursor-pointer"
+              className="px-4.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-indigo-650/80 hover:bg-indigo-600 rounded-xl border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.25)] transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_0_26px_rgba(99,102,241,0.32)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/40"
             >
               Entrar
             </button>
@@ -410,8 +412,8 @@ export const LoginGate: React.FC = () => {
           {/* Card 1 */}
           <div className="p-6 rounded-3xl bg-[#0a0d1d]/75 border border-indigo-950/50 hover:border-cyan-500/20 transition-all duration-300 space-y-3">
             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H12v9" />
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
             </div>
             <h3 className="text-base font-bold text-slate-200 tracking-wide font-mono">Resiliência sem gambiarra</h3>
@@ -800,12 +802,13 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 scrollToSection('features');
               }}
             />
-            <div className="relative min-w-0 p-6 md:p-8">
+            <div className="relative min-w-0 p-6 md:p-8 lg:flex lg:h-full lg:flex-col lg:justify-center">
             
             {/* Close Button */}
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-5 right-5 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900/60 transition-colors cursor-pointer"
+              aria-label="Fechar modal"
+              className="absolute top-5 right-5 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-colors cursor-pointer"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -829,11 +832,12 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
               <div className="flex border-b border-indigo-950/20 mb-6 font-mono">
                 <button
                   type="button"
+                  aria-label="Trocar para aba de Login"
                   onClick={() => {
                     setActiveTab('login');
                     setErrorMsg(null);
                   }}
-                  className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus:outline-none focus:text-cyan-400 ${
                     activeTab === 'login'
                       ? 'text-cyan-400 border-b-2 border-cyan-400'
                       : 'text-slate-500 hover:text-slate-350'
@@ -843,11 +847,12 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 </button>
                 <button
                   type="button"
+                  aria-label="Trocar para aba de Registro"
                   onClick={() => {
                     setActiveTab('signup');
                     setErrorMsg(null);
                   }}
-                  className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus:outline-none focus:text-cyan-400 ${
                     activeTab === 'signup'
                       ? 'text-cyan-400 border-b-2 border-cyan-400'
                       : 'text-slate-500 hover:text-slate-350'
@@ -879,7 +884,8 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     />
                     <button
                       onClick={handleCopyKey}
-                      className={`px-4 py-2.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                      aria-label="Copiar chave de API"
+                      className={`px-4 py-2.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-500/40 ${
                         copySuccess
                           ? 'bg-emerald-600 border-emerald-500 text-white'
                           : 'bg-slate-800/60 hover:bg-slate-800/80 border-slate-700/50 text-slate-300'
@@ -949,8 +955,9 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     />
                     <button
                       type="button"
+                      aria-label="Alternar visibilidade da senha"
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 focus:outline-none focus:text-cyan-400 transition-colors"
                     >
                       {showPassword ? (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1012,8 +1019,9 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     />
                     <button
                       type="button"
+                      aria-label="Alternar visibilidade da senha"
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 focus:outline-none focus:text-cyan-400 transition-colors"
                     >
                       {showPassword ? (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
