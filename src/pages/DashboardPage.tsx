@@ -101,7 +101,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 };
 
 export const DashboardPage: React.FC = () => {
-  const { setCreateModalOpen, setDocsOpen, showToast } = useUiStore();
+  const { setCreateModalOpen, setDocsOpen, showToast, setLogModalOpen } = useUiStore();
   const { jobs } = useJobsStore();
   const { user } = useAuthStore();
   const [allRecentLogs, setAllRecentLogs] = useState<LogEntry[]>([]);
@@ -110,6 +110,7 @@ export const DashboardPage: React.FC = () => {
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [isJobFilterOpen, setIsJobFilterOpen] = useState(false);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
+  const [selectedErrorCategory, setSelectedErrorCategory] = useState<string | null>(null);
   const [activeMetric, setActiveMetric] = useState<'overview' | 'latency' | 'errors' | 'queue'>('overview');
 
   interface QueueMetrics {
@@ -205,26 +206,26 @@ export const DashboardPage: React.FC = () => {
   })();
 
   const errorBreakdown = (() => {
-    const counts = {
-      ssrf: 0,
-      timeout: 0,
-      dns: 0,
-      http5xx: 0,
-      http4xx: 0,
-      others: 0,
+    const categories = {
+      ssrf: [] as LogEntry[],
+      timeout: [] as LogEntry[],
+      dns: [] as LogEntry[],
+      http5xx: [] as LogEntry[],
+      http4xx: [] as LogEntry[],
+      others: [] as LogEntry[],
     };
     allRecentLogs.forEach((log) => {
       if (log.status === 'failed') {
         const msg = (log.responseBody || '').toLowerCase();
-        if (msg.includes('ssrf')) counts.ssrf++;
-        else if (msg.includes('timeout') || msg.includes('deadline')) counts.timeout++;
-        else if (msg.includes('lookup') || msg.includes('dns') || msg.includes('no such host')) counts.dns++;
-        else if (log.httpStatus && log.httpStatus >= 500) counts.http5xx++;
-        else if (log.httpStatus && log.httpStatus >= 400) counts.http4xx++;
-        else counts.others++;
+        if (msg.includes('ssrf')) categories.ssrf.push(log);
+        else if (msg.includes('timeout') || msg.includes('deadline')) categories.timeout.push(log);
+        else if (msg.includes('lookup') || msg.includes('dns') || msg.includes('no such host')) categories.dns.push(log);
+        else if (log.httpStatus && log.httpStatus >= 500) categories.http5xx.push(log);
+        else if (log.httpStatus && log.httpStatus >= 400) categories.http4xx.push(log);
+        else categories.others.push(log);
       }
     });
-    return counts;
+    return categories;
   })();
 
   const plan = localStorage.getItem('cf_user_plan') || user?.plan || 'free';
@@ -804,30 +805,75 @@ export const DashboardPage: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2.5 bg-[#050716]/65 p-4 rounded-2xl border border-indigo-950/40 select-none text-left">
-                    <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400">Classificação dos Erros (Workspace)</h4>
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400">Classificação dos Erros</h4>
+                      {selectedErrorCategory && (
+                        <button
+                          onClick={() => setSelectedErrorCategory(null)}
+                          className="text-[9px] text-slate-500 hover:text-slate-355 font-mono font-semibold cursor-pointer"
+                        >
+                          Limpar filtro
+                        </button>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {[
-                        { label: 'SSRF Bloqueado', count: errorBreakdown.ssrf, color: 'bg-rose-500', icon: '🛡️' },
-                        { label: 'Timeouts / Deadlines', count: errorBreakdown.timeout, color: 'bg-amber-500', icon: '⏱️' },
-                        { label: 'Resolução DNS / Host', count: errorBreakdown.dns, color: 'bg-cyan-500', icon: '🌐' },
-                        { label: 'Erros do Servidor (5xx)', count: errorBreakdown.http5xx, color: 'bg-purple-500', icon: '🔥' },
-                        { label: 'Erros do Cliente (4xx)', count: errorBreakdown.http4xx, color: 'bg-yellow-500', icon: '⚠️' },
-                        { label: 'Outros Erros', count: errorBreakdown.others, color: 'bg-slate-500', icon: '⚙️' },
+                        { label: 'SSRF Bloqueado', count: errorBreakdown.ssrf.length, logs: errorBreakdown.ssrf, color: 'bg-rose-500', icon: '🛡️', key: 'ssrf' },
+                        { label: 'Timeouts / Deadlines', count: errorBreakdown.timeout.length, logs: errorBreakdown.timeout, color: 'bg-amber-500', icon: '⏱️', key: 'timeout' },
+                        { label: 'Resolução DNS / Host', count: errorBreakdown.dns.length, logs: errorBreakdown.dns, color: 'bg-cyan-500', icon: '🌐', key: 'dns' },
+                        { label: 'Erros do Servidor (5xx)', count: errorBreakdown.http5xx.length, logs: errorBreakdown.http5xx, color: 'bg-purple-500', icon: '🔥', key: 'http5xx' },
+                        { label: 'Erros do Cliente (4xx)', count: errorBreakdown.http4xx.length, logs: errorBreakdown.http4xx, color: 'bg-yellow-500', icon: '⚠️', key: 'http4xx' },
+                        { label: 'Outros Erros', count: errorBreakdown.others.length, logs: errorBreakdown.others, color: 'bg-slate-500', icon: '⚙️', key: 'others' },
                       ].map((item, idx) => {
-                        const totalFailed = Object.values(errorBreakdown).reduce((a, b) => a + b, 0);
+                        const totalFailed = Object.values(errorBreakdown).reduce((sum, list) => sum + list.length, 0);
                         const pct = totalFailed > 0 ? Math.round((item.count / totalFailed) * 100) : 0;
+                        const isExpanded = selectedErrorCategory === item.key;
                         return (
                           <div key={idx} className="space-y-1">
-                            <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedErrorCategory(isExpanded ? null : item.key)}
+                              className="w-full flex items-center justify-between text-[10px] text-slate-400 font-semibold hover:text-white transition-colors cursor-pointer text-left focus:outline-none"
+                            >
                               <span className="flex items-center gap-1.5">
                                 <span>{item.icon}</span>
-                                <span className="text-slate-350">{item.label}</span>
+                                <span className={isExpanded ? 'text-rose-450 font-bold' : 'text-slate-350'}>{item.label}</span>
                               </span>
-                              <span className="font-mono text-slate-400">{item.count} ({pct}%)</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-indigo-950/20">
+                              <span className="font-mono text-slate-450 flex items-center gap-1.5">
+                                <span>{item.count} ({pct}%)</span>
+                                <span className="text-[8px] text-slate-500">{isExpanded ? '▼' : '▶'}</span>
+                              </span>
+                            </button>
+                            <div className="w-full h-1 bg-slate-950 rounded-full overflow-hidden border border-indigo-950/20">
                               <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
                             </div>
+
+                            {/* Collapsible execution list */}
+                            {isExpanded && (
+                              <div className="mt-2 pl-3 py-1.5 border-l border-indigo-950/60 max-h-40 overflow-y-auto space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                                {item.logs.length === 0 ? (
+                                  <p className="text-[9px] text-slate-600 italic">Nenhuma falha neste grupo.</p>
+                                ) : (
+                                  item.logs.map((log) => (
+                                    <div
+                                      key={log.id}
+                                      onClick={() => setLogModalOpen(true, log.id)}
+                                      className="p-1.5 bg-indigo-950/20 border border-indigo-950/50 hover:border-cyan-500/30 rounded-lg cursor-pointer hover:bg-indigo-950/40 transition-all text-left"
+                                    >
+                                      <div className="flex justify-between items-center text-[9px] font-bold text-slate-200">
+                                        <span className="truncate max-w-[120px]">{log.jobName || 'Tarefa'}</span>
+                                        <span className="text-slate-500 font-mono">
+                                          {new Date(log.triggeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                      </div>
+                                      <p className="text-[8px] text-rose-400 font-mono truncate max-w-[195px] mt-0.5">
+                                        {log.responseBody || 'Sem resposta'}
+                                      </p>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
