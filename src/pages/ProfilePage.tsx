@@ -15,6 +15,34 @@ const formatDate = (value?: string | null) => {
   }).format(new Date(value));
 };
 
+const formatRelativeTime = (value?: string | null) => {
+  if (!value) return 'Nunca usado';
+
+  const date = new Date(value);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.max(0, Math.floor(diffMs / 1000));
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSecs < 10) return 'Ativo agora';
+  if (diffSecs < 60) return `há ${diffSecs} segundos`;
+  if (diffMins === 1) return 'há 1 minuto';
+  if (diffMins < 60) return `há ${diffMins} minutos`;
+  if (diffHours === 1) return 'há 1 hora';
+  if (diffHours < 24) return `há ${diffHours} horas`;
+  if (diffDays === 1) return 'ontem';
+  if (diffDays < 7) return `há ${diffDays} dias`;
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
 /*
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const InfoTip: React.FC<{ text: string }> = ({ text }) => (
@@ -40,6 +68,7 @@ export const ProfilePage: React.FC = () => {
   const { jobs, fetchJobs } = useJobsStore();
   const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen } = useUiStore();
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
+  const [isSwitchingProject, setIsSwitchingProject] = useState(false);
 
   // Load custom profile details saved during onboarding
   const [profileFullName, setProfileFullName] = useState(() => localStorage.getItem('cf_user_name') || user?.fullName || '');
@@ -331,15 +360,18 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleSwitchProject = async (project: any) => {
+    setIsSwitchingProject(true);
     try {
       const res = await api.post(`/v1/projects/${project.id}/switch`);
       if (res.data && res.data.token) {
         setActiveProject(project, res.data.token);
         showToast(`Alternado para o workspace: ${project.name}`, 'success');
-        fetchJobs();
+        await fetchJobs();
       }
     } catch (err: any) {
       showToast('Erro ao alternar de workspace.', 'error');
+    } finally {
+      setIsSwitchingProject(false);
     }
   };
   
@@ -515,7 +547,15 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* WORKSPACE & LIMITS STATUS */}
-          <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-4 text-left flex-1">
+          <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-4 text-left flex-1 relative">
+            {isSwitchingProject && (
+              <div className="absolute inset-0 bg-[#090c15]/75 backdrop-blur-[2px] rounded-3xl flex items-center justify-center z-50">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] font-bold text-slate-400">Alternando workspace...</span>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-bold text-slate-200">Workspace & Limites</h4>
@@ -762,8 +802,14 @@ export const ProfilePage: React.FC = () => {
                         Listando chaves...
                       </div>
                     ) : apiKeys.length === 0 ? (
-                      <div className="text-center py-10 text-slate-500 text-[11px] italic bg-[#05070e]/20 border border-indigo-950/30 rounded-2xl">
-                        Nenhuma chave ativa gerada para este workspace.
+                      <div className="text-center py-12 px-6 bg-[#05070e]/20 border border-indigo-950/30 rounded-2xl flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-indigo-950/30 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-3">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                        </div>
+                        <h5 className="text-[11px] font-bold text-slate-300">Sem chaves ativas</h5>
+                        <p className="text-[10px] text-slate-500 mt-1 max-w-[220px] leading-normal">Gere uma chave de API para integrar o CronFlow com seus scripts locais ou outros serviços.</p>
                       </div>
                     ) : (
                       apiKeys.map((key) => (
@@ -780,7 +826,7 @@ export const ProfilePage: React.FC = () => {
                               {key.lastUsedAt && (
                                 <>
                                   <span>•</span>
-                                  <span className="text-indigo-400">Último uso: {formatDate(key.lastUsedAt)}</span>
+                                  <span className="text-indigo-400">Último uso: {formatRelativeTime(key.lastUsedAt)}</span>
                                 </>
                               )}
                             </div>

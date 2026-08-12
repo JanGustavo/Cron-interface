@@ -60,8 +60,16 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
           <tbody className="divide-y divide-indigo-950/15">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-slate-500 italic select-none">
-                  Nenhuma execução registrada recentemente.
+                <td colSpan={5} className="px-5 py-12 text-center select-none">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-slate-900 border border-indigo-950/40 flex items-center justify-center text-slate-500 mb-3">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                    </div>
+                    <h5 className="text-[11px] font-bold text-slate-400">Sem atividade recente</h5>
+                    <p className="text-[10px] text-slate-500 mt-1 max-w-[240px] leading-normal">Os logs de disparos HTTP e retries aparecerão aqui em tempo real assim que os jobs forem executados.</p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -74,7 +82,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
                   {/* Job metadata info */}
                   <td className="px-5 py-3.5 min-w-[240px]">
                     <div className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors">
-                      {log.jobName || `Job #${log.jobId}`}
+                      {log.jobName || `Job #${log.jobId ? log.jobId.slice(0, 8) : ''}`}
                     </div>
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate max-w-[260px]">
                       {log.jobUrl}
