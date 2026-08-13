@@ -23,6 +23,7 @@ export const KanbanBoard: React.FC = () => {
   const [selectedTimezone, setSelectedTimezone] = useState('');
   const [selectedFrequencyType, setSelectedFrequencyType] = useState(''); // 'cron' | 'interval' | ''
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [activeMobileColumn, setActiveMobileColumn] = useState<KanbanStatus>('draft');
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -266,11 +267,51 @@ export const KanbanBoard: React.FC = () => {
         </div>
       )}
 
+      {/* Mobile Column Selector (Visible only on mobile/tablet < lg) */}
+      <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-indigo-950/20 select-none">
+        {COLUMNS.map((col) => {
+          const colCount = filteredJobs.filter((job) => (job.kanbanStatus || 'draft') === col.id).length;
+          const isActive = activeMobileColumn === col.id;
+          return (
+            <button
+              key={col.id}
+              onClick={() => setActiveMobileColumn(col.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                isActive
+                  ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30 font-bold'
+                  : 'bg-slate-900/40 text-slate-400 border-transparent hover:text-slate-200'
+              }`}
+            >
+              {col.title} ({colCount})
+            </button>
+          );
+        })}
+      </div>
+
       {/* Drag & Drop Board Context Wrapper */}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-indigo-950/60 scrollbar-track-transparent">
+        {/* Desktop View: all columns side-by-side */}
+        <div className="hidden lg:flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-indigo-950/60 scrollbar-track-transparent">
           {COLUMNS.map((column) => {
             // Get jobs belonging to this column, filtered by the search term
+            const columnJobs = filteredJobs.filter(
+              (job) => (job.kanbanStatus || 'draft') === column.id
+            );
+
+            return (
+              <KanbanColumn
+                key={column.id}
+                id={column.id}
+                title={column.title}
+                jobs={columnJobs}
+              />
+            );
+          })}
+        </div>
+
+        {/* Mobile View: single active column */}
+        <div className="lg:hidden block">
+          {COLUMNS.filter((col) => col.id === activeMobileColumn).map((column) => {
             const columnJobs = filteredJobs.filter(
               (job) => (job.kanbanStatus || 'draft') === column.id
             );

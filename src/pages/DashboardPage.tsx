@@ -380,7 +380,7 @@ export const DashboardPage: React.FC = () => {
           Bem-vindo ao <span className="text-gradient-cyber">CronFlow</span>
         </h2>
         <p className="text-sm text-slate-400 mt-2 max-w-xl">
-          Sua plataforma integrada de agendamento e automação serverless. Configure tarefas, receba webhooks e analise histórico com latência sub-milissegundo.
+          Sua plataforma integrada de agendamento e automação serverless. Configure tarefas, receba webhooks e analise o histórico com agendamento previsível.
         </p>
         
         <div className="flex gap-3 mt-6">

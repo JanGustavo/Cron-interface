@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import type { Project } from '../../types/auth';
 
 interface ProjectManagerProps {
   isSwitchingProject: boolean;
@@ -8,7 +8,7 @@ interface ProjectManagerProps {
   maxJobsLimit: number;
   jobsUsagePercent: number;
   isProPlan: boolean;
-  projects: any[];
+  projects: Project[];
   createProjectOpen: boolean;
   setCreateProjectOpen: (open: boolean) => void;
   newProjectName: string;
@@ -20,9 +20,9 @@ interface ProjectManagerProps {
   editingProjectName: string;
   setEditingProjectName: (name: string) => void;
   handleRenameProject: (e: React.FormEvent, projectId: string) => void;
-  handleSwitchProject: (project: any) => void;
+  handleSwitchProject: (project: Project) => void;
   handleDeleteProject: (projectId: string, projectName: string) => void;
-  activeProject: any;
+  activeProject: Project | null;
 }
 
 export const ProjectManager: React.FC<ProjectManagerProps> = ({

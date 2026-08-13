@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
 import { useJobsStore } from '../../store/jobsStore';
 import api from '../../services/api';
+import type { Project } from '../../types/auth';
 
 export const TopNav: React.FC = () => {
   const { theme, toggleTheme, activeTab, toggleSidebar } = useUiStore();
@@ -11,7 +11,7 @@ export const TopNav: React.FC = () => {
   const { fetchJobs } = useJobsStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const handleSwitchProject = async (project: any) => {
+  const handleSwitchProject = async (project: Project) => {
     try {
       const res = await api.post(`/v1/projects/${project.id}/switch`);
       if (res.data && res.data.token) {

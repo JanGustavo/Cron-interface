@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { useAuthStore } from '../store/authStore';
 import { useJobsStore } from '../store/jobsStore';
+import type { Project } from '../types/auth';
 import { useUiStore } from '../store/uiStore';
 import api from '../services/api';
 import { ProfileSettings } from '../components/Profile/ProfileSettings';
@@ -284,8 +284,9 @@ export const ProfilePage: React.FC = () => {
       });
       localStorage.setItem('cf_user_timezone', profileTimezone);
       showToast('Preferências de notificação salvas!', 'success');
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao salvar preferências.';
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { reason?: string; error?: string } } };
+      const errorMsg = axiosError.response?.data?.reason || axiosError.response?.data?.error || 'Erro ao salvar preferências.';
       showToast(errorMsg, 'error');
     } finally {
       setSavingProfile(false);
@@ -305,8 +306,9 @@ export const ProfilePage: React.FC = () => {
         setNewProjectName('');
         setCreateProjectOpen(false);
       }
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao criar projeto.';
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { reason?: string; error?: string } } };
+      const errorMsg = axiosError.response?.data?.reason || axiosError.response?.data?.error || 'Erro ao criar projeto.';
       showToast(errorMsg, 'error');
     } finally {
       setCreatingProject(false);
@@ -327,8 +329,9 @@ export const ProfilePage: React.FC = () => {
       }
       showToast('Projeto renomeado com sucesso!', 'success');
       setEditingProjectId(null);
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao renomear projeto.';
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { reason?: string; error?: string } } };
+      const errorMsg = axiosError.response?.data?.reason || axiosError.response?.data?.error || 'Erro ao renomear projeto.';
       showToast(errorMsg, 'error');
     }
   };
@@ -358,14 +361,15 @@ export const ProfilePage: React.FC = () => {
         setProjects(updatedProjects);
         showToast('Projeto excluído com sucesso!', 'success');
         fetchProfile();
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao excluir projeto.';
+      } catch (err) {
+        const axiosError = err as { response?: { data?: { reason?: string; error?: string } } };
+        const errorMsg = axiosError.response?.data?.reason || axiosError.response?.data?.error || 'Erro ao excluir projeto.';
         showToast(errorMsg, 'error');
       }
     }
   };
 
-  const handleSwitchProject = async (project: any) => {
+  const handleSwitchProject = async (project: Project) => {
     setIsSwitchingProject(true);
     try {
       const res = await api.post(`/v1/projects/${project.id}/switch`);
@@ -959,7 +963,7 @@ export const ProfilePage: React.FC = () => {
               <h4 className="text-sm font-bold text-slate-200">Links de Atalho</h4>
               <p className="text-[10px] text-slate-500 mt-0.5">Acesse rapidamente outras telas e recursos do painel.</p>
             </div>
-            <div className="grid grid-cols-3 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               <button
                 type="button"
                 onClick={handleCreateJob}
@@ -984,7 +988,7 @@ export const ProfilePage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenSupport}
-                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-emerald-300 hover:text-white bg-emerald-950/20 hover:bg-emerald-950/50 rounded-xl border border-emerald-500/15 transition-all cursor-pointer col-span-3"
+                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-emerald-300 hover:text-white bg-emerald-950/20 hover:bg-emerald-950/50 rounded-xl border border-emerald-500/15 transition-all cursor-pointer col-span-1 sm:col-span-3"
               >
                 Solicitar Suporte (Fale Conosco) ✉
               </button>

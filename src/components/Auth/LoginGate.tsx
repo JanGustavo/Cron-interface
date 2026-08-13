@@ -1,13 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import api from '../../services/api';
 import { AuthProductPanel } from './AuthProductPanel';
 import { authCopy } from './authCopy';
+import type { User, Token, Project } from '../../types/auth';
 
 export const LoginGate: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSimulationOpen, setIsSimulationOpen] = useState(false);
+  const [simulationStep, setSimulationStep] = useState(0);
+  const [isSimulating, setIsSimulating] = useState(false);
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +20,7 @@ export const LoginGate: React.FC = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [signupSession, setSignupSession] = useState<{ user: any; token: any; projects: any } | null>(null);
+  const [signupSession, setSignupSession] = useState<{ user: User; token: Token; projects: Project[] } | null>(null);
   
   // Interactive Sandbox Tab State
   const [activeSandboxTab, setActiveSandboxTab] = useState<'curl' | 'json' | 'agent'>('curl');
@@ -120,6 +123,40 @@ export const LoginGate: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Close simulation modal when pressing ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsSimulationOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Simulation step controller
+  useEffect(() => {
+    if (!isSimulationOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSimulationStep(0);
+      setIsSimulating(false);
+      return;
+    }
+    setIsSimulating(true);
+    setSimulationStep(1);
+  }, [isSimulationOpen]);
+
+  useEffect(() => {
+    if (!isSimulating) return;
+    if (simulationStep < 6) {
+      const timer = setTimeout(() => {
+        setSimulationStep((prev) => prev + 1);
+      }, 1800);
+      return () => clearTimeout(timer);
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsSimulating(false);
+    }
+  }, [simulationStep, isSimulating]);
+
   return (
     <div className="min-h-screen bg-[#060813] text-slate-100 selection:bg-cyan-500/30 selection:text-white font-sans scroll-smooth overflow-x-hidden relative">
       
@@ -207,13 +244,13 @@ export const LoginGate: React.FC = () => {
                   setActiveTab('signup');
                   setIsModalOpen(true);
                 }}
-                className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200"
+                className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
               >
                 Criar meu primeiro job grátis ⚡
               </button>
               <button
-                onClick={() => scrollToSection('failure-lifecycle')}
-                className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer"
+                onClick={() => setIsSimulationOpen(true)}
+                className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
               >
                 Ver uma execução por dentro
               </button>
@@ -359,7 +396,7 @@ export const LoginGate: React.FC = () => {
               <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 1</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              O job é disparado precisamente no horário definido (cron ou intervalo) a partir de instâncias desacopladas do Scheduler.
+              O job é disparado conforme o intervalo ou expressão cron definidos, a partir de instâncias isoladas do Scheduler.
             </p>
           </div>
 
@@ -614,12 +651,12 @@ export const LoginGate: React.FC = () => {
       </section>
 
       {/* 🛡️ SECURITY & TRUST SECTION */}
-      <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center font-sans">
         <div className="space-y-4 mb-16">
           <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-400 font-mono font-bold">Segurança e Conformidade</span>
           <h2 className="text-3xl font-black tracking-wide font-mono text-slate-100">Automação sem abrir uma porta para o ambiente interno.</h2>
-          <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-            Tratamos a segurança das suas requisições HTTP e dados sensíveis com padrões corporativos.
+          <p className="text-sm text-slate-450 max-w-lg mx-auto leading-relaxed">
+            Tratamos a segurança das suas requisições HTTP e dados sensíveis com padrões corporativos de ponta.
           </p>
         </div>
 
@@ -627,11 +664,11 @@ export const LoginGate: React.FC = () => {
           {/* Card 1: Proteção SSRF */}
           <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-3 hover:border-indigo-500/10 transition-all duration-300">
             <span className="text-sm font-bold text-slate-200 block font-mono">Proteção Anti-SSRF ativa</span>
-            <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              O CronFlow valida ativamente todos os endereços IP de destino e redirecionamentos contra faixas de redes privadas internas (como localhost, 127.0.0.1, 10.0.0.0/8). Impedimos que usuários mal-intencionados utilizem a plataforma para escanear a sua infraestrutura de nuvem interna.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              O CronFlow valida ativamente todos os endereços IP de destino e redirecionamentos contra faixas de redes privadas internas (como localhost, 127.0.0.1, 10.0.0.0/8). Impedimos escaneamentos maliciosos na sua rede interna.
             </p>
             <div className="pt-2">
-              <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors">
+              <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:underline">
                 Ver documentação →
               </a>
             </div>
@@ -640,11 +677,37 @@ export const LoginGate: React.FC = () => {
           {/* Card 2: Assinaturas HMAC */}
           <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-3 hover:border-indigo-500/10 transition-all duration-300">
             <span className="text-sm font-bold text-slate-200 block font-mono">Webhooks com Assinatura HMAC-SHA256</span>
-            <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              Todas as notificações de webhook e alertas de execução contêm uma assinatura criptográfica no cabeçalho baseada em chaves geradas por projeto. Seus servidores receptores podem validar a integridade e proveniência de cada chamada, impedindo ataques de spoofing.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Todas as notificações contêm uma assinatura criptográfica no cabeçalho baseada em chaves geradas por projeto. Seus servidores receptores podem validar a autenticidade das mensagens, mitigando ataques de spoofing.
             </p>
             <div className="pt-2">
-              <a href="https://github.com/JanGustavo/Cron/blob/master/README_WEBHOOKS.md" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors">
+              <a href="https://github.com/JanGustavo/Cron/blob/master/README_WEBHOOKS.md" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:underline">
+                Ver documentação →
+              </a>
+            </div>
+          </div>
+
+          {/* Card 3: Chaves de API Revogáveis */}
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-3 hover:border-indigo-500/10 transition-all duration-300">
+            <span className="text-sm font-bold text-slate-200 block font-mono">Chaves de API Revogáveis & Isoladas</span>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Gere chaves de API exclusivas com escopo restrito para cada workspace. Em caso de comprometimento, revogue ou rotacione suas chaves instantaneamente pelo painel, sem interromper as outras rotinas da sua organização.
+            </p>
+            <div className="pt-2">
+              <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:underline">
+                Ver documentação →
+              </a>
+            </div>
+          </div>
+
+          {/* Card 4: Validação de Redirecionamentos */}
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-3 hover:border-indigo-500/10 transition-all duration-300">
+            <span className="text-sm font-bold text-slate-200 block font-mono">Validação de Redirecionamento (Redirects)</span>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              O pipeline do Worker segue as diretrizes HTTP de redirecionamento com validação estrita de segurança. Impedimos redirecionamentos abertos e forçamos o protocolo HTTPS seguro nas transições para proteger chaves e tokens de autenticação.
+            </p>
+            <div className="pt-2">
+              <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:underline">
                 Ver documentação →
               </a>
             </div>
@@ -837,10 +900,10 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     setActiveTab('login');
                     setErrorMsg(null);
                   }}
-                  className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus:outline-none focus:text-cyan-400 ${
+                  className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none focus-visible:text-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-500/40 rounded-lg ${
                     activeTab === 'login'
                       ? 'text-cyan-400 border-b-2 border-cyan-400'
-                      : 'text-slate-500 hover:text-slate-350'
+                      : 'text-slate-500 hover:text-slate-355'
                   }`}
                 >
                   Entrar
@@ -852,10 +915,10 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     setActiveTab('signup');
                     setErrorMsg(null);
                   }}
-                  className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus:outline-none focus:text-cyan-400 ${
+                  className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none focus-visible:text-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-500/40 rounded-lg ${
                     activeTab === 'signup'
                       ? 'text-cyan-400 border-b-2 border-cyan-400'
-                      : 'text-slate-500 hover:text-slate-350'
+                      : 'text-slate-500 hover:text-slate-355'
                   }`}
                 >
                   Registrar
@@ -1066,6 +1129,112 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 </button>
               </form>
             )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📡 SIMULATOR MODAL */}
+      {isSimulationOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 animate-in fade-in duration-200 font-mono">
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-indigo-500/30 bg-[#0a0d1d]/95 shadow-[0_0_50px_rgba(0,217,255,0.2)] animate-in zoom-in-95 duration-200 p-6 md:p-8 flex flex-col">
+            <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center pb-4 border-b border-indigo-950/40 mb-6">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                <span className="text-xs uppercase font-extrabold tracking-wider text-cyan-400">Simulador de Execução CronFlow</span>
+              </div>
+              <button
+                onClick={() => setIsSimulationOpen(false)}
+                aria-label="Fechar simulação"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Simulation Area */}
+            <div className="flex-1 bg-[#060812] border border-indigo-950/60 rounded-2xl p-5 min-h-[320px] text-xs space-y-3 overflow-y-auto select-all text-left">
+              {simulationStep >= 1 && (
+                <div className="text-cyan-400 animate-in fade-in duration-300">
+                  📡 [08:00:00.000] scheduler: Dispatching job-9a1b (Sync Vendas) on schedule "0 8 * * *"
+                </div>
+              )}
+              {simulationStep >= 2 && (
+                <div className="text-indigo-300 animate-in fade-in duration-300">
+                  ⚡ [08:00:00.045] worker: Acquired distributed Redis lock for epoch window. Task ID: tsk_e891b.
+                </div>
+              )}
+              {simulationStep >= 3 && (
+                <div className="text-slate-300 animate-in fade-in duration-300">
+                  🔄 [08:00:00.052] worker: Dispatching HTTP POST webhook to https://api.vendas.com/sync...
+                </div>
+              )}
+              {simulationStep >= 4 && (
+                <div className="text-rose-450 font-semibold animate-in fade-in duration-300">
+                  ⚠️ [08:00:10.055] worker: HTTP request TIMEOUT (10000ms limit exceeded). Connection closed.
+                  <br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                  Enqueuing job for Retry 2/3 with backoff delay (30 seconds). Status: FAIL_TEMPORARY
+                </div>
+              )}
+              {simulationStep >= 5 && (
+                <div className="text-amber-400 animate-in fade-in duration-300">
+                  🔄 [08:00:40.060] worker: Backoff period expired. Executing Retry 2/3...
+                  <br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                  Sending HTTP POST to https://api.vendas.com/sync (HMAC Header signed)
+                </div>
+              )}
+              {simulationStep >= 6 && (
+                <div className="text-emerald-400 font-bold animate-in fade-in duration-300">
+                  ✅ [08:00:40.245] worker: HTTP Status 200 OK received! Latency: 185ms.
+                  <br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                  Database updated (1 retry required). Distributed Redis lock released.
+                  <br />
+                  🔔 [08:00:40.252] telemetry: Email/Webhook logs saved successfully. System recovery complete.
+                </div>
+              )}
+
+              {/* Typing/running indicator */}
+              {isSimulating && (
+                <div className="flex items-center gap-1.5 text-slate-500 py-1 font-sans">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce delay-150" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce delay-300" />
+                  <span className="text-[10px] italic ml-1 font-mono uppercase tracking-wider">Executando etapa {simulationStep}...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-between items-center pt-6 mt-4 border-t border-indigo-950/40 select-none">
+              <span className="text-[10px] text-slate-500">
+                {isSimulating ? 'Simulação em progresso...' : 'Simulação concluída.'}
+              </span>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setSimulationStep(1);
+                    setIsSimulating(true);
+                  }}
+                  disabled={isSimulating}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                >
+                  Reiniciar
+                </button>
+                <button
+                  onClick={() => setIsSimulationOpen(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                >
+                  Fechar
+                </button>
+              </div>
             </div>
           </div>
         </div>

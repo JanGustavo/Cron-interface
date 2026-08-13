@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from './components/Dashboard/DashboardLayout';
 import { useUiStore } from './store/uiStore';
 import { useAuthStore } from './store/authStore';
+import type { Project } from './types/auth';
 import { useJobsStore } from './store/jobsStore';
 import { KanbanBoard } from './components/Kanban/KanbanBoard';
 import { JobModal } from './components/Kanban/JobModal';
@@ -248,7 +248,7 @@ const App: React.FC = () => {
           const activeProjID = decoded?.project_id || (profile.projects && profile.projects[0]?.id) || '0fe9fb93-3fa0-44b6-b5d8-a5c5b62148a1';
           
           const projectsList = profile.projects || [];
-          const activeProj = projectsList.find((p: any) => p.id === activeProjID) || projectsList[0] || { id: activeProjID, userId: userId, name: 'Projeto Principal', createdAt: userCreatedAt };
+          const activeProj = projectsList.find((p: Project) => p.id === activeProjID) || projectsList[0] || { id: activeProjID, userId: userId, name: 'Projeto Principal', createdAt: userCreatedAt };
 
           login(
             { id: userId, email: email, plan: plan, createdAt: userCreatedAt, fullName: profile.fullName },
