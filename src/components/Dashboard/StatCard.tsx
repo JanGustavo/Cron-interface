@@ -12,6 +12,7 @@ interface StatCardProps {
     type: 'up' | 'down' | 'neutral';
   };
   description?: string;
+  tooltip?: string;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -21,6 +22,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   color = 'indigo',
   trend,
   description,
+  tooltip,
 }) => {
   const colorStyles = () => {
     switch (color) {
@@ -71,8 +73,19 @@ export const StatCard: React.FC<StatCardProps> = ({
     >
       <div className="flex items-center justify-between">
         {/* Title */}
-        <span className="text-slate-400 text-xs font-bold uppercase tracking-wider block">
-          {title}
+        <span className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+          <span>{title}</span>
+          {tooltip && (
+            <div className="relative group/tooltip">
+              <span className="text-[10px] text-slate-500 hover:text-cyan-400 cursor-help font-bold p-0.5">
+                (?)
+              </span>
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-44 p-2 bg-slate-950/95 border border-indigo-900/60 text-[9px] text-slate-300 font-sans normal-case font-normal leading-normal rounded-lg shadow-xl opacity-0 scale-95 pointer-events-none group-hover/tooltip:opacity-100 group-hover/tooltip:scale-100 transition-all duration-200 z-50 text-center">
+                {tooltip}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-950" />
+              </div>
+            </div>
+          )}
         </span>
         
         {/* Icon container */}

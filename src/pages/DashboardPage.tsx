@@ -366,6 +366,8 @@ export const DashboardPage: React.FC = () => {
     });
   })();
 
+  const isChartEmpty = chartData.every((d) => d.volume === 0);
+
   const recentActivities = allRecentLogs.slice(0, 5);
 
   return (
@@ -465,6 +467,7 @@ export const DashboardPage: React.FC = () => {
               value={`${createdJobsCount} / ${maxJobsLimit}`}
               color="indigo"
               description={isProPlan ? 'Plano Pro (20 tarefas máx global)' : 'Plano Gratuito (5 tarefas máx global)'}
+              tooltip="O número de tarefas criadas em relação ao limite total do seu plano de workspace."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -476,6 +479,7 @@ export const DashboardPage: React.FC = () => {
               value={successRate === '-' ? '-' : `${successRate}%`}
               color="emerald"
               description={successRate === '-' ? 'Sem execuções registradas' : 'Últimas 24 horas'}
+              tooltip="O percentual de requisições HTTP disparadas com sucesso (código menor que 500)."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -487,6 +491,7 @@ export const DashboardPage: React.FC = () => {
               value={avgResponseTime}
               color="purple"
               description={avgResponseTime === '-' ? 'Sem execuções registradas' : 'Média geral de webhooks'}
+              tooltip="A latência média de resposta dos seus servidores de webhook ao receber o agendamento."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -689,7 +694,7 @@ export const DashboardPage: React.FC = () => {
 
             {/* Dynamic Charts Container */}
             <div className="pt-2">
-              {activeMetric === 'queue' && (
+              {activeMetric === 'queue' ? (
                 <div className="space-y-4">
                   {loadingQueue && !queueMetrics ? (
                     <div className="flex flex-col items-center justify-center h-64 text-slate-500 text-xs">
@@ -746,141 +751,157 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-              )}
-
-              {activeMetric === 'overview' && (
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6}/>
-                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.1}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
-                      <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} req`} />
-                      <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Bar yAxisId="left" dataKey="volume" barSize={32} radius={[6, 6, 0, 0]} fill="url(#volumeGlow)" />
-                      <Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#10b981" strokeWidth={3} dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }} activeDot={{ r: 6, stroke: '#34d399', strokeWidth: 2, fill: '#070913' }} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {activeMetric === 'latency' && (
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="latencyGlow" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#a855f7" stopOpacity={0.0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
-                      <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}ms`} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="avgLatency" stroke="#a855f7" strokeWidth={3} fill="url(#latencyGlow)" />
-                      <Line type="monotone" dataKey="maxLatency" stroke="#06b6d4" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {activeMetric === 'errors' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-                  <div className="lg:col-span-2 h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
-                        <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} err`} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="failedCount" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={24} />
-                      </ComposedChart>
-                    </ResponsiveContainer>
+              ) : isChartEmpty ? (
+                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-indigo-500/10 bg-[#04060f]/30 min-h-[260px] text-center space-y-4 select-none">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-950/20 border border-indigo-500/20 text-indigo-400">
+                    <svg className="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                    </svg>
                   </div>
-                  
-                  <div className="space-y-2.5 bg-[#050716]/65 p-4 rounded-2xl border border-indigo-950/40 select-none text-left">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400">Classificação dos Erros</h4>
-                      {selectedErrorCategory && (
-                        <button
-                          onClick={() => setSelectedErrorCategory(null)}
-                          className="text-[9px] text-slate-500 hover:text-slate-355 font-mono font-semibold cursor-pointer"
-                        >
-                          Limpar filtro
-                        </button>
-                      )}
+                  <div className="space-y-1.5 max-w-sm">
+                    <h4 className="text-xs font-bold text-slate-350 font-mono">Sem dados no período</h4>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
+                      Nenhum disparo de webhook foi registrado para as tarefas selecionadas no intervalo de tempo de {chartFilter}. Certifique-se de que os agendamentos estão ativos e aguarde as execuções começarem.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {activeMetric === 'overview' && (
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6}/>
+                              <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.1}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
+                          <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                          <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} req`} />
+                          <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar yAxisId="left" dataKey="volume" barSize={32} radius={[6, 6, 0, 0]} fill="url(#volumeGlow)" />
+                          <Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#10b981" strokeWidth={3} dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }} activeDot={{ r: 6, stroke: '#34d399', strokeWidth: 2, fill: '#070913' }} />
+                        </ComposedChart>
+                      </ResponsiveContainer>
                     </div>
-                    <div className="space-y-2">
-                      {[
-                        { label: 'SSRF Bloqueado', count: errorBreakdown.ssrf.length, logs: errorBreakdown.ssrf, color: 'bg-rose-500', icon: '🛡️', key: 'ssrf' },
-                        { label: 'Timeouts / Deadlines', count: errorBreakdown.timeout.length, logs: errorBreakdown.timeout, color: 'bg-amber-500', icon: '⏱️', key: 'timeout' },
-                        { label: 'Resolução DNS / Host', count: errorBreakdown.dns.length, logs: errorBreakdown.dns, color: 'bg-cyan-500', icon: '🌐', key: 'dns' },
-                        { label: 'Erros do Servidor (5xx)', count: errorBreakdown.http5xx.length, logs: errorBreakdown.http5xx, color: 'bg-purple-500', icon: '🔥', key: 'http5xx' },
-                        { label: 'Erros do Cliente (4xx)', count: errorBreakdown.http4xx.length, logs: errorBreakdown.http4xx, color: 'bg-yellow-500', icon: '⚠️', key: 'http4xx' },
-                        { label: 'Outros Erros', count: errorBreakdown.others.length, logs: errorBreakdown.others, color: 'bg-slate-500', icon: '⚙️', key: 'others' },
-                      ].map((item, idx) => {
-                        const totalFailed = Object.values(errorBreakdown).reduce((sum, list) => sum + list.length, 0);
-                        const pct = totalFailed > 0 ? Math.round((item.count / totalFailed) * 100) : 0;
-                        const isExpanded = selectedErrorCategory === item.key;
-                        return (
-                          <div key={idx} className="space-y-1">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedErrorCategory(isExpanded ? null : item.key)}
-                              className="w-full flex items-center justify-between text-[10px] text-slate-400 font-semibold hover:text-white transition-colors cursor-pointer text-left focus:outline-none"
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <span>{item.icon}</span>
-                                <span className={isExpanded ? 'text-rose-450 font-bold' : 'text-slate-350'}>{item.label}</span>
-                              </span>
-                              <span className="font-mono text-slate-450 flex items-center gap-1.5">
-                                <span>{item.count} ({pct}%)</span>
-                                <span className="text-[8px] text-slate-500">{isExpanded ? '▼' : '▶'}</span>
-                              </span>
-                            </button>
-                            <div className="w-full h-1 bg-slate-950 rounded-full overflow-hidden border border-indigo-950/20">
-                              <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
-                            </div>
+                  )}
 
-                            {/* Collapsible execution list */}
-                            {isExpanded && (
-                              <div className="mt-2 pl-3 py-1.5 border-l border-indigo-950/60 max-h-40 overflow-y-auto space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                                {item.logs.length === 0 ? (
-                                  <p className="text-[9px] text-slate-600 italic">Nenhuma falha neste grupo.</p>
-                                ) : (
-                                  item.logs.map((log) => (
-                                    <div
-                                      key={log.id}
-                                      onClick={() => setLogModalOpen(true, log.id)}
-                                      className="p-1.5 bg-indigo-950/20 border border-indigo-950/50 hover:border-cyan-500/30 rounded-lg cursor-pointer hover:bg-indigo-950/40 transition-all text-left"
-                                    >
-                                      <div className="flex justify-between items-center text-[9px] font-bold text-slate-200">
-                                        <span className="truncate max-w-[120px]">{log.jobName || 'Tarefa'}</span>
-                                        <span className="text-slate-500 font-mono">
-                                          {new Date(log.triggeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                      </div>
-                                      <p className="text-[8px] text-rose-400 font-mono truncate max-w-[195px] mt-0.5">
-                                        {log.responseBody || 'Sem resposta'}
-                                      </p>
-                                    </div>
-                                  ))
+                  {activeMetric === 'latency' && (
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="latencyGlow" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4}/>
+                              <stop offset="95%" stopColor="#a855f7" stopOpacity={0.0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
+                          <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}ms`} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Area type="monotone" dataKey="avgLatency" stroke="#a855f7" strokeWidth={3} fill="url(#latencyGlow)" />
+                          <Line type="monotone" dataKey="maxLatency" stroke="#06b6d4" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {activeMetric === 'errors' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                      <div className="lg:col-span-2 h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
+                            <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} err`} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="failedCount" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={24} />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </div>
+                      
+                      <div className="space-y-2.5 bg-[#050716]/65 p-4 rounded-2xl border border-indigo-950/40 select-none text-left">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400">Classificação dos Erros</h4>
+                          {selectedErrorCategory && (
+                            <button
+                              onClick={() => setSelectedErrorCategory(null)}
+                              className="text-[9px] text-slate-500 hover:text-slate-355 font-mono font-semibold cursor-pointer"
+                            >
+                              Limpar filtro
+                            </button>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          {[
+                            { label: 'SSRF Bloqueado', count: errorBreakdown.ssrf.length, logs: errorBreakdown.ssrf, color: 'bg-rose-500', icon: '🛡️', key: 'ssrf' },
+                            { label: 'Timeouts / Deadlines', count: errorBreakdown.timeout.length, logs: errorBreakdown.timeout, color: 'bg-amber-500', icon: '⏱️', key: 'timeout' },
+                            { label: 'Resolução DNS / Host', count: errorBreakdown.dns.length, logs: errorBreakdown.dns, color: 'bg-cyan-500', icon: '🌐', key: 'dns' },
+                            { label: 'Erros do Servidor (5xx)', count: errorBreakdown.http5xx.length, logs: errorBreakdown.http5xx, color: 'bg-purple-500', icon: '🔥', key: 'http5xx' },
+                            { label: 'Erros do Cliente (4xx)', count: errorBreakdown.http4xx.length, logs: errorBreakdown.http4xx, color: 'bg-yellow-500', icon: '⚠️', key: 'http4xx' },
+                            { label: 'Outros Erros', count: errorBreakdown.others.length, logs: errorBreakdown.others, color: 'bg-slate-500', icon: '⚙️', key: 'others' },
+                          ].map((item, idx) => {
+                            const totalFailed = Object.values(errorBreakdown).reduce((sum, list) => sum + list.length, 0);
+                            const pct = totalFailed > 0 ? Math.round((item.count / totalFailed) * 100) : 0;
+                            const isExpanded = selectedErrorCategory === item.key;
+                            return (
+                              <div key={idx} className="space-y-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedErrorCategory(isExpanded ? null : item.key)}
+                                  className="w-full flex items-center justify-between text-[10px] text-slate-400 font-semibold hover:text-white transition-colors cursor-pointer text-left focus:outline-none"
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    <span>{item.icon}</span>
+                                    <span className={isExpanded ? 'text-rose-450 font-bold' : 'text-slate-350'}>{item.label}</span>
+                                  </span>
+                                  <span className="font-mono text-slate-450 flex items-center gap-1.5">
+                                    <span>{item.count} ({pct}%)</span>
+                                    <span className="text-[8px] text-slate-500">{isExpanded ? '▼' : '▶'}</span>
+                                  </span>
+                                </button>
+                                <div className="w-full h-1 bg-slate-950 rounded-full overflow-hidden border border-indigo-950/20">
+                                  <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
+                                </div>
+
+                                {/* Collapsible execution list */}
+                                {isExpanded && (
+                                  <div className="mt-2 pl-3 py-1.5 border-l border-indigo-950/60 max-h-40 overflow-y-auto space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                                    {item.logs.length === 0 ? (
+                                      <p className="text-[9px] text-slate-600 italic">Nenhuma falha neste grupo.</p>
+                                    ) : (
+                                      item.logs.map((log) => (
+                                        <div
+                                          key={log.id}
+                                          onClick={() => setLogModalOpen(true, log.id)}
+                                          className="p-1.5 bg-indigo-950/20 border border-indigo-950/50 hover:border-cyan-500/30 rounded-lg cursor-pointer hover:bg-indigo-950/40 transition-all text-left"
+                                        >
+                                          <div className="flex justify-between items-center text-[9px] font-bold text-slate-200">
+                                            <span className="truncate max-w-[120px]">{log.jobName || 'Tarefa'}</span>
+                                            <span className="text-slate-500 font-mono">
+                                              {new Date(log.triggeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                          </div>
+                                          <p className="text-[8px] text-rose-400 font-mono truncate max-w-[195px] mt-0.5">
+                                            {log.responseBody || 'Sem resposta'}
+                                          </p>
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
                                 )}
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>

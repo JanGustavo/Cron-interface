@@ -14,8 +14,32 @@ import { ToastHost } from './components/Shared/ToastHost';
 import { AgentChat } from './components/Shared/AgentChat';
 import api from './services/api';
 
-const DashboardPage = React.lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
-const ProfilePage = React.lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyWithRetry<T extends React.ComponentType<any>>(
+  componentImport: () => Promise<{ default: T }>
+): React.LazyExoticComponent<T> {
+  return React.lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      console.error('Error loading chunk, retrying page reload...', error);
+      try {
+        const hasReloaded = window.sessionStorage.getItem('chunk-reload-attempted');
+        if (!hasReloaded) {
+          window.sessionStorage.setItem('chunk-reload-attempted', 'true');
+          window.location.reload();
+          return new Promise(() => {});
+        }
+      } catch (e) {
+        console.error('sessionStorage is blocked or unavailable:', e);
+      }
+      throw error;
+    }
+  });
+}
+
+const DashboardPage = lazyWithRetry(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 
 const PageLoader: React.FC = () => (
   <div className="flex flex-col justify-center items-center py-20 min-h-[50vh] select-none font-mono">
@@ -193,6 +217,14 @@ const App: React.FC = () => {
   const { isAuthenticated, login, logout, activeProject } = useAuthStore();
   const { fetchJobs, jobs, setActiveJob } = useJobsStore();
   const [authChecking, setAuthChecking] = useState(true);
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.removeItem('chunk-reload-attempted');
+    } catch {
+      // Ignore if sessionStorage is disabled or unavailable
+    }
+  }, []);
 
   // Global Docs State
   const [docsMarkdown, setDocsMarkdown] = useState('');
