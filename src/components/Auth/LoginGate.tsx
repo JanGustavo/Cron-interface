@@ -26,6 +26,19 @@ export const LoginGate: React.FC = () => {
   
   // Interactive Sandbox Tab State
   const [activeSandboxTab, setActiveSandboxTab] = useState<'curl' | 'json' | 'agent'>('curl');
+  const [playgroundCopySuccess, setPlaygroundCopySuccess] = useState(false);
+
+  const handleCopyPlaygroundCode = () => {
+    const code = activeSandboxTab === 'curl'
+      ? `curl -X POST https://cron.jangustavo.me/v1/jobs \\\n  -H "Authorization: Bearer cf_live_suaAPIKey" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name": "Sync Vendas", "schedule": "0 8 * * *", "url": "https://api.vendas.com/sync"}'`
+      : activeSandboxTab === 'json'
+      ? `{\n  "name": "Sincronizador Diário",\n  "schedule": "every:24h",\n  "url": "https://meu-endpoint.com/webhook",\n  "http_method": "POST",\n  "timezone": "America/Sao_Paulo",\n  "tags": ["vendas", "faturamento"]\n}`
+      : `👤 Você: crie um job chamado Monitor de Dolar para rodar toda segunda-feira às 12h batendo na URL https://economia.com/api usando o método GET\n🤖 Agente: Executando Tool createJob... Job criado com ID 4a82-f38b com sucesso! 🚀`;
+
+    navigator.clipboard.writeText(code);
+    setPlaygroundCopySuccess(true);
+    setTimeout(() => setPlaygroundCopySuccess(false), 2000);
+  };
 
   const { login } = useAuthStore();
   const { toggleTheme, theme } = useUiStore();
@@ -223,7 +236,7 @@ export const LoginGate: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-6 text-left animate-in fade-in slide-in-from-bottom-8 duration-500">
             
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-widest font-mono">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold tracking-widest font-mono">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
               Automações HTTP para produtos que não podem falhar no silêncio
             </div>
@@ -238,7 +251,7 @@ export const LoginGate: React.FC = () => {
               Agende, proteja e monitore suas automações em um só lugar.
             </p>
 
-            <p className="text-sm text-slate-400 max-w-lg leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed">
               Substitua crontabs espalhados e webhooks sem diagnóstico por uma camada confiável para suas tarefas recorrentes. O CronFlow agenda execuções, tenta novamente quando necessário, assina seus webhooks e mostra o histórico completo de cada resultado.
             </p>
 
@@ -387,54 +400,59 @@ export const LoginGate: React.FC = () => {
         <div className="space-y-4 mb-16">
           <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-400 font-mono">Controle de Ciclo de Vida</span>
           <h2 className="text-3xl font-black tracking-wide font-mono text-slate-100">O que acontece quando um job falha?</h2>
-          <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-400 max-w-lg mx-auto leading-relaxed">
             Diferente de agendadores silenciosos, o CronFlow foi projetado para lidar com instabilidades na rede e falhas de serviços de forma resiliente.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-left">
-          {/* Passo 1 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">1. Disparo de Agendamento</div>
-              <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 1</span>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              O job é disparado conforme o intervalo ou expressão cron definidos, a partir de instâncias isoladas do Scheduler.
-            </p>
-          </div>
+        <div className="relative">
+          {/* Connecting gradient line on desktop */}
+          <div className="hidden md:block absolute top-[28%] left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-cyan-500/30 via-amber-500/30 to-emerald-500/30 z-0 pointer-events-none" />
 
-          {/* Passo 2 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">2. Resposta com Falha</div>
-              <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-rose-455 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 2</span>
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-6 text-left">
+            {/* Passo 1 */}
+            <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">1. Disparo de Agendamento</div>
+                <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 1</span>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed font-sans">
+                O job é disparado conforme o intervalo ou expressão cron definidos, a partir de instâncias isoladas do Scheduler.
+              </p>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              Seu endpoint responde com instabilidades temporárias, erros de rede (HTTP 5xx) ou timeouts inesperados de resposta.
-            </p>
-          </div>
 
-          {/* Passo 3 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">3. Retries Inteligentes</div>
-              <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-amber-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 3</span>
+            {/* Passo 2 */}
+            <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">2. Resposta com Falha</div>
+                <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-rose-455 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 2</span>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed font-sans">
+                Seu endpoint responde com instabilidades temporárias, erros de rede (HTTP 5xx) ou timeouts inesperados de resposta.
+              </p>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              O Worker enfileira automaticamente a tarefa para re-executar com backoff exponencial (3x), amortecendo flutuações temporárias.
-            </p>
-          </div>
 
-          {/* Passo 4 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">4. Alerta & Telemetria</div>
-              <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-emerald-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 4</span>
+            {/* Passo 3 */}
+            <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">3. Retries Inteligentes</div>
+                <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-amber-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 3</span>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed font-sans">
+                O Worker enfileira automaticamente a tarefa para re-executar com backoff exponencial (3x), amortecendo flutuações temporárias.
+              </p>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              Se o erro persistir, você recebe um webhook assinado ou alerta SMTP com os logs completos de cada tentativa realizada.
-            </p>
+
+            {/* Passo 4 */}
+            <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">4. Alerta & Telemetria</div>
+                <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-emerald-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 4</span>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed font-sans">
+                Se o erro persistir, você recebe um webhook assinado ou alerta SMTP com os logs completos de cada tentativa realizada.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -733,36 +751,63 @@ export const LoginGate: React.FC = () => {
         <div className="glass-panel rounded-3xl border border-indigo-500/20 overflow-hidden shadow-2xl flex flex-col font-mono text-left text-xs text-indigo-300">
           
           {/* Tabs header */}
-          <div className="flex bg-[#070913]/90 border-b border-indigo-950/40 p-2 gap-1.5 select-none">
+          <div className="flex bg-[#070913]/90 border-b border-indigo-950/40 p-2 gap-1.5 select-none justify-between items-center">
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => setActiveSandboxTab('curl')}
+                className={`px-4 py-2 text-[10px] uppercase font-bold tracking-wider rounded-xl transition-all cursor-pointer ${
+                  activeSandboxTab === 'curl'
+                    ? 'bg-indigo-950/70 text-cyan-400 border border-cyan-500/20'
+                    : 'text-slate-500 hover:text-slate-400'
+                }`}
+              >
+                Comando cURL
+              </button>
+              <button
+                onClick={() => setActiveSandboxTab('json')}
+                className={`px-4 py-2 text-[10px] uppercase font-bold tracking-wider rounded-xl transition-all cursor-pointer ${
+                  activeSandboxTab === 'json'
+                    ? 'bg-indigo-950/70 text-cyan-400 border border-cyan-500/20'
+                    : 'text-slate-500 hover:text-slate-400'
+                }`}
+              >
+                Estrutura JSON
+              </button>
+              <button
+                onClick={() => setActiveSandboxTab('agent')}
+                className={`px-4 py-2 text-[10px] uppercase font-bold tracking-wider rounded-xl transition-all cursor-pointer ${
+                  activeSandboxTab === 'agent'
+                    ? 'bg-indigo-950/70 text-cyan-400 border border-cyan-500/20'
+                    : 'text-slate-500 hover:text-slate-400'
+                }`}
+              >
+                Prompt Agente IA
+              </button>
+            </div>
+
+            {/* Copy button */}
             <button
-              onClick={() => setActiveSandboxTab('curl')}
-              className={`px-4 py-2 text-[10px] uppercase font-bold tracking-wider rounded-xl transition-all cursor-pointer ${
-                activeSandboxTab === 'curl'
-                  ? 'bg-indigo-950/70 text-cyan-400 border border-cyan-500/20'
-                  : 'text-slate-500 hover:text-slate-400'
+              onClick={handleCopyPlaygroundCode}
+              aria-label="Copiar código do sandbox"
+              className={`px-3 py-1.5 rounded-xl border text-[10px] uppercase font-bold flex items-center gap-1.5 transition-all duration-200 cursor-pointer mr-2 focus:outline-none focus:ring-1 focus:ring-cyan-500/40 ${
+                playgroundCopySuccess
+                  ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/20'
+                  : 'bg-slate-900/60 hover:bg-slate-900 text-slate-400 border-indigo-950 hover:text-slate-200 hover:border-cyan-500/20'
               }`}
             >
-              Comando cURL
-            </button>
-            <button
-              onClick={() => setActiveSandboxTab('json')}
-              className={`px-4 py-2 text-[10px] uppercase font-bold tracking-wider rounded-xl transition-all cursor-pointer ${
-                activeSandboxTab === 'json'
-                  ? 'bg-indigo-950/70 text-cyan-400 border border-cyan-500/20'
-                  : 'text-slate-500 hover:text-slate-400'
-              }`}
-            >
-              Estrutura JSON
-            </button>
-            <button
-              onClick={() => setActiveSandboxTab('agent')}
-              className={`px-4 py-2 text-[10px] uppercase font-bold tracking-wider rounded-xl transition-all cursor-pointer ${
-                activeSandboxTab === 'agent'
-                  ? 'bg-indigo-950/70 text-cyan-400 border border-cyan-500/20'
-                  : 'text-slate-500 hover:text-slate-400'
-              }`}
-            >
-              Prompt Agente IA
+              {playgroundCopySuccess ? (
+                <>
+                  <span>✓</span>
+                  <span>Copiado</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                  <span>Copiar</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -1195,7 +1240,7 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
             </div>
 
             {/* Simulation Area */}
-            <div className="flex-1 bg-[#060812] border border-indigo-950/60 rounded-2xl p-5 min-h-[320px] text-xs space-y-3 overflow-y-auto select-all text-left">
+            <div className="flex-1 bg-[#060812] border border-indigo-950/60 rounded-2xl p-3 md:p-5 min-h-[300px] text-[10px] md:text-xs space-y-2.5 overflow-y-auto select-all text-left">
               {simulationStep >= 1 && (
                 <div className="text-cyan-400 animate-in fade-in duration-300">
                   📡 [08:00:00.000] scheduler: Dispatching job-9a1b (Sync Vendas) on schedule "0 8 * * *"
@@ -1203,7 +1248,7 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
               )}
               {simulationStep >= 2 && (
                 <div className="text-indigo-300 animate-in fade-in duration-300">
-                  ⚡ [08:00:00.045] worker: Acquired distributed Redis lock for epoch window. Task ID: tsk_e891b.
+                  ⚡ [08:00:00.045] worker: Acquired distributed Redis lock. Task ID: tsk_e891b.
                 </div>
               )}
               {simulationStep >= 3 && (
@@ -1212,29 +1257,30 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 </div>
               )}
               {simulationStep >= 4 && (
-                <div className="text-rose-450 font-semibold animate-in fade-in duration-300">
-                  ⚠️ [08:00:10.055] worker: HTTP request TIMEOUT (10000ms limit exceeded). Connection closed.
-                  <br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                  Enqueuing job for Retry 2/3 with backoff delay (30 seconds). Status: FAIL_TEMPORARY
+                <div className="text-rose-400 font-semibold animate-in fade-in duration-300 space-y-1">
+                  <div>⚠️ [08:00:10.055] worker: HTTP TIMEOUT (10s limit exceeded).</div>
+                  <div className="pl-6 text-[9px] md:text-[11px] text-rose-500/80">
+                    → Enqueuing job for Retry 2/3 (30s backoff). Status: FAIL_TEMPORARY
+                  </div>
                 </div>
               )}
               {simulationStep >= 5 && (
-                <div className="text-amber-400 animate-in fade-in duration-300">
-                  🔄 [08:00:40.060] worker: Backoff period expired. Executing Retry 2/3...
-                  <br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                  Sending HTTP POST to https://api.vendas.com/sync (HMAC Header signed)
+                <div className="text-amber-400 animate-in fade-in duration-300 space-y-1">
+                  <div>🔄 [08:00:40.060] worker: Backoff expired. Executing Retry 2/3...</div>
+                  <div className="pl-6 text-[9px] md:text-[11px] text-amber-500/80">
+                    → Sending HTTP POST webhook (signed with project HMAC-SHA256)
+                  </div>
                 </div>
               )}
               {simulationStep >= 6 && (
-                <div className="text-emerald-400 font-bold animate-in fade-in duration-300">
-                  ✅ [08:00:40.245] worker: HTTP Status 200 OK received! Latency: 185ms.
-                  <br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                  Database updated (1 retry required). Distributed Redis lock released.
-                  <br />
-                  🔔 [08:00:40.252] telemetry: Email/Webhook logs saved successfully. System recovery complete.
+                <div className="text-emerald-400 font-bold animate-in fade-in duration-300 space-y-1">
+                  <div>✅ [08:00:40.245] worker: HTTP Status 200 OK! Latency: 185ms.</div>
+                  <div className="pl-6 text-[9px] md:text-[11px] text-emerald-500/80">
+                    → DB updated (1 retry required). Distributed Redis lock released.
+                  </div>
+                  <div className="pl-6 text-[9px] md:text-[11px] text-emerald-500/80">
+                    → Telemetry and notifications dispatched successfully. Recovery complete.
+                  </div>
                 </div>
               )}
 
