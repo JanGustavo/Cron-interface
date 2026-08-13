@@ -370,13 +370,13 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
         <div className="p-4 border-t border-indigo-950/30 bg-indigo-950/10 flex justify-between items-center gap-2">
           <button
             onClick={() => handleCopyText(JSON.stringify(log, null, 2), 'Objeto de log completo copiado para o clipboard! 📋')}
-            className="px-4 py-2.5 text-xs font-semibold text-slate-350 hover:text-white bg-slate-900/40 hover:bg-slate-900/80 rounded-xl border border-indigo-950/40 transition-all cursor-pointer"
+            className="px-4 py-2.5 text-xs font-semibold text-slate-350 hover:text-white bg-slate-900/40 hover:bg-slate-700/80 rounded-xl border border-indigo-200/40 transition-all cursor-pointer"
           >
             Copiar Log Completo (JSON)
           </button>
           <button
             onClick={handleClose}
-            className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-650/80 hover:bg-indigo-600 rounded-xl border border-indigo-500/20 transition-all shadow-[0_0_20px_rgba(99,102,241,0.25)] cursor-pointer"
+            className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-650/80 hover:bg-indigo-200/80 rounded-xl border border-indigo-50/600 transition-all shadow-[0_0_20px_rgba(99,102,241,0.25)] cursor-pointer"
           >
             Fechar Inspeção
           </button>

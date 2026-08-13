@@ -943,7 +943,7 @@ export const ProfilePage: React.FC = () => {
                       disabled
                       className="px-3.5 py-2 text-[9px] uppercase font-black text-slate-500 bg-slate-900 border border-slate-800 rounded-xl cursor-not-allowed shrink-0"
                     >
-                      Indisponível (Free/Pro)
+                      Em Breve (Enterprise)
                     </button>
                   </div>
                 </div>
