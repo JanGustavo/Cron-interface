@@ -16,6 +16,8 @@ export const LoginGate: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [projectName, setProjectName] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [cpf, setCpf] = useState('');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -62,7 +64,7 @@ export const LoginGate: React.FC = () => {
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password || !projectName.trim()) {
+    if (!email.trim() || !password || !projectName.trim() || !fullName.trim() || !cpf.trim()) {
       setErrorMsg('Por favor, preencha todos os campos do cadastro.');
       return;
     }
@@ -74,7 +76,9 @@ export const LoginGate: React.FC = () => {
       const response = await api.post('/v1/auth/signup', {
         email: email.trim(),
         password: password,
-        projectName: projectName.trim(),
+        project_name: projectName.trim(),
+        full_name: fullName.trim(),
+        cpf: cpf.trim(),
       });
 
       const { token, user, projects, apiKey } = response.data;
@@ -979,6 +983,8 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     setActiveTab('signup');
                     setEmail('');
                     setProjectName('');
+                    setFullName('');
+                    setCpf('');
                   }}
                   className="w-full text-center text-[10px] text-slate-500 hover:text-slate-400 font-semibold cursor-pointer"
                 >
@@ -1109,6 +1115,37 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     value={projectName}
                     onChange={(e) => setProjectName(e.target.value)}
                     className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                    Nome Completo
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="João da Silva"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                    CPF (Apenas números)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="12345678909"
+                    maxLength={11}
+                    value={cpf}
+                    onChange={(e) => setCpf(e.target.value.replace(/\D/g, ''))}
+                    className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
                     disabled={loading}
                     required
                   />
