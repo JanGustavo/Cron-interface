@@ -33,6 +33,13 @@ export const LogFilter: React.FC<LogFilterProps> = ({ filter, onChange, onReset 
   // Convert array status back to single selected status value for the HTML select
   const currentStatusValue = filter.status && filter.status.length > 0 ? filter.status[0] : '';
 
+  const activeFiltersCount = [
+    filter.searchQuery,
+    currentStatusValue,
+    filter.startDate,
+    filter.endDate,
+  ].filter(Boolean).length;
+
   return (
     <div className="p-4 rounded-2xl glass-panel border border-indigo-950/40 space-y-4 bg-indigo-950/5 relative overflow-hidden select-none">
       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
@@ -63,7 +70,11 @@ export const LogFilter: React.FC<LogFilterProps> = ({ filter, onChange, onReset 
               placeholder="Buscar por ID, Nome ou Endpoint URL..."
               value={filter.searchQuery || ''}
               onChange={handleSearchChange}
-              className="w-full pl-9 pr-3 py-2 bg-[#060814]/80 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/40 transition duration-300"
+              className={`w-full pl-9 pr-3 py-2 bg-[#060814]/80 border rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none transition duration-300 ${
+                filter.searchQuery
+                  ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.15)] focus:border-indigo-400'
+                  : 'border-indigo-950/60 focus:border-indigo-500/40'
+              }`}
             />
           </div>
         </div>
@@ -76,7 +87,11 @@ export const LogFilter: React.FC<LogFilterProps> = ({ filter, onChange, onReset 
           <select
             value={currentStatusValue}
             onChange={handleStatusChange}
-            className="w-full px-3 py-2 bg-[#060814]/80 border border-indigo-950/60 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-indigo-500/40 transition duration-300 cursor-pointer"
+            className={`w-full px-3 py-2 bg-[#060814]/80 border rounded-xl text-xs text-slate-300 focus:outline-none transition duration-300 cursor-pointer ${
+              currentStatusValue
+                ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.15)] focus:border-indigo-400'
+                : 'border-indigo-950/60 focus:border-indigo-500/40'
+            }`}
           >
             <option value="">Todos os Status</option>
             <option value="success">Sucesso (2xx OK)</option>
@@ -94,7 +109,11 @@ export const LogFilter: React.FC<LogFilterProps> = ({ filter, onChange, onReset 
             type="date"
             value={filter.startDate || ''}
             onChange={handleStartDateChange}
-            className="w-full px-3 py-1.5 bg-[#060814]/80 border border-indigo-950/60 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-indigo-500/40 transition duration-300 cursor-pointer"
+            className={`w-full px-3 py-1.5 bg-[#060814]/80 border rounded-xl text-xs text-slate-300 focus:outline-none transition duration-300 cursor-pointer ${
+              filter.startDate
+                ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.15)] focus:border-indigo-400'
+                : 'border-indigo-950/60 focus:border-indigo-500/40'
+            }`}
           />
         </div>
 
@@ -107,7 +126,11 @@ export const LogFilter: React.FC<LogFilterProps> = ({ filter, onChange, onReset 
             type="date"
             value={filter.endDate || ''}
             onChange={handleEndDateChange}
-            className="w-full px-3 py-1.5 bg-[#060814]/80 border border-indigo-950/60 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-indigo-500/40 transition duration-300 cursor-pointer"
+            className={`w-full px-3 py-1.5 bg-[#060814]/80 border rounded-xl text-xs text-slate-300 focus:outline-none transition duration-300 cursor-pointer ${
+              filter.endDate
+                ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.15)] focus:border-indigo-400'
+                : 'border-indigo-950/60 focus:border-indigo-500/40'
+            }`}
           />
         </div>
       </div>
@@ -130,17 +153,23 @@ export const LogFilter: React.FC<LogFilterProps> = ({ filter, onChange, onReset 
           </select>
         </div>
 
-        {/* Reset Filters Stack button */}
-        {(filter.searchQuery || filter.status || filter.startDate || filter.endDate) && (
-          <button
-            onClick={onReset}
-            className="px-3.5 py-1.5 text-[10px] uppercase font-bold text-indigo-400 hover:text-white bg-indigo-950/10 hover:bg-indigo-950/40 border border-indigo-950/30 rounded-xl transition-all duration-300 flex items-center gap-1"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Limpar Filtros
-          </button>
+        {activeFiltersCount > 0 ? (
+          <div className="flex items-center gap-3">
+            <span className="text-[9px] uppercase font-bold tracking-widest text-[#a855f7] bg-[#a855f7]/10 border border-[#a855f7]/20 px-2 py-0.5 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.15)] animate-pulse">
+              🛡️ {activeFiltersCount} {activeFiltersCount === 1 ? 'Filtro Ativo' : 'Filtros Ativos'}
+            </span>
+            <button
+              onClick={onReset}
+              className="px-3.5 py-1.5 text-[10px] uppercase font-black text-rose-450 hover:text-white bg-rose-950/15 hover:bg-rose-900/35 border border-rose-900/30 rounded-xl transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-md"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Limpar Filtros
+            </button>
+          </div>
+        ) : (
+          <span className="text-[9px] font-semibold text-slate-500 italic">Nenhum filtro de busca ativo</span>
         )}
       </div>
     </div>

@@ -49,7 +49,8 @@ export const LogList: React.FC<LogListProps> = ({
   return (
     <div className="rounded-2xl glass-panel border border-indigo-950/40 overflow-hidden bg-indigo-950/5 select-none flex flex-col">
       {/* Table Container */}
-      <div className="overflow-x-auto">
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-indigo-950/20 border-b border-indigo-950/40 text-slate-400 font-semibold">
@@ -141,6 +142,58 @@ export const LogList: React.FC<LogListProps> = ({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card List View */}
+      <div className="block md:hidden divide-y divide-indigo-950/20 max-h-[60vh] overflow-y-auto pr-1">
+        {logs.length === 0 ? (
+          <div className="p-10 text-center text-slate-500 font-semibold text-xs">
+            Nenhum registro de execução encontrado com os filtros atuais.
+          </div>
+        ) : (
+          logs.map((log) => (
+            <div
+              key={log.id}
+              onClick={() => onSelectLog(log.id)}
+              className="p-4 space-y-3 hover:bg-indigo-950/10 active:bg-indigo-950/20 transition-all cursor-pointer flex flex-col"
+            >
+              <div className="flex items-center justify-between">
+                <StatusBadge status={log.status} attemptNumber={log.attemptNumber} />
+                <span className="text-[10px] text-slate-500 font-mono font-medium">{log.triggeredAt}</span>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-200 text-xs">
+                    {log.jobName || 'Tarefa Deletada'}
+                  </span>
+                  <span className="text-[9px] text-slate-500 font-mono">
+                    #{log.jobId.slice(0, 8)}
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-mono truncate max-w-full">
+                  {log.jobUrl || 'N/A'}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-indigo-950/15 text-[10px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-500 font-bold uppercase text-[8px]">HTTP:</span>
+                  {getHttpStatusBadge(log.httpStatus)}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-500 font-bold uppercase text-[8px]">Duração:</span>
+                  <span className="font-mono text-slate-350 font-bold">
+                    {log.durationMs !== undefined && log.durationMs !== null ? `${log.durationMs}ms` : '-'}
+                  </span>
+                </div>
+                <span className="text-indigo-400 font-black uppercase text-[8px] tracking-wider bg-indigo-950/30 px-2.5 py-1 rounded border border-indigo-500/10">
+                  Ver detalhes
+                </span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Pagination Controls Footer */}

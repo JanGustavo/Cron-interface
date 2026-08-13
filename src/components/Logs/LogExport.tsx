@@ -39,8 +39,10 @@ export const LogExport: React.FC<LogExportProps> = ({ logs }) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      showToast('Arquivo JSON de auditoria exportado com sucesso! 📊', 'success');
     } catch (err) {
       console.error('Falha ao exportar JSON:', err);
+      showToast('Falha ao exportar JSON.', 'error');
     }
   };
 
@@ -67,8 +69,10 @@ export const LogExport: React.FC<LogExportProps> = ({ logs }) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      showToast('Arquivo CSV de auditoria baixado com sucesso! 📊', 'success');
     } catch (err) {
       console.error('Falha ao exportar CSV:', err);
+      showToast('Falha ao exportar CSV.', 'error');
     }
   };
 
