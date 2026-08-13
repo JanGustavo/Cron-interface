@@ -6,6 +6,20 @@ import { AuthProductPanel } from './AuthProductPanel';
 import { authCopy } from './authCopy';
 import type { User, Token, Project } from '../../types/auth';
 
+const getPasswordStrength = (pwd: string) => {
+  if (!pwd) return { score: 0, label: '', color: 'bg-transparent', textColor: 'text-slate-500' };
+  let score = 0;
+  if (pwd.length >= 6) score++;
+  if (pwd.length >= 10) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  
+  if (score <= 2) return { score, label: 'Fraca', color: 'bg-rose-500 w-1/3', textColor: 'text-rose-400' };
+  if (score <= 4) return { score, label: 'Média', color: 'bg-amber-500 w-2/3', textColor: 'text-amber-400' };
+  return { score, label: 'Forte', color: 'bg-emerald-500 w-full', textColor: 'text-emerald-400' };
+};
+
 export const LoginGate: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
@@ -902,7 +916,7 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 animate-in fade-in duration-200">
           
-          <div className="relative grid w-full max-w-6xl overflow-hidden rounded-3xl border border-indigo-500/30 bg-[#0a0d1d]/95 shadow-[0_0_50px_rgba(0,217,255,0.2)] animate-in zoom-in-95 duration-200 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,0.75fr)]">
+          <div className="relative grid w-full max-w-md lg:max-w-6xl overflow-hidden rounded-3xl border border-indigo-500/30 bg-[#0a0d1d]/95 shadow-[0_0_50px_rgba(0,217,255,0.2)] animate-in zoom-in-95 duration-200 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,0.75fr)]">
             <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
             <AuthProductPanel
               onCreateAccount={() => {
@@ -1095,7 +1109,7 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {loading ? 'Entrando...' : authCopy.login.submit}
                 </button>
@@ -1148,6 +1162,19 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                       )}
                     </button>
                   </div>
+                  {password && (
+                    <div className="space-y-1.5 pt-1 animate-in fade-in duration-200">
+                      <div className="flex justify-between items-center text-[10px] font-mono">
+                        <span className="text-slate-500">Força da senha:</span>
+                        <span className={`font-bold ${getPasswordStrength(password).textColor}`}>
+                          {getPasswordStrength(password).label}
+                        </span>
+                      </div>
+                      <div className="h-1 w-full bg-indigo-950/60 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-300 ${getPasswordStrength(password).color}`} />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1205,10 +1232,16 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-xs font-bold text-white bg-[#ff006e] hover:bg-[#d90368] transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {loading ? 'Criando workspace...' : authCopy.signup.submit}
                 </button>
+                <p className="text-[10px] text-slate-500 text-center leading-relaxed pt-2">
+                  Ao criar o workspace, você concorda com os nossos{' '}
+                  <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-cyan-400 underline transition-colors">Termos de Serviço</a>{' '}
+                  e{' '}
+                  <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-cyan-400 underline transition-colors">Política de Privacidade</a>.
+                </p>
               </form>
             )}
             </div>
