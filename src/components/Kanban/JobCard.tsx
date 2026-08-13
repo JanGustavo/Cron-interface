@@ -1,6 +1,7 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import type { Job } from '../../types/jobs';
+import { translateSchedule } from '../Shared/cronTranslator';
 import { StatusBadge } from '../Dashboard/StatusBadge';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
@@ -52,10 +53,12 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
   };
 
   const formatSchedule = (sched: string) => {
-    if (sched.startsWith('every:')) {
-      return `Intervalo: a cada ${sched.replace('every:', '')}`;
-    }
-    return `Cron: ${sched}`;
+    const translation = translateSchedule(sched);
+    return (
+      <span title={sched} className="cursor-help">
+        {translation || sched}
+      </span>
+    );
   };
 
   const getWebhookAlertStatus = (j: Job) => {

@@ -54,6 +54,19 @@ export const CreateJobModal: React.FC = () => {
       return;
     }
 
+    if (webhookAlertUrl.trim()) {
+      try {
+        const u = new URL(webhookAlertUrl.trim());
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+          setErrorMsg('O Webhook de Alerta deve ser um URL válido (começando com http:// ou https://).');
+          return;
+        }
+      } catch {
+        setErrorMsg('O Webhook de Alerta deve ser um URL válido.');
+        return;
+      }
+    }
+
     setLoading(true);
     setErrorMsg(null);
 

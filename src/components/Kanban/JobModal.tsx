@@ -73,8 +73,41 @@ export const JobModal: React.FC = () => {
   };
 
   const handleToggleStatus = () => {
+    if (!activeJob) return;
+    const isPausing = activeJob.status !== 'paused' && activeJob.status !== 'failing';
+    
+    if (isPausing) {
+      Swal.fire({
+        title: 'Pausar tarefa?',
+        text: `Deseja realmente pausar os agendamentos da tarefa "${activeJob.name}"? Ela não será executada até que você a reative.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, pausar!',
+        cancelButtonText: 'Não, cancelar',
+        background: '#0a0f1d',
+        color: '#cbd5e1',
+        iconColor: '#f59e0b',
+        customClass: {
+          popup: 'border border-indigo-950/60 rounded-3xl shadow-2xl bg-[#090c15] text-left font-sans',
+          title: 'text-base font-bold text-slate-100 px-6 pt-6',
+          htmlContainer: 'text-xs text-slate-400 font-medium leading-normal px-6 pb-4',
+          actions: 'px-6 pb-6 flex justify-end gap-2',
+          confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-amber-650 hover:bg-amber-500 rounded-xl transition-all shadow-md cursor-pointer',
+          cancelButton: 'px-4 py-2 text-xs font-semibold text-slate-450 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer',
+        },
+        buttonsStyling: false,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          executeToggleStatus();
+        }
+      });
+    } else {
+      executeToggleStatus();
+    }
+  };
+
+  const executeToggleStatus = () => {
     const nextStatus = (activeJob.status === 'paused' || activeJob.status === 'failing') ? 'active' : 'paused';
-    // Sync kanban status appropriately
     const nextKanban = nextStatus === 'paused' ? 'draft' : 'scheduled';
     const consecutiveFailures = nextStatus === 'active' ? 0 : activeJob.consecutiveFailures;
     updateJob({
@@ -83,6 +116,7 @@ export const JobModal: React.FC = () => {
       kanbanStatus: nextKanban,
       consecutiveFailures,
     });
+    showToast(nextStatus === 'paused' ? 'Tarefa pausada com sucesso.' : 'Tarefa reativada com sucesso.', 'success');
   };
 
   const handleDelete = () => {
@@ -116,7 +150,36 @@ export const JobModal: React.FC = () => {
     });
   };
 
-  const handleTriggerNow = async () => {
+  const handleTriggerNow = () => {
+    if (!activeJob) return;
+
+    Swal.fire({
+      title: 'Disparar agora?',
+      text: `Deseja realmente forçar um disparo de webhook imediato para "${activeJob.url}"? Isso gerará um novo registro de execução nos logs.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, disparar!',
+      cancelButtonText: 'Não, cancelar',
+      background: '#0a0f1d',
+      color: '#cbd5e1',
+      iconColor: '#06b6d4',
+      customClass: {
+        popup: 'border border-indigo-950/60 rounded-3xl shadow-2xl bg-[#090c15] text-left font-sans',
+        title: 'text-base font-bold text-slate-100 px-6 pt-6',
+        htmlContainer: 'text-xs text-slate-400 font-medium leading-normal px-6 pb-4',
+        actions: 'px-6 pb-6 flex justify-end gap-2',
+        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-600 rounded-xl transition-all shadow-md cursor-pointer',
+        cancelButton: 'px-4 py-2 text-xs font-semibold text-slate-450 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer',
+      },
+      buttonsStyling: false,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        executeTriggerNow();
+      }
+    });
+  };
+
+  const executeTriggerNow = async () => {
     try {
       const result = await triggerJob(activeJob.id);
       setLastTriggerStatus({ code: result.status, ok: result.status >= 200 && result.status < 300 });
@@ -143,7 +206,18 @@ export const JobModal: React.FC = () => {
       showToast('O agendamento cron não pode estar vazio', 'error');
       return;
     }
-
+    if (editWebhookAlertUrl.trim()) {
+      try {
+        const u = new URL(editWebhookAlertUrl.trim());
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+          showToast('O Webhook de Alerta deve ser um URL válido (começando com http:// ou https://).', 'error');
+          return;
+        }
+      } catch {
+        showToast('O Webhook de Alerta deve ser um URL válido.', 'error');
+        return;
+      }
+    }
     let parsedHeaders = null;
     if (editHeaders.trim()) {
       try {
