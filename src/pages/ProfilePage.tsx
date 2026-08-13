@@ -153,40 +153,72 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleRevokeAPIKey = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja revogar esta chave de API? Todas as integrações com ela deixarão de funcionar imediatamente.')) {
-      return;
-    }
-    try {
-      await api.delete(`/v1/keys/${id}`);
-      showToast('Chave de API revogada com sucesso.', 'success');
-      fetchAPIKeys();
-    } catch (err) {
-      console.error('Failed to revoke API key', err);
-      showToast('Falha ao revogar chave de API.', 'error');
+    const result = await Swal.fire({
+      title: 'Revogar Chave de API?',
+      html: `Tem certeza que deseja revogar esta chave de API?<br/><span style="color:#e11d48;font-size:11px;margin-top:5px;display:block;">Todas as integrações utilizando esta chave deixarão de funcionar imediatamente!</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, Revogar',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
+        title: 'text-slate-100 font-extrabold text-base',
+        htmlContainer: 'text-slate-400 text-xs leading-relaxed mt-2',
+        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-all shadow-md',
+        cancelButton: 'px-4 py-2 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all ml-2',
+      },
+      buttonsStyling: false,
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await api.delete(`/v1/keys/${id}`);
+        showToast('Chave de API revogada com sucesso.', 'success');
+        fetchAPIKeys();
+      } catch (err) {
+        console.error('Failed to revoke API key', err);
+        showToast('Falha ao revogar chave de API.', 'error');
+      }
     }
   };
 
   const [rotatingSecret, setRotatingSecret] = useState(false);
 
   const handleRotateWebhookSecret = async () => {
-    if (!window.confirm('Tem certeza que deseja rotacionar a chave de assinatura? Todos os alertas enviados a partir de agora usarão a nova assinatura HMAC, e integrações antigas que não atualizarem o segredo falharão.')) {
-      return;
-    }
-    setRotatingSecret(true);
-    try {
-      const res = await api.post('/v1/projects/webhook-secret/rotate');
-      const newSecret = res.data.webhookSecret;
-      if (activeProject) {
-        const updatedProject = { ...activeProject, webhookSecret: newSecret };
-        setActiveProject(updatedProject);
-        setProjects(projects.map(p => p.id === activeProject.id ? updatedProject : p));
+    const result = await Swal.fire({
+      title: 'Rotacionar Chave de Assinatura?',
+      html: `Tem certeza que deseja rotacionar a chave de assinatura?<br/><span style="color:#f59e0b;font-size:11px;margin-top:5px;display:block;">Todos os alertas de webhook enviados a partir de agora usarão a nova assinatura HMAC. Integrações antigas que não atualizarem o segredo falharão!</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, Rotacionar',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
+        title: 'text-slate-100 font-extrabold text-base',
+        htmlContainer: 'text-slate-400 text-xs leading-relaxed mt-2',
+        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded-xl transition-all shadow-md',
+        cancelButton: 'px-4 py-2 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all ml-2',
+      },
+      buttonsStyling: false,
+    });
+
+    if (result.isConfirmed) {
+      setRotatingSecret(true);
+      try {
+        const res = await api.post('/v1/projects/webhook-secret/rotate');
+        const newSecret = res.data?.webhookSecret || res.data?.webhook_secret;
+        if (newSecret && activeProject) {
+          const updatedProject = { ...activeProject, webhookSecret: newSecret };
+          setActiveProject(updatedProject);
+          setProjects(projects.map(p => p.id === activeProject.id ? updatedProject : p));
+        }
+        showToast('Chave de assinatura rotacionada com sucesso!', 'success');
+      } catch (err) {
+        console.error('Failed to rotate webhook secret', err);
+        showToast('Falha ao rotacionar chave de assinatura.', 'error');
+      } finally {
+        setRotatingSecret(false);
       }
-      showToast('Chave de assinatura rotacionada com sucesso!', 'success');
-    } catch (err) {
-      console.error('Failed to rotate webhook secret', err);
-      showToast('Falha ao rotacionar chave de assinatura.', 'error');
-    } finally {
-      setRotatingSecret(false);
     }
   };
 
@@ -204,25 +236,25 @@ export const ProfilePage: React.FC = () => {
     const tz = timezone || 'America/Sao_Paulo';
 
     if (techStack.includes('Node.js')) {
-      return `fetch("http://localhost:8080/v1/jobs", {\n  method: "POST",\n  headers: {\n    "Authorization": "Bearer ${key}",\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify({\n    Name: "Minha Tarefa Agendada",\n    CronExpr: "*/5 * * * *", // a cada 5m\n    Method: "POST",\n    Url: "https://minhaapi.com/webhooks/limpeza",\n    Timezone: "${tz}"\n  })\n})\n.then(res => res.json())\n.then(data => console.log("Job cadastrado:", data.Id));`;
+      return `const CRONFLOW_API_KEY = process.env.CRONFLOW_API_KEY || "${key}";\n\nfetch("https://cron.jangustavo.me/v1/jobs", {\n  method: "POST",\n  headers: {\n    "Authorization": "Bearer " + CRONFLOW_API_KEY,\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify({\n    name: "Minha Tarefa Agendada",\n    schedule: "*/5 * * * *", // a cada 5m\n    http_method: "POST",\n    url: "https://minhaapi.com/webhooks/limpeza",\n    timezone: "${tz}"\n  })\n})\n.then(res => res.json())\n.then(data => console.log("Job cadastrado:", data.id));`;
     }
     if (techStack.includes('Go')) {
-      return `package main\n\nimport (\n\t"bytes"\n\t"encoding/json"\n\t"fmt"\n\t"net/http"\n)\n\nfunc main() {\n\tpayload := map[string]interface{}{\n\t\t"Name":     "Minha Tarefa",\n\t\t"CronExpr": "*/5 * * * *",\n\t\t"Method":   "POST",\n\t\t"Url":      "https://minhaapi.com/webhooks/limpeza",\n\t\t"Timezone": "${tz}",\n\t}\n\tbody, _ := json.Marshal(payload)\n\n\treq, _ := http.NewRequest("POST", "http://localhost:8080/v1/jobs", bytes.NewBuffer(body))\n\treq.Header.Set("Authorization", "Bearer \${key}")\n\treq.Header.Set("Content-Type", "application/json")\n\n\tclient := &http.Client{}\n\tclient.Do(req)\n}`;
+      return `package main\n\nimport (\n\t"bytes"\n\t"encoding/json"\n\t"fmt"\n\t"net/http"\n)\n\nfunc main() {\n\tpayload := map[string]interface{}{\n\t\t"name":        "Minha Tarefa",\n\t\t"schedule":    "*/5 * * * *",\n\t\t"http_method": "POST",\n\t\t"url":         "https://minhaapi.com/webhooks/limpeza",\n\t\t"timezone":    "${tz}",\n\t}\n\tbody, _ := json.Marshal(payload)\n\n\treq, _ := http.NewRequest("POST", "https://cron.jangustavo.me/v1/jobs", bytes.NewBuffer(body))\n\treq.Header.Set("Authorization", "Bearer ${key}")\n\treq.Header.Set("Content-Type", "application/json")\n\n\tclient := &http.Client{}\n\tresp, _ := client.Do(req)\n\tdefer resp.Body.Close()\n}`;
     }
     if (techStack.includes('Python')) {
-      return `import requests\n\nurl = "http://localhost:8080/v1/jobs"\nheaders = {\n    "Authorization": "Bearer ${key}",\n    "Content-Type": "application/json"\n}\npayload = {\n    "Name": "Minha Tarefa Agendada",\n    "CronExpr": "*/5 * * * *",\n    "Method": "POST",\n    "Url": "https://minhaapi.com/webhooks/limpeza",\n    "Timezone": "${tz}"\n}\n\nresponse = requests.post(url, json=payload, headers=headers)\nprint(response.json())`;
+      return `import requests\n\nurl = "https://cron.jangustavo.me/v1/jobs"\nheaders = {\n    "Authorization": "Bearer ${key}",\n    "Content-Type": "application/json"\n}\npayload = {\n    "name": "Minha Tarefa Agendada",\n    "schedule": "*/5 * * * *",\n    "http_method": "POST",\n    "url": "https://minhaapi.com/webhooks/limpeza",\n    "timezone": "${tz}"\n}\n\nresponse = requests.post(url, json=payload, headers=headers)\nprint(response.json())`;
     }
     if (techStack.includes('PHP')) {
-      return `$ch = curl_init("http://localhost:8080/v1/jobs");\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\ncurl_setopt($ch, CURLOPT_POST, true);\ncurl_setopt($ch, CURLOPT_HTTPHEADER, [\n    "Authorization: Bearer ${key}",\n    "Content-Type: application/json"\n]);\ncurl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([\n    "Name" => "Minha Tarefa",\n    "CronExpr" => "*/5 * * * *",\n    "Method" => "POST",\n    "Url" => "https://minhaapi.com/webhooks/limpeza",\n    "Timezone" => "${tz}"\n]));\n$resp = curl_exec($ch);`;
+      return `$ch = curl_init("https://cron.jangustavo.me/v1/jobs");\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\ncurl_setopt($ch, CURLOPT_POST, true);\ncurl_setopt($ch, CURLOPT_HTTPHEADER, [\n    "Authorization: Bearer ${key}",\n    "Content-Type: application/json"\n]);\ncurl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([\n    "name" => "Minha Tarefa",\n    "schedule" => "*/5 * * * *",\n    "http_method" => "POST",\n    "url" => "https://minhaapi.com/webhooks/limpeza",\n    "timezone" => "${tz}"\n]));\n$resp = curl_exec($ch);`;
     }
     if (techStack.includes('C#')) {
-      return `using var client = new HttpClient();\nclient.DefaultRequestHeaders.Add("Authorization", "Bearer ${key}");\n\nvar payload = new {\n    Name = "Minha Tarefa Agendada",\n    CronExpr = "*/5 * * * *",\n    Method = "POST",\n    Url = "https://minhaapi.com/webhooks/limpeza",\n    Timezone = "${tz}"\n};\n\nawait client.PostAsJsonAsync("http://localhost:8080/v1/jobs", payload);`;
+      return `using var client = new HttpClient();\nclient.DefaultRequestHeaders.Add("Authorization", "Bearer ${key}");\n\nvar payload = new {\n    name = "Minha Tarefa Agendada",\n    schedule = "*/5 * * * *",\n    http_method = "POST",\n    url = "https://minhaapi.com/webhooks/limpeza",\n    timezone = "${tz}"\n};\n\nawait client.PostAsJsonAsync("https://cron.jangustavo.me/v1/jobs", payload);`;
     }
     if (techStack.includes('Java')) {
-      return `// Exemplo HTTP Client (Java 11+):\nvar client = HttpClient.newHttpClient();\nvar req = HttpRequest.newBuilder()\n  .uri(URI.create("http://localhost:8080/v1/jobs"))\n  .header("Authorization", "Bearer ${key}")\n  .header("Content-Type", "application/json")\n  .POST(HttpRequest.BodyPublishers.ofString("{\\"Name\\":\\"Tarefa\\",\\"CronExpr\\":\\"*/5 * * * *\\",\\"Method\\":\\"POST\\",\\"Url\\":\\"https://api.com\\",\\"Timezone\\":\\"${tz}\\"}"))\n  .build();\nclient.send(req, HttpResponse.BodyHandlers.ofString());`;
+      return `// Exemplo HTTP Client (Java 11+):\nvar client = HttpClient.newHttpClient();\nvar req = HttpRequest.newBuilder()\n  .uri(URI.create("https://cron.jangustavo.me/v1/jobs"))\n  .header("Authorization", "Bearer ${key}")\n  .header("Content-Type", "application/json")\n  .POST(HttpRequest.BodyPublishers.ofString("{\\"name\\":\\"Tarefa\\",\\"schedule\\":\\"*/5 * * * *\\",\\"http_method\\":\\"POST\\",\\"url\\":\\"https://api.com\\",\\"timezone\\":\\"${tz}\\"}"))\n  .build();\nclient.send(req, HttpResponse.BodyHandlers.ofString());`;
     }
 
-    return `curl -X POST "http://localhost:8080/v1/jobs" \\\n     -H "Authorization: Bearer ${key}" \\\n     -H "Content-Type: application/json" \\\n     -d '{\n       "Name": "Minha Tarefa Agendada",\n       "CronExpr": "*/5 * * * *",\n       "Method": "POST",\n       "Url": "https://minhaapi.com/webhooks/limpeza",\n       "Timezone": "${tz}"\n     }'`;
+    return `curl -X POST "https://cron.jangustavo.me/v1/jobs" \\\n     -H "Authorization: Bearer ${key}" \\\n     -H "Content-Type: application/json" \\\n     -d '{\n       "name": "Minha Tarefa Agendada",\n       "schedule": "*/5 * * * *",\n       "http_method": "POST",\n       "url": "https://minhaapi.com/webhooks/limpeza",\n       "timezone": "${tz}"\n     }'`;
   };
 
   const handleUpdateWebhook = (e: React.FormEvent) => {
@@ -396,12 +428,10 @@ export const ProfilePage: React.FC = () => {
     ? jobs.filter((job) => job.projectId === activeProject.id)
     : jobs;
 
-  const activeJobs = workspaceJobs.length; // total jobs (active, paused, failing)
   const globalMaxLimit = isProPlan ? 20 : 5;
   const baselineActiveJobsCount = Number(localStorage.getItem('cf_profile_active_jobs_count') || '0');
   const diff = jobs.length - baselineActiveJobsCount;
   const currentTotalJobsCreated = totalJobsCreated + diff;
-  const maxJobsLimit = Math.max(0, globalMaxLimit - currentTotalJobsCreated);
   const jobsUsagePercent = globalMaxLimit > 0 ? Math.min(100, Math.round((currentTotalJobsCreated / globalMaxLimit) * 100)) : 0;
 
   const handleCreateJob = () => {
@@ -436,6 +466,10 @@ export const ProfilePage: React.FC = () => {
       title: 'Conectar API Key',
       done: apiKeys.length > 0,
       detail: apiKeys.length > 0 ? `Configurado e ativo` : 'Conecte sua chave para autenticar as requisições.',
+      action: {
+        label: 'Ir para chaves',
+        onClick: () => setSecurityTab('keys'),
+      },
     },
     {
       id: 'first-job',
@@ -508,11 +542,11 @@ export const ProfilePage: React.FC = () => {
           <ProjectManager
             isSwitchingProject={isSwitchingProject}
             workspaceName={workspaceName}
-            activeJobs={activeJobs}
-            maxJobsLimit={maxJobsLimit}
             jobsUsagePercent={jobsUsagePercent}
             isProPlan={isProPlan}
             projects={projects}
+            globalMaxLimit={globalMaxLimit}
+            currentTotalJobsCreated={currentTotalJobsCreated}
             createProjectOpen={createProjectOpen}
             setCreateProjectOpen={setCreateProjectOpen}
             newProjectName={newProjectName}
@@ -662,8 +696,9 @@ export const ProfilePage: React.FC = () => {
                               type="button"
                               onClick={() => {
                                 navigator.clipboard.writeText(key.prefix);
-                                showToast('Prefixo copiado!', 'info');
+                                showToast('Prefixo identificador copiado!', 'info');
                               }}
+                              title="Copia os caracteres iniciais (prefixo) para identificação da chave"
                               className="px-2.5 py-1.5 text-[9px] uppercase font-bold text-slate-350 hover:text-white bg-slate-900/60 rounded-xl border border-slate-800 transition-all cursor-pointer"
                             >
                               Copiar Prefixo

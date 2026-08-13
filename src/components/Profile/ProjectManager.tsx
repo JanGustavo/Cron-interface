@@ -4,11 +4,11 @@ import type { Project } from '../../types/auth';
 interface ProjectManagerProps {
   isSwitchingProject: boolean;
   workspaceName: string;
-  activeJobs: number;
-  maxJobsLimit: number;
   jobsUsagePercent: number;
   isProPlan: boolean;
   projects: Project[];
+  globalMaxLimit: number;
+  currentTotalJobsCreated: number;
   createProjectOpen: boolean;
   setCreateProjectOpen: (open: boolean) => void;
   newProjectName: string;
@@ -28,8 +28,6 @@ interface ProjectManagerProps {
 export const ProjectManager: React.FC<ProjectManagerProps> = ({
   isSwitchingProject,
   workspaceName,
-  activeJobs,
-  maxJobsLimit,
   jobsUsagePercent,
   isProPlan,
   projects,
@@ -47,6 +45,8 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
   handleSwitchProject,
   handleDeleteProject,
   activeProject,
+  globalMaxLimit,
+  currentTotalJobsCreated,
 }) => {
   return (
     <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-4 text-left flex-1 relative">
@@ -72,7 +72,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
       <div className="space-y-2.5 p-4 bg-[#060812]/50 border border-indigo-950/40 rounded-2xl">
         <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-400 tracking-wider">
           <span>Limite de Tarefas</span>
-          <span className="text-indigo-400 font-mono">{activeJobs} / {maxJobsLimit} Jobs</span>
+          <span className="text-indigo-400 font-mono">{currentTotalJobsCreated} / {globalMaxLimit} Jobs</span>
         </div>
         <div className="h-2 rounded-full bg-slate-950/70 overflow-hidden relative">
           <div

@@ -57,6 +57,11 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             </div>
             <h3 className="text-xl font-bold text-slate-100 mt-1">{profileFullName || 'CronFlow User'}</h3>
             <p className="text-[11px] text-slate-400 font-mono mt-0.5">{userEmail}</p>
+            <p className="text-[9px] text-slate-500 leading-normal mt-2 border-t border-indigo-950/30 pt-2 select-none">
+              {isProPlan 
+                ? '⭐ Plano PRO ativo: Limite de 20 tarefas por workspace, múltiplos projetos e 60 dias de histórico de auditoria.'
+                : '⚡ Plano STARTER: Limite de 5 tarefas por workspace, projeto único e 3 dias de logs.'}
+            </p>
           </div>
         </div>
 
