@@ -8,6 +8,7 @@ import api from '../services/api';
 import { ProfileSettings } from '../components/Profile/ProfileSettings';
 import { ProjectManager } from '../components/Profile/ProjectManager';
 import { OnboardingSteps } from '../components/Profile/OnboardingSteps';
+import { useEntitlements } from '../hooks/useEntitlements';
 
 const formatDate = (value?: string | null) => {
   if (!value) return 'Não informado';
@@ -92,8 +93,8 @@ export const ProfilePage: React.FC = () => {
 
   const memberSince = formatDate(user?.createdAt);
   const workspaceName = activeProject?.name || 'Projeto Pessoal';
-  const [profilePlan, setProfilePlan] = useState(() => localStorage.getItem('cf_user_plan') || user?.plan || 'free');
-  const isProPlan = profilePlan === 'paid';
+	const { isPro } = useEntitlements();
+	const isProPlan = isPro;
 
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
@@ -277,7 +278,6 @@ export const ProfilePage: React.FC = () => {
           localStorage.setItem('cf_user_name', res.data.fullName);
         }
         if (res.data.plan) {
-          setProfilePlan(res.data.plan);
           localStorage.setItem('cf_user_plan', res.data.plan);
         }
         if (res.data.totalJobsCreated !== undefined) {

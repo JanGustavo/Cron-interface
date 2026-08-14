@@ -3,10 +3,12 @@ import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { CronTimeHelp } from '../Shared/CronTimeHelp';
 import { translateSchedule } from '../Shared/cronTranslator';
+import { useEntitlements } from '../../hooks/useEntitlements';
 
 export const CreateJobModal: React.FC = () => {
 	const { addJob, jobs } = useJobsStore();
 	const { isCreateModalOpen, setCreateModalOpen } = useUiStore();
+	const { alertsWebhooksEnabled, workflowsEnabled } = useEntitlements();
 
 	const [name, setName] = useState('');
 	const [schedule, setSchedule] = useState('every:5m');
@@ -274,15 +276,22 @@ export const CreateJobModal: React.FC = () => {
             </label>
             <input
               type="url"
-              placeholder="https://hooks.slack.com/services/..."
+              placeholder={alertsWebhooksEnabled ? "https://hooks.slack.com/services/..." : "Bloqueado no seu plano. Faça upgrade para o Plano PRO! 🔒"}
               value={webhookAlertUrl}
               onChange={(e) => setWebhookAlertUrl(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
-              disabled={loading}
+              className={`w-full px-3.5 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono ${!alertsWebhooksEnabled ? 'opacity-50 cursor-not-allowed border-red-500/20' : ''}`}
+              disabled={loading || !alertsWebhooksEnabled}
             />
-            <span className="text-[9px] text-slate-500 block pt-0.5">
-              Notificado se a tarefa falhar repetidamente (excedendo 3 falhas seguidas). Suporta Discord, Slack e ntfy.
-            </span>
+            {!alertsWebhooksEnabled && (
+              <span className="text-[9px] text-amber-500 font-semibold block pt-0.5 font-mono">
+                ⚠️ Webhook de alerta é exclusivo do Plano PRO.
+              </span>
+            )}
+            {alertsWebhooksEnabled && (
+              <span className="text-[9px] text-slate-500 block pt-0.5">
+                Notificado se a tarefa falhar repetidamente (excedendo 3 falhas seguidas). Suporta Discord, Slack e ntfy.
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -294,16 +303,21 @@ export const CreateJobModal: React.FC = () => {
               <select
                 value={nextJobId}
                 onChange={(e) => setNextJobId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
-                disabled={loading}
+                className={`w-full px-3 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono ${!workflowsEnabled ? 'opacity-50 cursor-not-allowed border-red-500/20' : ''}`}
+                disabled={loading || !workflowsEnabled}
               >
-                <option value="">Nenhum (Finalizar Fluxo)</option>
-                {jobs.map((jb) => (
+                <option value="">{workflowsEnabled ? "Nenhum (Finalizar Fluxo)" : "Bloqueado no seu plano. Faça upgrade!"}</option>
+                {workflowsEnabled && jobs.map((jb) => (
                   <option key={jb.id} value={jb.id}>
                     {jb.name} ({jb.schedule})
                   </option>
                 ))}
               </select>
+              {!workflowsEnabled && (
+                <span className="text-[9px] text-amber-500 font-semibold block pt-0.5 font-mono">
+                  ⚠️ Encadeamento (Workflows) é exclusivo do Plano PRO.
+                </span>
+              )}
             </div>
 
             {/* Tags Input */}

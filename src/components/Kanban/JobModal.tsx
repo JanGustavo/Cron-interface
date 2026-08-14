@@ -7,10 +7,12 @@ import api from '../../services/api';
 import type { Job, JobLog } from '../../types/jobs';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
+import { useEntitlements } from '../../hooks/useEntitlements';
 
 export const JobModal: React.FC = () => {
   const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob, jobs } = useJobsStore();
   const { isJobModalOpen, setJobModalOpen, showToast } = useUiStore();
+  const { alertsWebhooksEnabled, workflowsEnabled } = useEntitlements();
   const [jobLogs, setJobLogs] = useState<JobLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [lastTriggerStatus, setLastTriggerStatus] = useState<{ code: number | null; ok: boolean } | null>(null);
@@ -420,13 +422,21 @@ export const JobModal: React.FC = () => {
           <div className="space-y-1">
             <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Webhook de Alerta (Opcional)</label>
             {isEditing ? (
-              <input
-                type="url"
-                value={editWebhookAlertUrl}
-                onChange={(e) => setEditWebhookAlertUrl(e.target.value)}
-                className="w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-                placeholder="https://hooks.slack.com/services/..."
-              />
+              <>
+                <input
+                  type="url"
+                  value={editWebhookAlertUrl}
+                  onChange={(e) => setEditWebhookAlertUrl(e.target.value)}
+                  className={`w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 ${!alertsWebhooksEnabled ? 'opacity-50 cursor-not-allowed border-red-500/20' : ''}`}
+                  placeholder={alertsWebhooksEnabled ? "https://hooks.slack.com/services/..." : "Bloqueado no seu plano. Faça upgrade para o Plano PRO! 🔒"}
+                  disabled={!alertsWebhooksEnabled}
+                />
+                {!alertsWebhooksEnabled && (
+                  <span className="text-[9px] text-amber-500 font-semibold block pt-0.5">
+                    ⚠️ Webhook de alerta é exclusivo do Plano PRO.
+                  </span>
+                )}
+              </>
             ) : (
               <div className="px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-xs font-mono text-slate-300 break-all select-all select-none">
                 {activeJob.webhookAlertUrl || <span className="text-slate-600 italic">Nenhum webhook de alerta configurado</span>}
@@ -440,18 +450,26 @@ export const JobModal: React.FC = () => {
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Próximo Job (Workflow)</label>
               {isEditing ? (
-                <select
-                  value={editNextJobId}
-                  onChange={(e) => setEditNextJobId(e.target.value)}
-                  className="w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 pr-10 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 select-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
-                >
-                  <option value="">Nenhum (Finalizar Fluxo)</option>
-                  {jobs.filter(jb => jb.id !== activeJob.id).map((jb) => (
-                    <option key={jb.id} value={jb.id}>
-                      {jb.name} ({jb.schedule})
-                    </option>
-                  ))}
-                </select>
+                <>
+                  <select
+                    value={editNextJobId}
+                    onChange={(e) => setEditNextJobId(e.target.value)}
+                    className={`w-full bg-slate-950 border border-indigo-500/20 rounded-xl px-4 py-3 pr-10 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 select-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] ${!workflowsEnabled ? 'opacity-50 cursor-not-allowed border-red-500/20' : ''}`}
+                    disabled={!workflowsEnabled}
+                  >
+                    <option value="">{workflowsEnabled ? "Nenhum (Finalizar Fluxo)" : "Bloqueado no seu plano. Faça upgrade!"}</option>
+                    {workflowsEnabled && jobs.filter(jb => jb.id !== activeJob.id).map((jb) => (
+                      <option key={jb.id} value={jb.id}>
+                        {jb.name} ({jb.schedule})
+                      </option>
+                    ))}
+                  </select>
+                  {!workflowsEnabled && (
+                    <span className="text-[9px] text-amber-500 font-semibold block pt-0.5">
+                      ⚠️ Encadeamento (Workflows) é exclusivo do Plano PRO.
+                    </span>
+                  )}
+                </>
               ) : (
                 <div className="px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-xs font-mono text-slate-300 select-none">
                   {activeJob.nextJobId ? (

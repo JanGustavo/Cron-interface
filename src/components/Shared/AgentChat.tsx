@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import api from '../../services/api';
 import { useJobsStore } from '../../store/jobsStore';
+import { useEntitlements } from '../../hooks/useEntitlements';
 
 interface GeminiPart {
   text?: string;
@@ -27,6 +28,7 @@ interface Message {
 }
 
 export const AgentChat: React.FC = () => {
+  const { workflowsEnabled } = useEntitlements();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -248,17 +250,25 @@ export const AgentChat: React.FC = () => {
 
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="p-2.5 border-t border-indigo-950/40 bg-[#0c1026]/90 flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                disabled={isLoading}
-                placeholder="Pergunte algo ao CronFlow AI..."
-                className="flex-1 px-3.5 py-1.5 bg-slate-950/50 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/30 focus:ring-1 focus:ring-indigo-500/35 transition-all disabled:opacity-50"
-              />
+              {!workflowsEnabled ? (
+                <div className="flex-1 flex items-center justify-between px-3 py-1.5 bg-indigo-950/20 border border-amber-500/20 rounded-xl">
+                  <span className="text-[10px] text-amber-500 font-semibold font-mono">
+                    🔒 AI Copilot exclusivo do Plano PRO
+                  </span>
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  disabled={isLoading}
+                  placeholder="Pergunte algo ao CronFlow AI..."
+                  className="flex-1 px-3.5 py-1.5 bg-slate-950/50 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/30 focus:ring-1 focus:ring-indigo-500/35 transition-all disabled:opacity-50"
+                />
+              )}
               <button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || !workflowsEnabled}
                 className="px-3 py-1.5 rounded-xl bg-indigo-650 text-slate-100 font-bold hover:bg-indigo-550 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs uppercase tracking-wider"
               >
                 Enviar

@@ -5,6 +5,7 @@ import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { KanbanColumn } from './KanbanColumn';
 import type { KanbanStatus } from '../../types/jobs';
+import { useEntitlements } from '../../hooks/useEntitlements';
 
 const COLUMNS: { id: KanbanStatus; title: string }[] = [
   { id: 'draft', title: 'Draft' },
@@ -17,7 +18,26 @@ const COLUMNS: { id: KanbanStatus; title: string }[] = [
 export const KanbanBoard: React.FC = () => {
   const { jobs, moveJobKanbanStatus } = useJobsStore();
   const { setCreateModalOpen, setImportModalOpen, showToast } = useUiStore();
+  const { maxJobs } = useEntitlements();
   const [searchTerm, setSearchTerm] = useState('');
+
+  const limitsReached = jobs.length >= maxJobs;
+
+  const handleOpenCreateModal = () => {
+    if (limitsReached) {
+      showToast(`Você atingiu o limite de ${maxJobs} jobs do seu plano atual. Vá em Perfil e faça o upgrade para o Plano PRO para criar mais tarefas! 💎`, 'warning');
+    } else {
+      setCreateModalOpen(true);
+    }
+  };
+
+  const handleOpenImportModal = () => {
+    if (limitsReached) {
+      showToast(`Você atingiu o limite de ${maxJobs} jobs do seu plano atual. Vá em Perfil e faça o upgrade para o Plano PRO para importar tarefas! 💎`, 'warning');
+    } else {
+      setImportModalOpen(true);
+    }
+  };
   const [selectedMethod, setSelectedMethod] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedTimezone, setSelectedTimezone] = useState('');
@@ -101,18 +121,24 @@ export const KanbanBoard: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Create Job button */}
           <button
-            onClick={() => setCreateModalOpen(true)}
-            className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary flex items-center gap-1.5 cursor-pointer"
+            onClick={handleOpenCreateModal}
+            className={`px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/30 neon-glow-primary flex items-center gap-1.5 cursor-pointer ${limitsReached ? 'opacity-85 border-amber-500/20' : ''}`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Nova Tarefa</span>
+            {limitsReached ? (
+              <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+            )}
+            <span>{limitsReached ? 'Limite Excedido' : 'Nova Tarefa'}</span>
           </button>
 
           {/* Import JSON button */}
           <button
-            onClick={() => setImportModalOpen(true)}
+            onClick={handleOpenImportModal}
             className="px-4 py-2 text-xs font-semibold text-indigo-400 hover:text-white bg-indigo-950/30 hover:bg-indigo-950/60 border border-indigo-500/20 hover:border-indigo-400/40 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
