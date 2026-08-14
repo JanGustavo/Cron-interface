@@ -45,6 +45,8 @@ export const OnboardingTour: React.FC = () => {
   const { isOnboardingOpen: isOpen, setOnboardingOpen: setIsOpen } = useUiStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
+  const [popoverWidth, setPopoverWidth] = useState(280);
+  const [spotlightStyle, setSpotlightStyle] = useState<React.CSSProperties>({ display: 'none' });
 
   const handleDismiss = () => {
     localStorage.setItem('cf_first_run_seen', '1');
@@ -78,54 +80,58 @@ export const OnboardingTour: React.FC = () => {
   }, [setIsOpen]);
 
   useEffect(() => {
-    if (!isOpen) {
-      // Remove class from all elements
-      document.querySelectorAll('.tour-highlight').forEach(el => {
-        el.classList.remove('tour-highlight');
-      });
-      return;
-    }
+    if (!isOpen) return;
 
     const step = steps[currentStep];
-    const targetEl = document.getElementById(step.targetId);
-
-    // Clean up previous highlights
-    document.querySelectorAll('.tour-highlight').forEach(el => {
-      el.classList.remove('tour-highlight');
-    });
-
+    
     const updatePosition = () => {
-      if (targetEl) {
-        targetEl.classList.add('tour-highlight');
-        const rect = targetEl.getBoundingClientRect();
-        
-        // Dynamic popover dimensions estimates
-        const popoverHeight = 180;
-        const popoverWidth = 280;
+      const targetEl = document.getElementById(step.targetId);
+      const widthVal = Math.min(280, window.innerWidth - 24);
 
-        // Position above target. If too high, show below.
-        let top = rect.top + window.scrollY - popoverHeight - 20;
-        if (top < 10) {
-          top = rect.bottom + window.scrollY + 10;
+      requestAnimationFrame(() => {
+        setPopoverWidth(widthVal);
+
+        if (targetEl) {
+          const rect = targetEl.getBoundingClientRect();
+          
+          // Spotlight helper style
+          setSpotlightStyle({
+            display: 'block',
+            top: `${rect.top + window.scrollY}px`,
+            left: `${rect.left + window.scrollX}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+          });
+
+          // Dynamic Popover Positioning Estimates
+          const popoverHeight = step.tip ? 180 : 130;
+
+          // Position above target. If too high or close to screen top, show below.
+          let top = rect.top + window.scrollY - popoverHeight - 24;
+          if (rect.top < popoverHeight + 30) {
+            top = rect.bottom + window.scrollY + 16;
+          }
+
+          // Align horizontally to target center
+          let left = rect.left + window.scrollX + (rect.width - widthVal) / 2;
+          if (left < 12) left = 12;
+          if (left + widthVal > window.innerWidth - 12) {
+            left = window.innerWidth - widthVal - 12;
+          }
+
+          setPopoverPos({ top, left });
+        } else {
+          // Fallback: hide spotlight helper and center popover on viewport
+          setSpotlightStyle({ display: 'none' });
+          
+          const top = window.innerHeight / 2 - 90 + window.scrollY;
+          const left = window.innerWidth / 2 - widthVal / 2 + window.scrollX;
+          setPopoverPos({ top, left });
         }
-
-        // Align horizontally to target center
-        let left = rect.left + window.scrollX + (rect.width - popoverWidth) / 2;
-        if (left < 10) left = 10;
-        if (left + popoverWidth > window.innerWidth) {
-          left = window.innerWidth - popoverWidth - 10;
-        }
-
-        setPopoverPos({ top, left });
-      } else {
-        // Center popover on viewport if target is missing
-        setPopoverPos({
-          top: window.innerHeight / 2 - 90 + window.scrollY,
-          left: window.innerWidth / 2 - 140 + window.scrollX,
-        });
-      }
+      });
     };
 
+    // Run initial update
     updatePosition();
 
     // Event listeners to handle page resize or scroll
@@ -135,10 +141,6 @@ export const OnboardingTour: React.FC = () => {
     return () => {
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition);
-      // Clean up on unmount or step transition
-      if (targetEl) {
-        targetEl.classList.remove('tour-highlight');
-      }
     };
   }, [isOpen, currentStep]);
 
@@ -149,93 +151,111 @@ export const OnboardingTour: React.FC = () => {
 
   return (
     <AnimatePresence>
-      {/* Tour Overlay background dims the screen */}
-      <div 
-        className="tour-overlay" 
-        onClick={handleDismiss} 
-      />
-
-      {/* Floating Popover Step Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        style={{
-          position: 'absolute',
-          top: `${popoverPos.top}px`,
-          left: `${popoverPos.left}px`,
-        }}
-        className="z-[10000] w-[280px] rounded-2xl border border-indigo-500/35 bg-[#0a0d1c] p-5 text-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.2)] overflow-hidden"
-      >
-        {/* Colorful top border strip decoration */}
-        <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500" />
-
-        {/* Step progress details */}
-        <div className="flex items-start gap-3 mb-3">
-          <span className="text-2xl filter drop-shadow select-none">{step.icon}</span>
-          <div className="min-w-0 flex-1">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-cyan-400 font-mono">
-              Passo {currentStep + 1} de {steps.length}
-            </span>
-            <h3 className="text-sm font-bold text-slate-100 mt-0.5 leading-snug">{step.title}</h3>
-          </div>
-        </div>
-
-        {/* Main description text */}
-        <p className="text-[11px] text-slate-350 leading-relaxed mb-4">
-          {step.description}
-        </p>
-
-        {/* Tooltip detail element */}
-        {step.tip && (
-          <div className="p-2.5 mb-4 rounded-xl border border-indigo-950/40 bg-[#060814]/65 text-[9px] text-slate-400 flex items-start gap-1.5 leading-relaxed">
-            <span className="text-indigo-400 text-xs">💡</span>
-            <span>{step.tip}</span>
-          </div>
+      {/* Root Portal / Overlay Container */}
+      <div className="fixed inset-0 z-[9990] overflow-hidden pointer-events-none">
+        
+        {/* Dark overlay backdrop handler */}
+        {spotlightStyle.display === 'none' ? (
+          <div 
+            className="tour-overlay-fallback pointer-events-auto"
+            onClick={handleDismiss}
+          />
+        ) : (
+          <div 
+            className="fixed inset-0 bg-transparent pointer-events-auto"
+            onClick={handleDismiss}
+          />
         )}
 
-        {/* Action button menu */}
-        <div className="flex items-center justify-between pt-3 border-t border-indigo-950/40">
-          {/* Progress dots indicator */}
-          <div className="flex gap-1">
-            {steps.map((_, idx) => (
-              <span
-                key={idx}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  idx === currentStep ? 'w-4 bg-indigo-500' : 'w-1.5 bg-indigo-950/80'
-                }`}
-              />
-            ))}
+        {/* Dynamic Spotlight helper div */}
+        <div
+          className="tour-spotlight-helper"
+          style={spotlightStyle}
+        />
+
+        {/* Floating Popover Step Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          style={{
+            position: 'absolute',
+            top: `${popoverPos.top}px`,
+            left: `${popoverPos.left}px`,
+            width: `${popoverWidth}px`,
+          }}
+          className="pointer-events-auto z-[9999] rounded-2xl border border-indigo-500/35 bg-[#0a0d1c] p-5 text-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.2)] overflow-hidden"
+        >
+          {/* Colorful top border strip decoration */}
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500" />
+
+          {/* Step progress details */}
+          <div className="flex items-start gap-3 mb-3">
+            <span className="text-2xl filter drop-shadow select-none">{step.icon}</span>
+            <div className="min-w-0 flex-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-cyan-400 font-mono">
+                Passo {currentStep + 1} de {steps.length}
+              </span>
+              <h3 className="text-sm font-bold text-slate-100 mt-0.5 leading-snug">{step.title}</h3>
+            </div>
           </div>
 
-          {/* Skip / Next Controls */}
-          <div className="flex gap-2">
-            {currentStep > 0 ? (
-              <button
-                onClick={handlePrev}
-                className="px-2.5 py-1.5 rounded-lg border border-indigo-950/75 hover:bg-slate-900/35 text-[10px] font-semibold text-slate-300 transition-all cursor-pointer"
-              >
-                Voltar
-              </button>
+          {/* Main description text */}
+          <p className="text-[11px] text-slate-350 leading-relaxed mb-4">
+            {step.description}
+          </p>
+
+          {/* Tooltip detail element */}
+          {step.tip && (
+            <div className="p-2.5 mb-4 rounded-xl border border-indigo-950/40 bg-[#060814]/65 text-[9px] text-slate-450 flex items-start gap-1.5 leading-relaxed select-none">
+              <span className="text-indigo-400 text-xs">💡</span>
+              <span>{step.tip}</span>
+            </div>
+          )}
+
+          {/* Action button menu */}
+          <div className="flex items-center justify-between pt-3 border-t border-indigo-950/40">
+            {/* Progress dots indicator */}
+            <div className="flex gap-1 select-none">
+              {steps.map((_, idx) => (
+                <span
+                  key={idx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentStep ? 'w-4 bg-indigo-500' : 'w-1.5 bg-indigo-950/80'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Skip / Next Controls */}
+            <div className="flex gap-2">
+              {currentStep > 0 ? (
+                <button
+                  onClick={handlePrev}
+                  className="px-2.5 py-1.5 rounded-lg border border-indigo-950/75 hover:bg-slate-900/35 text-[10px] font-semibold text-slate-300 transition-all cursor-pointer"
+                >
+                  Voltar
+                </button>
             ) : (
-              <button
-                onClick={handleDismiss}
-                className="px-2.5 py-1.5 rounded-lg border border-indigo-950/75 hover:bg-slate-900/35 text-[10px] font-semibold text-slate-450 hover:text-slate-300 transition-all cursor-pointer"
-              >
-                Pular
-              </button>
+                <button
+                  onClick={handleDismiss}
+                  className="px-2.5 py-1.5 rounded-lg border border-indigo-950/75 hover:bg-slate-900/35 text-[10px] font-semibold text-slate-450 hover:text-slate-300 transition-all cursor-pointer"
+                >
+                  Pular
+                </button>
             )}
 
-            <button
-              onClick={handleNext}
-              className="inline-flex min-w-[80px] items-center justify-center px-3 py-1.5 rounded-lg bg-indigo-600 text-slate-100 font-bold hover:bg-indigo-500 transition-all text-[10px] uppercase tracking-wider cursor-pointer shadow-md"
-            >
-              {isLast ? 'Concluir' : 'Próximo'}
-            </button>
+              <button
+                onClick={handleNext}
+                className="inline-flex min-w-[80px] items-center justify-center px-3 py-1.5 rounded-lg bg-indigo-650 text-slate-100 font-bold hover:bg-indigo-550 transition-all text-[10px] uppercase tracking-wider cursor-pointer shadow-md"
+              >
+                {isLast ? 'Concluir' : 'Próximo'}
+              </button>
+            </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </AnimatePresence>
   );
 };

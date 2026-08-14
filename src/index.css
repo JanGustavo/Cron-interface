@@ -184,22 +184,22 @@ button, a, select, input, textarea {
 
 
 /* Spotlight Tour Styles */
-.tour-overlay {
+.tour-overlay-fallback {
   position: fixed;
   inset: 0;
   background-color: rgba(7, 9, 19, 0.75);
   z-index: 9998;
   backdrop-filter: blur(2px);
   pointer-events: auto;
-  transition: opacity 0.3s ease-in-out;
 }
 
-.tour-highlight {
-  position: relative !important;
-  z-index: 9999 !important;
-  box-shadow: 0 0 0 9999px rgba(7, 9, 19, 0.75), 0 0 25px rgba(99, 102, 241, 0.95) !important;
-  pointer-events: auto !important;
-  outline: 2px solid rgba(99, 102, 241, 0.9) !important;
-  outline-offset: 4px !important;
-  transition: all 0.3s ease-in-out;
+.tour-spotlight-helper {
+  position: absolute;
+  z-index: 9998;
+  box-shadow: 0 0 0 9999px rgba(7, 9, 19, 0.75), 0 0 25px rgba(99, 102, 241, 0.85);
+  border-radius: 12px;
+  outline: 2px solid rgba(99, 102, 241, 0.95);
+  outline-offset: 4px;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
