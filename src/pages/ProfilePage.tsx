@@ -1149,7 +1149,7 @@ export const ProfilePage: React.FC = () => {
                         <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Histórico de logs retido por <strong>3 dias</strong></span>
+                        <span>Histórico de logs retido por <strong>7 dias</strong></span>
                       </li>
                       <li className="flex items-center gap-2.5 text-slate-500 line-through">
                         <svg className="w-4 h-4 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -1199,7 +1199,7 @@ export const ProfilePage: React.FC = () => {
                       )}
                     </div>
                     <h4 className="text-2xl font-black text-slate-100 flex items-baseline gap-1.5">
-                      <span>R$ 49</span>
+                      <span>R$ 29</span>
                       <span className="text-xs font-semibold text-slate-500">/ mês</span>
                     </h4>
                     <p className="text-xs text-slate-300 mt-2 leading-relaxed">
@@ -1212,19 +1212,19 @@ export const ProfilePage: React.FC = () => {
                         <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Até <strong>20 tarefas (jobs)</strong> ativos por workspace</span>
+                        <span>Até <strong>50 tarefas (jobs)</strong> ativos por workspace</span>
                       </li>
                       <li className="flex items-center gap-2.5">
                         <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span><strong>Múltiplos projetos (workspaces)</strong> ilimitados</span>
+                        <span>Até <strong>5 projetos (workspaces)</strong> ativos</span>
                       </li>
                       <li className="flex items-center gap-2.5">
                         <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Logs e auditoria retidos por <strong>60 dias</strong></span>
+                        <span>Logs e auditoria retidos por <strong>90 dias</strong></span>
                       </li>
                       <li className="flex items-center gap-2.5">
                         <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
