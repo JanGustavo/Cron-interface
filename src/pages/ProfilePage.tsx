@@ -428,6 +428,42 @@ export const ProfilePage: React.FC = () => {
       setIsSwitchingProject(false);
     }
   };
+
+  const [upgrading, setUpgrading] = useState(false);
+
+  const handleUpgrade = async () => {
+    if (upgrading) return;
+    setUpgrading(true);
+    try {
+      showToast('Redirecionando para o checkout seguro da Stripe...', 'info');
+      const res = await api.post('/v1/billing/checkout', {});
+      if (res.data && res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        showToast('Erro ao obter link de checkout da Stripe.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Erro ao iniciar fluxo de pagamento. Tente novamente.', 'error');
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      showToast('Redirecionando para o portal de faturamento da Stripe...', 'info');
+      const res = await api.post('/v1/billing/portal', {});
+      if (res.data && res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        showToast('Erro ao obter link do portal da Stripe.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Erro ao carregar portal de faturamento. Tente novamente.', 'error');
+    }
+  };
   
   const memberDays = useMemo(() => {
     if (!user?.createdAt) return 0;
@@ -1215,23 +1251,19 @@ export const ProfilePage: React.FC = () => {
                     {isProPlan ? (
                       <button
                         type="button"
-                        disabled
-                        className="w-full py-3.5 rounded-xl text-xs font-bold text-center text-cyan-400 bg-cyan-950/20 border border-cyan-500/30 cursor-not-allowed select-none"
+                        onClick={handleManageSubscription}
+                        className="w-full py-3.5 rounded-xl text-xs font-bold text-center text-cyan-400 hover:text-white bg-cyan-950/20 hover:bg-cyan-900 border border-cyan-500/30 transition-all cursor-pointer"
                       >
-                        Seu Plano Ativo 👑
+                        Gerenciar Assinatura ⚙️
                       </button>
                     ) : (
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          // Inform that the checkout link works as a placeholder
-                          showToast('Fluxo de pagamento em desenvolvimento. O link de upgrade pode ser configurado no código!', 'info');
-                        }}
+                      <button
+                        type="button"
+                        onClick={handleUpgrade}
                         className="w-full py-3.5 rounded-xl text-xs font-black text-center text-slate-950 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-450 transition-all shadow-lg hover:shadow-cyan-500/25 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none"
                       >
                         <span>Fazer Upgrade para PRO 💎</span>
-                      </a>
+                      </button>
                     )}
                   </div>
                 </div>
