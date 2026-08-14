@@ -11,6 +11,7 @@ interface UiState {
   isCreateModalOpen: boolean;
   isImportModalOpen: boolean;
   isDocsOpen: boolean;
+  isOnboardingOpen: boolean;
   selectedLogId: string | null;
   toast: { message: string; variant: ToastVariant } | null;
 
@@ -25,6 +26,7 @@ interface UiState {
   setCreateModalOpen: (isOpen: boolean) => void;
   setImportModalOpen: (isOpen: boolean) => void;
   setDocsOpen: (isOpen: boolean) => void;
+  setOnboardingOpen: (isOpen: boolean) => void;
   showToast: (message: string, variant?: ToastVariant) => void;
   clearToast: () => void;
 }
@@ -38,6 +40,7 @@ export const useUiStore = create<UiState>((set) => ({
   isCreateModalOpen: false,
   isImportModalOpen: false,
   isDocsOpen: false,
+  isOnboardingOpen: false,
   selectedLogId: null,
   toast: null,
 
@@ -78,6 +81,8 @@ export const useUiStore = create<UiState>((set) => ({
   setImportModalOpen: (isImportModalOpen) => set({ isImportModalOpen }),
 
   setDocsOpen: (isDocsOpen) => set({ isDocsOpen }),
+
+  setOnboardingOpen: (isOnboardingOpen) => set({ isOnboardingOpen }),
 
   showToast: (message, variant = 'info') =>
     set({ toast: { message, variant } }),

@@ -12,8 +12,7 @@ interface Step {
 }
 
 export const OnboardingTour: React.FC = () => {
-  const { setCreateModalOpen } = useUiStore();
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOnboardingOpen: isOpen, setOnboardingOpen: setIsOpen, setCreateModalOpen } = useUiStore();
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
@@ -26,11 +25,12 @@ export const OnboardingTour: React.FC = () => {
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [setIsOpen]);
 
   const handleDismiss = () => {
     localStorage.setItem('cf_first_run_seen', '1');
     setIsOpen(false);
+    setCurrentStep(0);
   };
 
   const steps: Step[] = [

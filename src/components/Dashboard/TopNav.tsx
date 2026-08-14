@@ -6,7 +6,7 @@ import api from '../../services/api';
 import type { Project } from '../../types/auth';
 
 export const TopNav: React.FC = () => {
-  const { theme, toggleTheme, activeTab, toggleSidebar } = useUiStore();
+  const { theme, toggleTheme, activeTab, toggleSidebar, setOnboardingOpen } = useUiStore();
   const { activeProject, projects, setActiveProject, user } = useAuthStore();
   const { fetchJobs } = useJobsStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -71,6 +71,18 @@ export const TopNav: React.FC = () => {
       {/* Right Side Options (Theme Toggle, Workspace Selector, Profile) */}
       <div className="flex items-center gap-4">
         
+        {/* Onboarding Tour Button */}
+        <button
+          onClick={() => setOnboardingOpen(true)}
+          className="px-3 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-950/30 border border-indigo-950/40 transition-colors flex items-center gap-1.5 cursor-pointer text-xs font-semibold"
+          title="Ver Tutorial / Como Funciona"
+        >
+          <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="hidden sm:inline">Como Funciona</span>
+        </button>
+
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
