@@ -109,7 +109,7 @@ export const CreateJobModal: React.FC = () => {
       // Clear state and close
       setName('');
       setSchedule('every:5m');
-      setTimezone('UTC');
+      setTimezone(localStorage.getItem('cf_user_timezone') || 'UTC');
       setUrl('https://httpbin.org/post');
       setHttpMethod('POST');
       setHeadersText('{\n  "Content-Type": "application/json"\n}');
