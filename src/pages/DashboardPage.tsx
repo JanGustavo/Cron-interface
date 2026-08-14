@@ -236,7 +236,6 @@ export const DashboardPage: React.FC = () => {
   const baselineActiveJobsCount = Number(localStorage.getItem('cf_profile_active_jobs_count') || '0');
   const diff = jobs.length - baselineActiveJobsCount;
   const currentTotalJobsCreated = storedTotalJobsCreated + diff;
-  const maxJobsLimit = Math.max(0, globalMaxLimit - currentTotalJobsCreated);
   const createdJobsCount = jobs.length;
   const isLimitReached = currentTotalJobsCreated >= globalMaxLimit;
 
@@ -464,7 +463,7 @@ export const DashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard
               title="Tarefas Cadastradas"
-              value={`${createdJobsCount} / ${maxJobsLimit}`}
+              value={`${createdJobsCount} / ${globalMaxLimit}`}
               color="indigo"
               description={isProPlan ? 'Plano Pro (20 tarefas máx global)' : 'Plano Gratuito (5 tarefas máx global)'}
               tooltip="O número de tarefas criadas em relação ao limite total do seu plano de workspace."
@@ -883,7 +882,14 @@ export const DashboardPage: React.FC = () => {
                                           <div className="flex justify-between items-center text-[9px] font-bold text-slate-200">
                                             <span className="truncate max-w-[120px]">{log.jobName || 'Tarefa'}</span>
                                             <span className="text-slate-500 font-mono">
-                                              {new Date(log.triggeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                              {(() => {
+                                                const d = new Date(log.triggeredAt);
+                                                const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                                                const offset = d.getTimezoneOffset();
+                                                const hours = Math.floor(Math.abs(offset) / 60);
+                                                const sign = offset <= 0 ? '+' : '-';
+                                                return `${time} (GMT${sign}${hours})`;
+                                              })()}
                                             </span>
                                           </div>
                                           <p className="text-[8px] text-rose-400 font-mono truncate max-w-[195px] mt-0.5">

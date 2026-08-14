@@ -19,7 +19,30 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
       if (isNaN(date.getTime())) {
         return '-';
       }
-      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+      
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isYesterday = date.toDateString() === yesterday.toDateString();
+      
+      const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      
+      const offset = date.getTimezoneOffset();
+      const absOffset = Math.abs(offset);
+      const hours = Math.floor(absOffset / 60);
+      const sign = offset <= 0 ? '+' : '-';
+      const tzStr = `GMT${sign}${hours}`;
+
+      if (isToday) {
+        return `Hoje às ${timeStr} (${tzStr})`;
+      } else if (isYesterday) {
+        return `Ontem às ${timeStr} (${tzStr})`;
+      } else {
+        const dateStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        return `${dateStr} às ${timeStr} (${tzStr})`;
+      }
     } catch {
       return '-';
     }
@@ -52,7 +75,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
             <tr className="border-b border-indigo-950/20 text-slate-500 font-bold uppercase tracking-wider bg-indigo-950/5">
               <th className="px-5 py-3 text-[10px]">Tarefa / URL</th>
               <th className="px-5 py-3 text-[10px] w-28">Status</th>
-              <th className="px-5 py-3 text-[10px] w-24">Hora</th>
+              <th className="px-5 py-3 text-[10px] w-48">Horário</th>
               <th className="px-5 py-3 text-[10px] w-24">Duração</th>
               <th className="px-5 py-3 text-[10px] w-12">Tenta.</th>
             </tr>

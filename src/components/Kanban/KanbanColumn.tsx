@@ -7,9 +7,10 @@ interface KanbanColumnProps {
   id: KanbanStatus;
   title: string;
   jobs: Job[];
+  hasActiveFilters?: boolean;
 }
 
-export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, jobs }) => {
+export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, jobs, hasActiveFilters = false }) => {
   const getHeaderStyles = () => {
     switch (id) {
       case 'success':
@@ -84,7 +85,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, jobs }) =
             {/* Empty column placeholder indicator */}
             {jobs.length === 0 && (
               <div className="h-28 border border-dashed border-indigo-950/30 rounded-xl flex items-center justify-center text-slate-600 text-xs font-semibold px-4 text-center select-none">
-                Arraste tarefas aqui
+                {hasActiveFilters ? 'Nenhuma correspondência' : 'Arraste tarefas aqui'}
               </div>
             )}
           </div>

@@ -173,7 +173,7 @@ export const KanbanBoard: React.FC = () => {
         <div className="p-4 rounded-2xl glass-panel border border-indigo-950/40 space-y-4 bg-indigo-950/5 relative overflow-hidden select-none animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* HTTP Method Filter */}
             <div>
               <label className="text-[9px] uppercase font-bold text-slate-500 tracking-wider block mb-1">
@@ -304,6 +304,7 @@ export const KanbanBoard: React.FC = () => {
                 id={column.id}
                 title={column.title}
                 jobs={columnJobs}
+                hasActiveFilters={hasActiveFilters}
               />
             );
           })}
@@ -322,6 +323,7 @@ export const KanbanBoard: React.FC = () => {
                 id={column.id}
                 title={column.title}
                 jobs={columnJobs}
+                hasActiveFilters={hasActiveFilters}
               />
             );
           })}

@@ -3,6 +3,7 @@ import type { LogEntry } from '../../types/logs';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { StatusBadge } from '../Dashboard/StatusBadge';
+import Swal from 'sweetalert2';
 
 interface LogDetailProps {
   logs: LogEntry[];
@@ -34,7 +35,51 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
     }
   };
 
-  const handleReplayJob = async () => {
+  const handleReplayJob = () => {
+    if (!job) return;
+    
+    const method = job.httpMethod || 'POST';
+    const payloadStr = job.payload 
+      ? (typeof job.payload === 'object' ? JSON.stringify(job.payload, null, 2) : job.payload) 
+      : 'Nenhum';
+
+    Swal.fire({
+      title: 'Disparar Replay Manual?',
+      html: `
+        <div class="text-left space-y-3 font-sans text-xs">
+          <p class="text-slate-450">Deseja realmente reexecutar esta tarefa disparando uma nova requisição HTTP?</p>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-900/60 space-y-1.5 font-mono">
+            <div><span class="text-cyan-400 font-bold">MÉTODO:</span> <span class="text-slate-200">${method}</span></div>
+            <div><span class="text-cyan-400 font-bold">URL:</span> <span class="text-slate-350 break-all">${log.jobUrl || job.url}</span></div>
+            <div><span class="text-cyan-400 font-bold">PAYLOAD:</span> <pre class="text-slate-400 text-[10px] mt-1 whitespace-pre-wrap">${payloadStr}</pre></div>
+          </div>
+          <p class="text-amber-500 font-semibold mt-2">⚠️ Atenção: Isso gerará novos registros e efeitos colaterais no endpoint de destino.</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, disparar replay',
+      cancelButtonText: 'Cancelar',
+      background: '#0a0f1d',
+      color: '#cbd5e1',
+      iconColor: '#06b6d4',
+      customClass: {
+        popup: 'border border-indigo-950/60 rounded-3xl shadow-2xl bg-[#090c15] text-left font-sans max-w-lg',
+        title: 'text-base font-bold text-slate-100 px-6 pt-6',
+        htmlContainer: 'px-6 pb-4',
+        actions: 'px-6 pb-6 flex justify-end gap-2',
+        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-600 rounded-xl transition-all shadow-md cursor-pointer',
+        cancelButton: 'px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer',
+      },
+      buttonsStyling: false,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        executeReplayJob();
+      }
+    });
+  };
+
+  const executeReplayJob = async () => {
     if (!job) return;
     try {
       await triggerJob(job.id);

@@ -26,7 +26,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
       {/* Main Structural Right Area Container */}
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out pl-0 ${
+        className={`flex-1 min-w-0 flex flex-col min-h-screen transition-all duration-300 ease-in-out pl-0 ${
           sidebarOpen ? 'md:pl-64' : 'md:pl-20'
         }`}
       >

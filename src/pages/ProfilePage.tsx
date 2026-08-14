@@ -68,7 +68,7 @@ const InfoTip: React.FC<{ text: string }> = ({ text }) => (
 */
 
 export const ProfilePage: React.FC = () => {
-  const { user, activeProject, projects, token, setActiveProject, setProjects } = useAuthStore();
+  const { user, activeProject, projects, setActiveProject, setProjects } = useAuthStore();
   const { jobs, fetchJobs } = useJobsStore();
   const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen } = useUiStore();
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
@@ -94,7 +94,6 @@ export const ProfilePage: React.FC = () => {
   const [profilePlan, setProfilePlan] = useState(() => localStorage.getItem('cf_user_plan') || user?.plan || 'free');
   const isProPlan = profilePlan === 'paid';
 
-  const activeKey = token?.accessToken || localStorage.getItem('cf_token') || '';
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const webhookConfigured = globalWebhook.trim().length > 0;
@@ -232,29 +231,28 @@ export const ProfilePage: React.FC = () => {
   }, [securityTab, fetchAPIKeys]);
 
   const getCodeSnippet = () => {
-    const key = activeKey || 'SUA_API_KEY_AQUI';
     const tz = timezone || 'America/Sao_Paulo';
 
     if (techStack.includes('Node.js')) {
-      return `const CRONFLOW_API_KEY = process.env.CRONFLOW_API_KEY || "${key}";\n\nfetch("https://cron.jangustavo.me/v1/jobs", {\n  method: "POST",\n  headers: {\n    "Authorization": "Bearer " + CRONFLOW_API_KEY,\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify({\n    name: "Minha Tarefa Agendada",\n    schedule: "*/5 * * * *", // a cada 5m\n    http_method: "POST",\n    url: "https://minhaapi.com/webhooks/limpeza",\n    timezone: "${tz}"\n  })\n})\n.then(res => res.json())\n.then(data => console.log("Job cadastrado:", data.id));`;
+      return `const apiKey = process.env.CRONFLOW_API_KEY;\nif (!apiKey) throw new Error("CRONFLOW_API_KEY ausente");\n\nfetch("https://cron.jangustavo.me/v1/jobs", {\n  method: "POST",\n  headers: {\n    "Authorization": "Bearer " + apiKey,\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify({\n    name: "Minha Tarefa Agendada",\n    schedule: "*/5 * * * *", // a cada 5m\n    http_method: "POST",\n    url: "https://minhaapi.com/webhooks/limpeza",\n    timezone: "${tz}"\n  })\n})\n.then(res => res.json())\n.then(data => console.log("Job cadastrado:", data.id));`;
     }
     if (techStack.includes('Go')) {
-      return `package main\n\nimport (\n\t"bytes"\n\t"encoding/json"\n\t"fmt"\n\t"net/http"\n)\n\nfunc main() {\n\tpayload := map[string]interface{}{\n\t\t"name":        "Minha Tarefa",\n\t\t"schedule":    "*/5 * * * *",\n\t\t"http_method": "POST",\n\t\t"url":         "https://minhaapi.com/webhooks/limpeza",\n\t\t"timezone":    "${tz}",\n\t}\n\tbody, _ := json.Marshal(payload)\n\n\treq, _ := http.NewRequest("POST", "https://cron.jangustavo.me/v1/jobs", bytes.NewBuffer(body))\n\treq.Header.Set("Authorization", "Bearer ${key}")\n\treq.Header.Set("Content-Type", "application/json")\n\n\tclient := &http.Client{}\n\tresp, _ := client.Do(req)\n\tdefer resp.Body.Close()\n}`;
+      return `package main\n\nimport (\n\t"bytes"\n\t"encoding/json"\n\t"net/http"\n\t"os"\n)\n\nfunc main() {\n\tapiKey := os.Getenv("CRONFLOW_API_KEY")\n\tif apiKey == "" {\n\t\tpanic("CRONFLOW_API_KEY ausente")\n\t}\n\n\tpayload := map[string]interface{}{\n\t\t"name":        "Minha Tarefa",\n\t\t"schedule":    "*/5 * * * *",\n\t\t"http_method": "POST",\n\t\t"url":         "https://minhaapi.com/webhooks/limpeza",\n\t\t"timezone":    "${tz}",\n\t}\n\tbody, _ := json.Marshal(payload)\n\n\treq, _ := http.NewRequest("POST", "https://cron.jangustavo.me/v1/jobs", bytes.NewBuffer(body))\n\treq.Header.Set("Authorization", "Bearer " + apiKey)\n\treq.Header.Set("Content-Type", "application/json")\n\n\tclient := &http.Client{}\n\tresp, _ := client.Do(req)\n\tdefer resp.Body.Close()\n}`;
     }
     if (techStack.includes('Python')) {
-      return `import requests\n\nurl = "https://cron.jangustavo.me/v1/jobs"\nheaders = {\n    "Authorization": "Bearer ${key}",\n    "Content-Type": "application/json"\n}\npayload = {\n    "name": "Minha Tarefa Agendada",\n    "schedule": "*/5 * * * *",\n    "http_method": "POST",\n    "url": "https://minhaapi.com/webhooks/limpeza",\n    "timezone": "${tz}"\n}\n\nresponse = requests.post(url, json=payload, headers=headers)\nprint(response.json())`;
+      return `import os\nimport requests\n\napiKey = os.environ.get("CRONFLOW_API_KEY")\nif not apiKey:\n    raise ValueError("CRONFLOW_API_KEY ausente")\n\nurl = "https://cron.jangustavo.me/v1/jobs"\nheaders = {\n    "Authorization": f"Bearer {apiKey}",\n    "Content-Type": "application/json"\n}\npayload = {\n    "name": "Minha Tarefa Agendada",\n    "schedule": "*/5 * * * *",\n    "http_method": "POST",\n    "url": "https://minhaapi.com/webhooks/limpeza",\n    "timezone": "${tz}"\n}\n\nresponse = requests.post(url, json=payload, headers=headers)\nprint(response.json())`;
     }
     if (techStack.includes('PHP')) {
-      return `$ch = curl_init("https://cron.jangustavo.me/v1/jobs");\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\ncurl_setopt($ch, CURLOPT_POST, true);\ncurl_setopt($ch, CURLOPT_HTTPHEADER, [\n    "Authorization: Bearer ${key}",\n    "Content-Type: application/json"\n]);\ncurl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([\n    "name" => "Minha Tarefa",\n    "schedule" => "*/5 * * * *",\n    "http_method" => "POST",\n    "url" => "https://minhaapi.com/webhooks/limpeza",\n    "timezone" => "${tz}"\n]));\n$resp = curl_exec($ch);`;
+      return `<?php\n$apiKey = getenv("CRONFLOW_API_KEY");\nif (!$apiKey) {\n    die("CRONFLOW_API_KEY ausente");\n}\n\n$ch = curl_init("https://cron.jangustavo.me/v1/jobs");\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\ncurl_setopt($ch, CURLOPT_POST, true);\ncurl_setopt($ch, CURLOPT_HTTPHEADER, [\n    "Authorization: Bearer " . $apiKey,\n    "Content-Type: application/json"\n]);\ncurl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([\n    "name" => "Minha Tarefa",\n    "schedule" => "*/5 * * * *",\n    "http_method" => "POST",\n    "url" => "https://minhaapi.com/webhooks/limpeza",\n    "timezone" => "${tz}"\n]));\n$resp = curl_exec($ch);`;
     }
     if (techStack.includes('C#')) {
-      return `using var client = new HttpClient();\nclient.DefaultRequestHeaders.Add("Authorization", "Bearer ${key}");\n\nvar payload = new {\n    name = "Minha Tarefa Agendada",\n    schedule = "*/5 * * * *",\n    http_method = "POST",\n    url = "https://minhaapi.com/webhooks/limpeza",\n    timezone = "${tz}"\n};\n\nawait client.PostAsJsonAsync("https://cron.jangustavo.me/v1/jobs", payload);`;
+      return `using System;\nusing System.Net.Http;\nusing System.Net.Http.Json;\n\nvar apiKey = Environment.GetEnvironmentVariable("CRONFLOW_API_KEY");\nif (string.IsNullOrEmpty(apiKey)) {\n    throw new Exception("CRONFLOW_API_KEY ausente");\n}\n\nusing var client = new HttpClient();\nclient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");\n\nvar payload = new {\n    name = "Minha Tarefa Agendada",\n    schedule = "*/5 * * * *",\n    http_method = "POST",\n    url = "https://minhaapi.com/webhooks/limpeza",\n    timezone = "${tz}"\n};\n\nawait client.PostAsJsonAsync("https://cron.jangustavo.me/v1/jobs", payload);`;
     }
     if (techStack.includes('Java')) {
-      return `// Exemplo HTTP Client (Java 11+):\nvar client = HttpClient.newHttpClient();\nvar req = HttpRequest.newBuilder()\n  .uri(URI.create("https://cron.jangustavo.me/v1/jobs"))\n  .header("Authorization", "Bearer ${key}")\n  .header("Content-Type", "application/json")\n  .POST(HttpRequest.BodyPublishers.ofString("{\\"name\\":\\"Tarefa\\",\\"schedule\\":\\"*/5 * * * *\\",\\"http_method\\":\\"POST\\",\\"url\\":\\"https://api.com\\",\\"timezone\\":\\"${tz}\\"}"))\n  .build();\nclient.send(req, HttpResponse.BodyHandlers.ofString());`;
+      return `// Exemplo HTTP Client (Java 11+):\nString apiKey = System.getenv("CRONFLOW_API_KEY");\nif (apiKey == null || apiKey.isEmpty()) {\n    throw new RuntimeException("CRONFLOW_API_KEY ausente");\n}\n\nvar client = HttpClient.newHttpClient();\nvar req = HttpRequest.newBuilder()\n  .uri(URI.create("https://cron.jangustavo.me/v1/jobs"))\n  .header("Authorization", "Bearer " + apiKey)\n  .header("Content-Type", "application/json")\n  .POST(HttpRequest.BodyPublishers.ofString("{\\"name\\":\\"Tarefa\\",\\"schedule\\":\\"*/5 * * * *\\",\\"http_method\\":\\"POST\\",\\"url\\":\\"https://api.com\\",\\"timezone\\":\\"${tz}\\"}"))\n  .build();\nclient.send(req, HttpResponse.BodyHandlers.ofString());`;
     }
 
-    return `curl -X POST "https://cron.jangustavo.me/v1/jobs" \\\n     -H "Authorization: Bearer ${key}" \\\n     -H "Content-Type: application/json" \\\n     -d '{\n       "name": "Minha Tarefa Agendada",\n       "schedule": "*/5 * * * *",\n       "http_method": "POST",\n       "url": "https://minhaapi.com/webhooks/limpeza",\n       "timezone": "${tz}"\n     }'`;
+    return `# Defina a variável de ambiente: export CRONFLOW_API_KEY="cf_live_..."\ncurl -X POST "https://cron.jangustavo.me/v1/jobs" \\\n     -H "Authorization: Bearer $CRONFLOW_API_KEY" \\\n     -H "Content-Type: application/json" \\\n     -d '{\n       "name": "Minha Tarefa Agendada",\n       "schedule": "*/5 * * * *",\n       "http_method": "POST",\n       "url": "https://minhaapi.com/webhooks/limpeza",\n       "timezone": "${tz}"\n     }'`;
   };
 
   const handleUpdateWebhook = (e: React.FormEvent) => {
