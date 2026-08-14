@@ -88,7 +88,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
     const targetLog = logs.find((l) => l.id === selectedLogId);
     if (!targetLog) return;
 
-    const fullLines = getTerminalLogs(targetLog);
+    const fullLines = getTerminalLogs(targetLog).filter(Boolean);
     
     if (typingTimerRef.current) clearInterval(typingTimerRef.current);
 
@@ -116,7 +116,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
     if (typingTimerRef.current) clearInterval(typingTimerRef.current);
     const targetLog = logs.find((l) => l.id === selectedLogId);
     if (targetLog) {
-      setTerminalLines(getTerminalLogs(targetLog));
+      setTerminalLines(getTerminalLogs(targetLog).filter(Boolean));
     }
     setIsTyping(false);
   };
@@ -541,7 +541,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
             </div>
             
             <div className="p-4 bg-[#03050a] border border-indigo-950/65 rounded-2xl font-mono text-[10px] text-cyan-400/90 h-64 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-indigo-950/60 scrollbar-track-transparent">
-              {terminalLines.map((line, idx) => {
+              {terminalLines.filter(Boolean).map((line, idx) => {
                 let color = 'text-cyan-400/90';
                 if (line.includes('[SYS]')) color = 'text-slate-500';
                 if (line.includes('[NET]')) color = 'text-indigo-400';
