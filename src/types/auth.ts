@@ -3,12 +3,22 @@
  * based on the database schema and frontend requirements.
  */
 
+export interface PlanLimits {
+  maxJobs: number;
+  maxUsers: number;
+  logsRetentionDays: number;
+  workflowsEnabled: boolean;
+  alertsWebhooksEnabled: boolean;
+  multiProjectEnabled: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
-  plan: 'free' | 'paid';
+  plan: string;
   fullName?: string;
   createdAt: string;
+  limits?: PlanLimits;
 }
 
 export interface Project {

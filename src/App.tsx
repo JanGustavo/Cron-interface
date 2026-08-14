@@ -284,7 +284,7 @@ const App: React.FC = () => {
           const activeProj = projectsList.find((p: Project) => p.id === activeProjID) || projectsList[0] || { id: activeProjID, userId: userId, name: 'Projeto Principal', createdAt: userCreatedAt };
 
           login(
-            { id: userId, email: email, plan: plan, createdAt: userCreatedAt, fullName: profile.fullName },
+            { id: userId, email: email, plan: plan, createdAt: userCreatedAt, fullName: profile.fullName, limits: profile.limits },
             { accessToken: savedToken, refreshToken: '', tokenType: 'Bearer', expiresIn: 86400 },
             projectsList.length > 0 ? projectsList : [activeProj]
           );

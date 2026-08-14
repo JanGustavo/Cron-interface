@@ -1,4 +1,5 @@
 import React from 'react';
+import { useEntitlements } from '../../hooks/useEntitlements';
 
 interface ProfileSettingsProps {
   avatarLabel: string;
@@ -29,6 +30,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   memberSince,
   onOpenPlans,
 }) => {
+  const { maxJobs, logsRetentionDays } = useEntitlements();
+
   return (
     <div className="relative overflow-hidden rounded-3xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/10 via-[#0a0c1a] to-cyan-500/5 p-6 shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 opacity-80" />
@@ -62,8 +65,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <div className="mt-3.5 border-t border-indigo-950/30 pt-3 select-none flex flex-col gap-2.5">
               <p className="text-[10px] text-slate-450 leading-relaxed">
                 {isProPlan 
-                  ? '⭐ Plano PRO ativo: Limite de 20 tarefas por workspace, múltiplos projetos e 60 dias de logs.'
-                  : '⚡ Plano STARTER: Limite de 5 tarefas por workspace, projeto único e 3 dias de logs.'}
+                  ? `⭐ Plano PRO ativo: Limite de ${maxJobs} tarefas por workspace, múltiplos projetos e ${logsRetentionDays} dias de logs.`
+                  : `⚡ Plano STARTER: Limite de ${maxJobs} tarefas por workspace, projeto único e ${logsRetentionDays} dias de logs.`}
               </p>
               <button
                 type="button"

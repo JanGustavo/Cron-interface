@@ -290,6 +290,19 @@ export const ProfilePage: React.FC = () => {
           localStorage.setItem('cf_user_timezone', res.data.timezone);
         }
         setDigestHour(res.data.digestHour !== undefined ? res.data.digestHour : 18);
+
+        // Atualiza os dados de limite e plano no Zustand global
+        const authStore = useAuthStore.getState();
+        if (authStore.user) {
+          useAuthStore.setState({
+            user: {
+              ...authStore.user,
+              fullName: res.data.fullName,
+              plan: res.data.plan,
+              limits: res.data.limits
+            }
+          });
+        }
       }
     } catch (err) {
       console.error('Erro ao buscar perfil do usuário:', err);
