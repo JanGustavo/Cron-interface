@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { LogEntry } from '../../types/logs';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
@@ -12,6 +12,120 @@ interface LogDetailProps {
 export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
   const { jobs, triggerJob } = useJobsStore();
   const { isLogModalOpen, selectedLogId, setLogModalOpen, showToast } = useUiStore();
+
+  const [terminalLines, setTerminalLines] = useState<string[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const getTerminalLogs = useCallback((targetLog: LogEntry) => {
+    const lines = [];
+    const currentJob = jobs.find((j) => j.id === targetLog.jobId);
+    const method = currentJob?.httpMethod || 'POST';
+    const url = targetLog.jobUrl || currentJob?.url || 'https://api.empresa.com/sync';
+    
+    let host = 'api.endpoint.com';
+    try {
+      if (url.startsWith('http')) {
+        host = new URL(url).hostname;
+      }
+    } catch {
+      // safe fallback
+    }
+    
+    const triggeredTime = new Date(targetLog.triggeredAt).toLocaleString('pt-BR');
+
+    lines.push(`[${triggeredTime}] [SYS] Inicializando tarefa agendada: "${currentJob?.name || targetLog.jobName || 'Tarefa'}"`);
+    lines.push(`[${triggeredTime}] [SYS] Configuração: Cron [${currentJob?.schedule || 'every:5m'}], Fuso [${currentJob?.timezone || 'UTC'}]`);
+    lines.push(`[${triggeredTime}] [NET] Resolvendo DNS para: ${host}...`);
+    lines.push(`[${triggeredTime}] [NET] DNS resolvido com sucesso.`);
+    
+    const currentAttempt = targetLog.attemptNumber;
+    for (let i = 1; i <= currentAttempt; i++) {
+      const isLast = i === currentAttempt;
+      const attemptTime = new Date(new Date(targetLog.triggeredAt).getTime() + (i - 1) * 300000).toLocaleString('pt-BR');
+      
+      lines.push(`[${attemptTime}] [HTTP] [TENTATIVA ${i}/${currentAttempt}] Conectando a ${host}...`);
+      lines.push(`[${attemptTime}] [HTTP] [TENTATIVA ${i}/${currentAttempt}] Enviando HTTP ${method} para: ${url}`);
+      
+      if (currentJob?.headers && Object.keys(currentJob.headers).length > 0) {
+        lines.push(`[${attemptTime}] [HTTP] Headers: ${JSON.stringify(currentJob.headers)}`);
+      }
+      if (currentJob?.payload && method !== 'GET') {
+        const payloadStr = typeof currentJob.payload === 'object' ? JSON.stringify(currentJob.payload) : currentJob.payload;
+        lines.push(`[${attemptTime}] [HTTP] Payload: ${payloadStr.slice(0, 100)}${payloadStr.length > 100 ? '...' : ''}`);
+      }
+
+      if (isLast) {
+        if (targetLog.status === 'success') {
+          lines.push(`[${attemptTime}] [HTTP] Resposta recebida. HTTP Status: ${targetLog.httpStatus || 200}`);
+          lines.push(`[${attemptTime}] [HTTP] Duração: ${targetLog.durationMs || 50}ms`);
+          if (targetLog.responseBody) {
+            lines.push(`[${attemptTime}] [HTTP] Resposta do Corpo: ${targetLog.responseBody.slice(0, 150)}${targetLog.responseBody.length > 150 ? '...' : ''}`);
+          }
+          lines.push(`[${attemptTime}] [SYS] ✔ Execução CONCLUÍDA com sucesso.`);
+        } else if (targetLog.status === 'timeout') {
+          lines.push(`[${attemptTime}] [ERR] Falha de Timeout: Sem resposta do servidor após 10000ms.`);
+          lines.push(`[${attemptTime}] [SYS] ❌ Execução INTERROMPIDA por erro.`);
+        } else {
+          lines.push(`[${attemptTime}] [ERR] Falha HTTP: Status ${targetLog.httpStatus || 500} ou erro de conexão.`);
+          lines.push(`[${attemptTime}] [SYS] ❌ Execução INTERROMPIDA por erro.`);
+        }
+      } else {
+        lines.push(`[${attemptTime}] [ERR] Tentativa ${i} falhou: Conexão recusada ou timeout.`);
+        lines.push(`[${attemptTime}] [SYS] Re-enfileirando para Retry com Atraso Exponencial (Backoff)...`);
+      }
+    }
+    return lines;
+  }, [jobs]);
+
+  useEffect(() => {
+    if (!isLogModalOpen || !selectedLogId) {
+      if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+      return;
+    }
+
+    const targetLog = logs.find((l) => l.id === selectedLogId);
+    if (!targetLog) return;
+
+    const fullLines = getTerminalLogs(targetLog);
+    
+    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+
+    requestAnimationFrame(() => {
+      setIsTyping(true);
+      setTerminalLines([]);
+    });
+    let lineIdx = 0;
+    typingTimerRef.current = setInterval(() => {
+      if (lineIdx < fullLines.length) {
+        setTerminalLines((prev) => [...prev, fullLines[lineIdx]]);
+        lineIdx++;
+      } else {
+        if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+        setIsTyping(false);
+      }
+    }, 200); // print a new line every 200ms
+
+    return () => {
+      if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+    };
+  }, [isLogModalOpen, selectedLogId, logs, getTerminalLogs]);
+
+  const handleSkipTerminalTyping = () => {
+    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+    const targetLog = logs.find((l) => l.id === selectedLogId);
+    if (targetLog) {
+      setTerminalLines(getTerminalLogs(targetLog));
+    }
+    setIsTyping(false);
+  };
+
+  useEffect(() => {
+    if (terminalEndRef.current) {
+      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [terminalLines]);
 
   if (!isLogModalOpen || !selectedLogId) return null;
 
@@ -406,6 +520,49 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Full-width Terminal Pane */}
+          <div className="col-span-1 md:col-span-2 border-t border-indigo-950/30 pt-5 text-left">
+            <div className="flex justify-between items-center mb-2 select-none">
+              <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                Console de Execução do Job (Shell)
+              </h5>
+              {isTyping && (
+                <button
+                  onClick={handleSkipTerminalTyping}
+                  className="text-[9px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors uppercase font-mono tracking-wider cursor-pointer"
+                >
+                  ⏩ Pular Animação
+                </button>
+              )}
+            </div>
+            
+            <div className="p-4 bg-[#03050a] border border-indigo-950/65 rounded-2xl font-mono text-[10px] text-cyan-400/90 h-64 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-indigo-950/60 scrollbar-track-transparent">
+              {terminalLines.map((line, idx) => {
+                let color = 'text-cyan-400/90';
+                if (line.includes('[SYS]')) color = 'text-slate-500';
+                if (line.includes('[NET]')) color = 'text-indigo-400';
+                if (line.includes('[ERR]')) color = 'text-rose-450 font-semibold';
+                if (line.includes('[TENTATIVA')) color = 'text-amber-400';
+                if (line.includes('✔')) color = 'text-emerald-400 font-bold';
+                if (line.includes('❌')) color = 'text-rose-400 font-bold';
+
+                return (
+                  <div key={idx} className={`${color} leading-relaxed break-all`}>
+                    {line}
+                  </div>
+                );
+              })}
+              
+              {/* Blinking cursor */}
+              <div className="inline-flex items-center gap-1 text-slate-500 select-none">
+                <span>{isTyping ? 'Executando etapa...' : '>'}</span>
+                <span className="w-1.5 h-3 bg-cyan-400 animate-pulse" />
+              </div>
+              <div ref={terminalEndRef} />
             </div>
           </div>
 
