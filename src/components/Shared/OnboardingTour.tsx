@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUiStore } from '../../store/uiStore';
 
@@ -48,6 +48,8 @@ export const OnboardingTour: React.FC = () => {
   const [popoverWidth, setPopoverWidth] = useState(280);
   const [spotlightStyle, setSpotlightStyle] = useState<React.CSSProperties>({ display: 'none' });
 
+  const popoverRef = useRef<HTMLDivElement>(null);
+
   const handleDismiss = () => {
     localStorage.setItem('cf_first_run_seen', '1');
     setIsOpen(false);
@@ -91,6 +93,9 @@ export const OnboardingTour: React.FC = () => {
       requestAnimationFrame(() => {
         setPopoverWidth(widthVal);
 
+        // Dynamically measure the popover element layout height
+        const popoverHeight = popoverRef.current ? popoverRef.current.offsetHeight : (step.tip ? 240 : 160);
+
         if (targetEl) {
           const rect = targetEl.getBoundingClientRect();
           
@@ -103,12 +108,11 @@ export const OnboardingTour: React.FC = () => {
             height: `${rect.height}px`,
           });
 
-          // Dynamic Popover Positioning Estimates
-          const popoverHeight = step.tip ? 180 : 130;
-
           // Position above target. If too high or close to screen top, show below.
-          let top = rect.top + window.scrollY - popoverHeight - 24;
-          if (rect.top < popoverHeight + 30) {
+          let top = rect.top + window.scrollY - popoverHeight - 16;
+          
+          // Overlap safety check: if positioning above pushes the card off-screen, display it below the target
+          if (rect.top - popoverHeight - 20 < 10) {
             top = rect.bottom + window.scrollY + 16;
           }
 
@@ -124,21 +128,23 @@ export const OnboardingTour: React.FC = () => {
           // Fallback: hide spotlight helper and center popover on viewport
           setSpotlightStyle({ display: 'none' });
           
-          const top = window.innerHeight / 2 - 90 + window.scrollY;
+          const top = window.innerHeight / 2 - popoverHeight / 2 + window.scrollY;
           const left = window.innerWidth / 2 - widthVal / 2 + window.scrollX;
           setPopoverPos({ top, left });
         }
       });
     };
 
-    // Run initial update
-    updatePosition();
+    // Run positioning update. We use a tiny timeout to guarantee React committed
+    // the text/content updates to the DOM, so offsetHeight yields a accurate measurement.
+    const updateTimer = setTimeout(updatePosition, 50);
 
     // Event listeners to handle page resize or scroll
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition);
 
     return () => {
+      clearTimeout(updateTimer);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition);
     };
@@ -175,6 +181,7 @@ export const OnboardingTour: React.FC = () => {
 
         {/* Floating Popover Step Card */}
         <motion.div
+          ref={popoverRef}
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -237,14 +244,14 @@ export const OnboardingTour: React.FC = () => {
                 >
                   Voltar
                 </button>
-            ) : (
+              ) : (
                 <button
                   onClick={handleDismiss}
                   className="px-2.5 py-1.5 rounded-lg border border-indigo-950/75 hover:bg-slate-900/35 text-[10px] font-semibold text-slate-450 hover:text-slate-300 transition-all cursor-pointer"
                 >
                   Pular
                 </button>
-            )}
+              )}
 
               <button
                 onClick={handleNext}
