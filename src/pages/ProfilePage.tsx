@@ -73,6 +73,7 @@ export const ProfilePage: React.FC = () => {
   const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen } = useUiStore();
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
   const [isSwitchingProject, setIsSwitchingProject] = useState(false);
+  const [isPlansModalOpen, setIsPlansModalOpen] = useState(false);
 
   // Load custom profile details saved during onboarding
   const [profileFullName, setProfileFullName] = useState(() => localStorage.getItem('cf_user_name') || user?.fullName || '');
@@ -535,6 +536,7 @@ export const ProfilePage: React.FC = () => {
             company={company}
             memberDays={memberDays}
             memberSince={memberSince}
+            onOpenPlans={() => setIsPlansModalOpen(true)}
           />
 
           <ProjectManager
@@ -1030,6 +1032,211 @@ export const ProfilePage: React.FC = () => {
 
         </div>
       </div>
+
+      {isPlansModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/75 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-3xl border border-indigo-500/20 bg-[#0a0d1d]/95 p-6 md:p-8 shadow-[0_0_60px_rgba(99,102,241,0.25)] overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 opacity-90" />
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-indigo-950/40 select-none">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-slate-100 tracking-wide flex items-center gap-2">
+                  <span>Planos e Assinaturas</span>
+                  <span className="text-[9px] font-mono px-2 py-0.5 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-full font-bold uppercase tracking-wider">Monetização</span>
+                </h3>
+                <p className="text-xs text-slate-400">Escolha o plano ideal para a escala de agendamentos e integrações de sua infraestrutura.</p>
+              </div>
+              <button
+                onClick={() => setIsPlansModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/60 transition-colors cursor-pointer"
+                title="Fechar"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Scrollable Container */}
+            <div className="flex-1 overflow-y-auto py-6 pr-1 custom-scrollbar space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* 1. STARTER PLAN (Left) */}
+                <div className={`p-6 rounded-2xl border transition-all flex flex-col justify-between ${
+                  !isProPlan 
+                    ? 'bg-[#0b0e22]/50 border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.05)]' 
+                    : 'bg-slate-950/40 border-indigo-950/50'
+                }`}>
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 font-mono">Starter</span>
+                      {!isProPlan && (
+                        <span className="text-[9px] font-bold px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-mono">PLANO ATUAL</span>
+                      )}
+                    </div>
+                    <h4 className="text-2xl font-black text-slate-100 flex items-baseline gap-1.5">
+                      <span>R$ 0</span>
+                      <span className="text-xs font-semibold text-slate-500">/ grátis</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                      Infraestrutura básica e agendamentos simples para desenvolvedores individuais testarem suas rotinas de cron.
+                    </p>
+                    
+                    {/* Benefits List */}
+                    <ul className="mt-6 space-y-3.5 text-xs text-slate-300">
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Até <strong>5 tarefas (jobs)</strong> ativos</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Workspace / Projeto único</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Histórico de logs retido por <strong>3 dias</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2.5 text-slate-500 line-through">
+                        <svg className="w-4 h-4 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Alertas críticos via e-mail e webhook</span>
+                      </li>
+                      <li className="flex items-center gap-2.5 text-slate-500 line-through">
+                        <svg className="w-4 h-4 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Suporte prioritário via SLA</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="mt-8">
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full py-3 rounded-xl text-xs font-bold text-center text-slate-500 bg-slate-900 border border-indigo-950/30 cursor-not-allowed select-none"
+                    >
+                      {!isProPlan ? 'Seu Plano Ativo' : 'Plano Gratuito'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. PRO PLAN (Right) - Highly persuasive and premium */}
+                <div className={`p-6 rounded-2xl border-2 transition-all flex flex-col justify-between relative overflow-hidden ${
+                  isProPlan 
+                    ? 'bg-gradient-to-br from-indigo-950/40 to-cyan-950/15 border-cyan-500/40 shadow-[0_0_30px_rgba(6,182,212,0.15)]' 
+                    : 'bg-gradient-to-br from-indigo-950/60 to-purple-950/20 border-indigo-500/50 shadow-[0_0_30px_rgba(99,102,241,0.15)]'
+                }`}>
+                  {/* Decorative Glow */}
+                  <div className="absolute -right-12 -top-12 h-28 w-28 rounded-full bg-cyan-400/10 blur-xl pointer-events-none" />
+                  
+                  {/* Popular Tag */}
+                  <span className="absolute top-4 right-4 bg-gradient-to-r from-cyan-400 to-indigo-500 text-slate-950 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg select-none shadow-md">
+                    RECOMENDADO ⭐
+                  </span>
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 font-mono">PLANO PRO</span>
+                      {isProPlan && (
+                        <span className="text-[9px] font-bold px-2 py-0.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded font-mono">ATIVO 👑</span>
+                      )}
+                    </div>
+                    <h4 className="text-2xl font-black text-slate-100 flex items-baseline gap-1.5">
+                      <span>R$ 49</span>
+                      <span className="text-xs font-semibold text-slate-500">/ mês</span>
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Ideal para squads e plataformas de produção que exigem múltiplos tenants, alta retenção de auditoria e monitoramento em tempo real.
+                    </p>
+                    
+                    {/* Benefits List */}
+                    <ul className="mt-6 space-y-3.5 text-xs text-slate-200">
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Até <strong>20 tarefas (jobs)</strong> ativos por workspace</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span><strong>Múltiplos projetos (workspaces)</strong> ilimitados</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Logs e auditoria retidos por <strong>60 dias</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Alertas críticos via e-mail e webhook (OpsGenie, PagerDuty)</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Scheduler Engine em fila prioritária dedicada</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Suporte preferencial via chat SLA &lt; 4h</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="mt-8">
+                    {isProPlan ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-3.5 rounded-xl text-xs font-bold text-center text-cyan-400 bg-cyan-950/20 border border-cyan-500/30 cursor-not-allowed select-none"
+                      >
+                        Seu Plano Ativo 👑
+                      </button>
+                    ) : (
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          // Inform that the checkout link works as a placeholder
+                          showToast('Fluxo de pagamento em desenvolvimento. O link de upgrade pode ser configurado no código!', 'info');
+                        }}
+                        className="w-full py-3.5 rounded-xl text-xs font-black text-center text-slate-950 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-450 transition-all shadow-lg hover:shadow-cyan-500/25 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none"
+                      >
+                        <span>Fazer Upgrade para PRO 💎</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="flex justify-end pt-4 border-t border-indigo-950/40">
+              <button
+                onClick={() => setIsPlansModalOpen(false)}
+                className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-350 hover:text-white bg-slate-800/60 hover:bg-slate-800/90 rounded-xl transition-all cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

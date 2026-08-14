@@ -12,6 +12,7 @@ import { CreateJobModal } from './components/Kanban/CreateJobModal';
 import { ImportJobModal } from './components/Kanban/ImportJobModal';
 import { ToastHost } from './components/Shared/ToastHost';
 import { AgentChat } from './components/Shared/AgentChat';
+import { OnboardingTour } from './components/Shared/OnboardingTour';
 import api from './services/api';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -394,6 +395,7 @@ const App: React.FC = () => {
       </DashboardLayout>
       <AgentChat />
       <ToastHost />
+      <OnboardingTour />
 
       {/* Global Docs Modal */}
       {isDocsOpen && (

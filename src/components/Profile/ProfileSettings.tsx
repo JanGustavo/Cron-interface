@@ -12,6 +12,7 @@ interface ProfileSettingsProps {
   company: string;
   memberDays: number;
   memberSince: string;
+  onOpenPlans: () => void;
 }
 
 export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
@@ -26,6 +27,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   company,
   memberDays,
   memberSince,
+  onOpenPlans,
 }) => {
   return (
     <div className="relative overflow-hidden rounded-3xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/10 via-[#0a0c1a] to-cyan-500/5 p-6 shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
@@ -57,11 +59,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             </div>
             <h3 className="text-xl font-bold text-slate-100 mt-1">{profileFullName || 'CronFlow User'}</h3>
             <p className="text-[11px] text-slate-400 font-mono mt-0.5">{userEmail}</p>
-            <p className="text-[9px] text-slate-500 leading-normal mt-2 border-t border-indigo-950/30 pt-2 select-none">
-              {isProPlan 
-                ? '⭐ Plano PRO ativo: Limite de 20 tarefas por workspace, múltiplos projetos e 60 dias de histórico de auditoria.'
-                : '⚡ Plano STARTER: Limite de 5 tarefas por workspace, projeto único e 3 dias de logs.'}
-            </p>
+            <div className="mt-3.5 border-t border-indigo-950/30 pt-3 select-none flex flex-col gap-2.5">
+              <p className="text-[10px] text-slate-450 leading-relaxed">
+                {isProPlan 
+                  ? '⭐ Plano PRO ativo: Limite de 20 tarefas por workspace, múltiplos projetos e 60 dias de logs.'
+                  : '⚡ Plano STARTER: Limite de 5 tarefas por workspace, projeto único e 3 dias de logs.'}
+              </p>
+              <button
+                type="button"
+                onClick={onOpenPlans}
+                className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-all bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 hover:border-cyan-500/35 hover:shadow-[0_0_15px_rgba(6,182,212,0.15)] cursor-pointer focus-visible:outline-none"
+              >
+                💎 Ver Planos & Benefícios
+              </button>
+            </div>
           </div>
         </div>
 

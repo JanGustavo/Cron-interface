@@ -20,11 +20,13 @@ export const authCopy = {
     eyebrow: 'Recuperação segura',
     title: 'Vamos devolver o acesso ao seu workspace.',
     description: 'Informe o e-mail da conta. Enviaremos as instruções para criar uma nova senha.',
+    submit: 'Enviar link de recuperação',
   },
   resetPassword: {
     eyebrow: 'Acesso protegido',
     title: 'Defina uma nova senha.',
     description: 'Escolha uma senha forte para continuar protegendo suas automações.',
+    submit: 'Definir nova senha',
   },
 } as const;
 

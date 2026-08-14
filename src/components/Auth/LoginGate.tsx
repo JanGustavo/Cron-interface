@@ -21,11 +21,28 @@ const getPasswordStrength = (pwd: string) => {
 };
 
 export const LoginGate: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Parse URL on initialization to support reset-password and verify-email routing
+  const getInitialResetInfo = () => {
+    if (typeof window === 'undefined') return { isResetMode: false, isVerifyMode: false, token: '' };
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromUrl = params.get('token');
+    const path = window.location.pathname;
+    return {
+      isResetMode: !!(tokenFromUrl && path === '/reset-password'),
+      isVerifyMode: !!(tokenFromUrl && path === '/verify-email'),
+      token: tokenFromUrl || '',
+    };
+  };
+
+  const initialResetInfo = getInitialResetInfo();
+
+  const [isModalOpen, setIsModalOpen] = useState(initialResetInfo.isResetMode || initialResetInfo.isVerifyMode);
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
   const [simulationStep, setSimulationStep] = useState(0);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'forgot' | 'reset' | 'verify'>(
+    initialResetInfo.isVerifyMode ? 'verify' : initialResetInfo.isResetMode ? 'reset' : 'login'
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +54,28 @@ export const LoginGate: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [signupSession, setSignupSession] = useState<{ user: User; token: Token; projects: Project[] } | null>(null);
+  
+  // Forgot Password & Reset Password State
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccessMsg, setForgotSuccessMsg] = useState<string | null>(null);
+  const [resetToken] = useState(initialResetInfo.token);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [resetSuccessMsg, setResetSuccessMsg] = useState<string | null>(null);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Email Verification State
+  const [signupVerificationRequired, setSignupVerificationRequired] = useState(false);
+  const [signupVerificationMessage, setSignupVerificationMessage] = useState('');
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [signupVerificationLink, setSignupVerificationLink] = useState('');
+  
+  // Resend Verification State
+  const [showResendOption, setShowResendOption] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccessMessage, setResendSuccessMessage] = useState('');
+  const [resendSuccessLink, setResendSuccessLink] = useState('');
   
   // Interactive Sandbox Tab State
   const [activeSandboxTab, setActiveSandboxTab] = useState<'curl' | 'json' | 'agent'>('curl');
@@ -66,6 +105,9 @@ export const LoginGate: React.FC = () => {
 
     setLoading(true);
     setErrorMsg(null);
+    setShowResendOption(false);
+    setResendSuccessMessage('');
+    setResendSuccessLink('');
 
     try {
       const response = await api.post('/v1/auth/login', {
@@ -81,11 +123,40 @@ export const LoginGate: React.FC = () => {
       if (axiosError.response) {
         const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
         setErrorMsg(backendError || `Erro de autenticação: HTTP ${axiosError.response.status}`);
+        if (axiosError.response.status === 403 && backendError?.toLowerCase().includes('confirme seu e-mail')) {
+          setShowResendOption(true);
+        }
       } else {
         setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email.trim()) {
+      setErrorMsg('Por favor, preencha o e-mail para reenviar a confirmação.');
+      return;
+    }
+    setResendLoading(true);
+    setResendSuccessMessage('');
+    setResendSuccessLink('');
+    setErrorMsg(null);
+    try {
+      const response = await api.post('/v1/auth/resend-verification', {
+        email: email.trim(),
+      });
+      const { message, link } = response.data;
+      setResendSuccessMessage(message || 'E-mail de confirmação reenviado com sucesso!');
+      setResendSuccessLink(link || '');
+    } catch (err) {
+      console.error(err);
+      const axiosError = err as { response?: { status: number; data?: { error?: string; reason?: string } } };
+      const backendError = axiosError.response?.data?.error || axiosError.response?.data?.reason;
+      setErrorMsg(backendError || 'Erro ao reenviar confirmação. Verifique se o e-mail está correto.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -108,9 +179,15 @@ export const LoginGate: React.FC = () => {
         cpf: cpf.trim(),
       });
 
-      const { token, user, projects, apiKey } = response.data;
-      setGeneratedKey(apiKey);
-      setSignupSession({ user, token, projects });
+      const { token, user, projects, apiKey, requiresVerification, message, link } = response.data;
+      if (requiresVerification) {
+        setSignupVerificationRequired(true);
+        setSignupVerificationMessage(message || 'Por favor, confirme seu e-mail para ativar sua conta.');
+        setSignupVerificationLink(link || '');
+      } else {
+        setGeneratedKey(apiKey);
+        setSignupSession({ user, token, projects });
+      }
     } catch (err) {
       console.error(err);
       const axiosError = err as { response?: { status: number; data?: { error?: string; reason?: string } } };
@@ -136,6 +213,133 @@ export const LoginGate: React.FC = () => {
     if (!signupSession) return;
     login(signupSession.user, signupSession.token, signupSession.projects);
   };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setErrorMsg('Por favor, preencha o e-mail.');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+    setForgotSuccessMsg(null);
+
+    try {
+      const response = await api.post('/v1/auth/forgot-password', {
+        email: forgotEmail.trim(),
+      });
+      const msg = response.data?.message || 'Link de recuperação enviado!';
+      const devLink = response.data?.link;
+      setForgotSuccessMsg(msg + (devLink ? ` (Link de desenvolvimento: ${devLink})` : ''));
+    } catch (err) {
+      console.error(err);
+      const axiosError = err as { response?: { status: number; data?: { error?: string; reason?: string } } };
+      if (axiosError.response) {
+        const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
+        setErrorMsg(backendError || `Erro: HTTP ${axiosError.response.status}`);
+      } else {
+        setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || !confirmNewPassword) {
+      setErrorMsg('Por favor, preencha a nova senha e confirme.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setErrorMsg('As senhas não coincidem.');
+      return;
+    }
+    if (!resetToken) {
+      setErrorMsg('Token de redefinição não encontrado na URL.');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+    setResetSuccessMsg(null);
+
+    try {
+      const response = await api.post('/v1/auth/reset-password', {
+        token: resetToken,
+        newPassword: newPassword,
+      });
+      const msg = response.data?.message || 'Senha redefinida com sucesso!';
+      setResetSuccessMsg(msg);
+      setTimeout(() => {
+        setResetSuccessMsg(null);
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setActiveTab('login');
+        // Clean the URL query params so they don't reload
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }, 3000);
+    } catch (err) {
+      console.error(err);
+      const axiosError = err as { response?: { status: number; data?: { error?: string; reason?: string } } };
+      if (axiosError.response) {
+        const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
+        setErrorMsg(backendError || `Erro: HTTP ${axiosError.response.status}`);
+      } else {
+        setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Trigger email verification automatically when in verify mode
+  useEffect(() => {
+    if (activeTab !== 'verify' || !initialResetInfo.token) return;
+
+    const performVerification = async () => {
+      setVerificationLoading(true);
+      setErrorMsg(null);
+      try {
+        const response = await api.post('/v1/auth/verify-email', {
+          token: initialResetInfo.token,
+        });
+
+        // The response format matches AuthResponse
+        const { token, user, projects, apiKey } = response.data;
+        
+        setVerificationSuccess(true);
+        if (apiKey) {
+          // It was the first activation, show the API Key
+          setGeneratedKey(apiKey);
+          setSignupSession({ user, token, projects });
+        } else {
+          // Already verified, log in directly
+          login(user, token, projects);
+          // Clean the URL query params so they don't reload
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      } catch (err) {
+        console.error(err);
+        const axiosError = err as { response?: { status: number; data?: { error?: string; reason?: string } } };
+        if (axiosError.response) {
+          const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
+          setErrorMsg(backendError || `Erro na ativação: HTTP ${axiosError.response.status}`);
+        } else {
+          setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
+        }
+      } finally {
+        setVerificationLoading(false);
+      }
+    };
+
+    performVerification();
+  }, [activeTab, initialResetInfo.token, login]);
+
+
 
   // Smooth Scroll Helper
   const scrollToSection = (id: string) => {
@@ -925,7 +1129,7 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
               }}
               onExplore={() => {
                 setIsModalOpen(false);
-                scrollToSection('features');
+                scrollToSection('failure-lifecycle');
               }}
             />
             <div className="relative min-w-0 p-6 md:p-8 lg:flex lg:h-full lg:flex-col lg:justify-center">
@@ -947,14 +1151,44 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-950/40 border border-cyan-500/20 shadow-lg p-1.5">
                   <img src="/logo.svg" alt="Logo CronFlow" className="w-full h-full object-contain" />
                 </div>
-                <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-300">{activeTab === 'login' ? authCopy.login.eyebrow : authCopy.signup.eyebrow}</p>
-                <h3 className="text-lg font-black text-slate-100 tracking-tight font-mono">{activeTab === 'login' ? authCopy.login.title : authCopy.signup.title}</h3>
-                <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">{activeTab === 'login' ? authCopy.login.description : authCopy.signup.description}</p>
+                <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-300">
+                  {activeTab === 'login'
+                    ? authCopy.login.eyebrow
+                    : activeTab === 'signup'
+                    ? authCopy.signup.eyebrow
+                    : activeTab === 'forgot'
+                    ? authCopy.forgotPassword.eyebrow
+                    : activeTab === 'reset'
+                    ? authCopy.resetPassword.eyebrow
+                    : 'Ativação'}
+                </p>
+                <h3 className="text-lg font-black text-slate-100 tracking-tight font-mono">
+                  {activeTab === 'login'
+                    ? authCopy.login.title
+                    : activeTab === 'signup'
+                    ? authCopy.signup.title
+                    : activeTab === 'forgot'
+                    ? authCopy.forgotPassword.title
+                    : activeTab === 'reset'
+                    ? authCopy.resetPassword.title
+                    : 'Verificando seu e-mail'}
+                </h3>
+                <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">
+                  {activeTab === 'login'
+                    ? authCopy.login.description
+                    : activeTab === 'signup'
+                    ? authCopy.signup.description
+                    : activeTab === 'forgot'
+                    ? authCopy.forgotPassword.description
+                    : activeTab === 'reset'
+                    ? authCopy.resetPassword.description
+                    : 'Por favor, aguarde enquanto ativamos o seu workspace.'}
+                </p>
               </div>
             )}
 
             {/* Tabs Selector */}
-            {!generatedKey && (
+            {!generatedKey && (activeTab === 'login' || activeTab === 'signup') && (
               <div className="flex border-b border-indigo-950/20 mb-6 font-mono">
                 <button
                   type="button"
@@ -1098,11 +1332,78 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                       )}
                     </button>
                   </div>
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('forgot');
+                        setErrorMsg(null);
+                        setForgotSuccessMsg(null);
+                      }}
+                      className="text-[10px] text-slate-400 hover:text-cyan-400 transition-colors font-mono uppercase tracking-wider cursor-pointer focus-visible:outline-none focus-visible:text-cyan-400 focus-visible:ring-1 focus-visible:ring-cyan-500/20"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
                 </div>
 
                 {errorMsg && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] text-rose-400 font-semibold text-center select-text">
-                    ⚠️ {errorMsg}
+                  <div className="flex items-start gap-2.5 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-400 font-medium select-text animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_4px_20px_rgba(244,63,94,0.08)]">
+                    <svg className="w-4.5 h-4.5 shrink-0 text-rose-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span className="leading-relaxed">{errorMsg}</span>
+                  </div>
+                )}
+
+                {showResendOption && (
+                  <div className="p-4 bg-indigo-950/20 border border-indigo-500/20 rounded-2xl space-y-3 animate-in slide-in-from-bottom-2 duration-300">
+                    <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                      Não recebeu o e-mail de ativação ou deseja reenviar? Clique no botão abaixo:
+                    </p>
+                    <button
+                      type="button"
+                      disabled={resendLoading}
+                      onClick={handleResendVerification}
+                      className="w-full py-2.5 rounded-xl text-xs font-bold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/25 hover:border-cyan-500/45 transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none"
+                    >
+                      {resendLoading ? 'Reenviando...' : '📩 Reenviar E-mail de Confirmação'}
+                    </button>
+                  </div>
+                )}
+
+                {resendSuccessMessage && (
+                  <div className="space-y-4 font-sans animate-in fade-in duration-300">
+                    <div className="flex items-start gap-3.5 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                      <svg className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider font-mono">Sucesso!</span>
+                        <p className="text-xs text-slate-300 leading-relaxed font-sans">{resendSuccessMessage}</p>
+                      </div>
+                    </div>
+
+                    {resendSuccessLink && (
+                      <div className="p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-2xl space-y-3 shadow-inner">
+                        <div className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                          <span className="text-[9px] uppercase font-bold text-cyan-400 tracking-wider font-mono">Modo Desenvolvimento</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                          Use o atalho abaixo para ativar a conta imediatamente sem abrir o e-mail:
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            window.location.href = resendSuccessLink;
+                          }}
+                          className="w-full py-2.5 rounded-xl text-xs font-bold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/25 hover:border-cyan-500/45 transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none"
+                        >
+                          ⚡ Simular Clique de Ativação
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1114,8 +1415,58 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                   {loading ? 'Entrando...' : authCopy.login.submit}
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleSignupSubmit} className="space-y-4 text-left">
+            ) : activeTab === 'signup' ? (
+              signupVerificationRequired ? (
+                <div className="space-y-5 animate-in zoom-in-95 duration-300 text-left font-sans">
+                  {/* Clean, premium success card */}
+                  <div className="flex items-start gap-3.5 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                    <svg className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider font-mono">Sucesso!</span>
+                      <p className="text-xs text-slate-300 leading-relaxed font-sans">{signupVerificationMessage}</p>
+                    </div>
+                  </div>
+
+                  {/* Dedicated developer helper section */}
+                  {signupVerificationLink && (
+                    <div className="p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-2xl space-y-3 shadow-inner">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                        <span className="text-[9px] uppercase font-bold text-cyan-400 tracking-wider font-mono">Modo Desenvolvimento</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                        Como você está testando localmente, utilize o atalho abaixo para simular o clique e ativar a conta imediatamente:
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.location.href = signupVerificationLink;
+                        }}
+                        className="w-full py-2.5 rounded-xl text-xs font-bold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/25 hover:border-cyan-500/45 transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none"
+                      >
+                        ⚡ Simular Clique de Ativação
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('login');
+                      setSignupVerificationRequired(false);
+                      setSignupVerificationMessage('');
+                      setSignupVerificationLink('');
+                      setErrorMsg(null);
+                    }}
+                    className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                  >
+                    Ir para o Login
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSignupSubmit} className="space-y-4 text-left">
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
                     E-mail do Desenvolvedor
@@ -1224,8 +1575,11 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                 </div>
 
                 {errorMsg && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] text-rose-400 font-semibold text-center">
-                    ⚠️ {errorMsg}
+                  <div className="flex items-start gap-2.5 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-400 font-medium select-text animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_4px_20px_rgba(244,63,94,0.08)]">
+                    <svg className="w-4.5 h-4.5 shrink-0 text-rose-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span className="leading-relaxed">{errorMsg}</span>
                   </div>
                 )}
 
@@ -1243,7 +1597,213 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                   <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-cyan-400 underline transition-colors">Política de Privacidade</a>.
                 </p>
               </form>
-            )}
+            )
+          ) : activeTab === 'forgot' ? (
+              <form onSubmit={handleForgotPasswordSubmit} className="space-y-5 text-left animate-in fade-in duration-300">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                    E-mail do Desenvolvedor
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="dev@empresa.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                {errorMsg && (
+                  <div className="flex items-start gap-2.5 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-400 font-medium select-text animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_4px_20px_rgba(244,63,94,0.08)]">
+                    <svg className="w-4.5 h-4.5 shrink-0 text-rose-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span className="leading-relaxed">{errorMsg}</span>
+                  </div>
+                )}
+
+                {forgotSuccessMsg && (
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-[11px] text-emerald-400 font-semibold space-y-2 select-text">
+                    <p>{forgotSuccessMsg}</p>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:opacity-50"
+                >
+                  {loading ? 'Enviando...' : authCopy.forgotPassword.submit}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('login');
+                    setErrorMsg(null);
+                    setForgotSuccessMsg(null);
+                  }}
+                  className="w-full text-center text-[10px] text-slate-500 hover:text-slate-400 font-semibold cursor-pointer uppercase tracking-wider font-mono mt-4 block focus-visible:outline-none focus-visible:text-cyan-400 focus-visible:ring-1 focus-visible:ring-cyan-500/20 py-1.5"
+                >
+                  Voltar para o Login
+                </button>
+              </form>
+            ) : activeTab === 'reset' ? (
+              <form onSubmit={handleResetPasswordSubmit} className="space-y-5 text-left animate-in fade-in duration-300">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                    Nova Senha
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                      disabled={loading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      aria-label="Alternar visibilidade da senha"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 focus:outline-none focus:text-cyan-400 transition-colors"
+                    >
+                      {showPassword ? (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.204.214-2.357.606-3.427m3.2 6.427a4 4 0 116.388 3.25M15 12a3 3 0 00-3-3 M3 3l18 18" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {newPassword && (
+                    <div className="space-y-1.5 pt-1 animate-in fade-in duration-200">
+                      <div className="flex justify-between items-center text-[10px] font-mono">
+                        <span className="text-slate-500">Força da senha:</span>
+                        <span className={`font-bold ${getPasswordStrength(newPassword).textColor}`}>
+                          {getPasswordStrength(newPassword).label}
+                        </span>
+                      </div>
+                      <div className="h-1 w-full bg-indigo-950/60 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-300 ${getPasswordStrength(newPassword).color}`} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                    Confirme a Nova Senha
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                      disabled={loading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      aria-label="Alternar visibilidade da senha"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 focus:outline-none focus:text-cyan-400 transition-colors"
+                    >
+                      {showConfirmPassword ? (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.204.214-2.357.606-3.427m3.2 6.427a4 4 0 116.388 3.25M15 12a3 3 0 00-3-3 M3 3l18 18" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {errorMsg && (
+                  <div className="flex items-start gap-2.5 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-400 font-medium select-text animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_4px_20px_rgba(244,63,94,0.08)]">
+                    <svg className="w-4.5 h-4.5 shrink-0 text-rose-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span className="leading-relaxed">{errorMsg}</span>
+                  </div>
+                )}
+
+                {resetSuccessMsg && (
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-[11px] text-emerald-400 font-semibold select-text">
+                    ✅ {resetSuccessMsg}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:opacity-50"
+                >
+                  {loading ? 'Redefinindo...' : authCopy.resetPassword.submit}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('login');
+                    setErrorMsg(null);
+                    setResetSuccessMsg(null);
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                  }}
+                  className="w-full text-center text-[10px] text-slate-500 hover:text-slate-400 font-semibold cursor-pointer uppercase tracking-wider font-mono mt-4 block focus-visible:outline-none focus-visible:text-cyan-400 focus-visible:ring-1 focus-visible:ring-cyan-500/20 py-1.5"
+                >
+                  Cancelar e Voltar ao Login
+                </button>
+              </form>
+            ) : activeTab === 'verify' ? (
+              <div className="space-y-6 text-left animate-in fade-in duration-300 font-sans">
+                {verificationLoading ? (
+                  <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                    <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
+                    <p className="text-xs text-slate-400 uppercase tracking-widest font-mono animate-pulse">Ativando sua conta e workspace...</p>
+                  </div>
+                ) : errorMsg ? (
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-2.5 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-400 font-medium select-text animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_4px_20px_rgba(244,63,94,0.08)]">
+                      <svg className="w-4.5 h-4.5 shrink-0 text-rose-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span className="leading-relaxed">{errorMsg}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('login');
+                        setErrorMsg(null);
+                        const newUrl = window.location.pathname;
+                        window.history.replaceState({}, document.title, newUrl);
+                      }}
+                      className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                    >
+                      Ir para o Login
+                    </button>
+                  </div>
+                ) : verificationSuccess ? (
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-2">
+                    <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider font-mono">Conta Ativada!</span>
+                    <p className="text-xs text-slate-300">Seu e-mail foi verificado com sucesso. Preparando o seu painel...</p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             </div>
           </div>
         </div>
