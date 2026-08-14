@@ -477,7 +477,7 @@ export const LoginGate: React.FC = () => {
           <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-400 font-mono font-bold">Diferencial Operacional</span>
           <h2 className="text-3xl font-black tracking-wide font-mono text-slate-100">Não basta executar. É preciso confiar na execução.</h2>
           <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-            Entenda como construímos a camada de resiliência e segurança mais avançada do mercado para automações recorrentes.
+            Entenda como construímos uma camada de resiliência e segurança robusta para automações recorrentes.
           </p>
         </div>
 
