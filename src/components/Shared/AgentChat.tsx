@@ -268,8 +268,8 @@ export const AgentChat: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Botão de Toggle Flutuante */}
       <motion.button
+        id="tour-floating-chat"
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}

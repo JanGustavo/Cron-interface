@@ -387,6 +387,7 @@ export const DashboardPage: React.FC = () => {
         
         <div className="flex gap-3 mt-6">
           <button
+            id="tour-btn-create"
             onClick={() => setCreateModalOpen(true)}
             disabled={isLimitReached}
             className={`px-4 py-2 text-xs font-semibold text-white rounded-xl transition-all shadow-md cursor-pointer ${
@@ -462,6 +463,7 @@ export const DashboardPage: React.FC = () => {
           {/* Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard
+              id="tour-stat-jobs"
               title="Tarefas Cadastradas"
               value={`${createdJobsCount} / ${globalMaxLimit}`}
               color="indigo"

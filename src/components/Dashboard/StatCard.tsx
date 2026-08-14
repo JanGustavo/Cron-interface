@@ -3,6 +3,7 @@ import React from 'react';
 export type StatCardColor = 'indigo' | 'emerald' | 'rose' | 'amber' | 'purple';
 
 interface StatCardProps {
+  id?: string;
   title: string;
   value: string | number;
   icon?: React.ReactNode;
@@ -16,6 +17,7 @@ interface StatCardProps {
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
+  id,
   title,
   value,
   icon,
@@ -69,6 +71,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div
+      id={id}
       className={`p-4 sm:p-5 rounded-2xl glass-panel ${styles.border} ${styles.hover} transition-all duration-300 group select-none`}
     >
       <div className="flex items-center justify-between">
