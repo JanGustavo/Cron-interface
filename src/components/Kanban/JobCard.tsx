@@ -102,7 +102,14 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={handleCardClick}
-          className={`p-4 rounded-xl glass-panel border cursor-grab active:cursor-grabbing select-none transition-all duration-300 ${
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleCardClick();
+            }
+          }}
+          tabIndex={0}
+          className={`p-4 rounded-xl glass-panel border cursor-grab active:cursor-grabbing select-none transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/80 ${
             snapshot.isDragging
               ? 'scale-105 border-indigo-500/40 shadow-[0_8px_32px_rgba(99,102,241,0.25)] neon-glow-primary'
               : (job.consecutiveFailures >= 3 || job.status === 'failing')
