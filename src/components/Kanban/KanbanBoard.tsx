@@ -18,10 +18,10 @@ const COLUMNS: { id: KanbanStatus; title: string }[] = [
 export const KanbanBoard: React.FC = () => {
   const { jobs, moveJobKanbanStatus } = useJobsStore();
   const { setCreateModalOpen, setImportModalOpen, showToast } = useUiStore();
-  const { maxJobs } = useEntitlements();
+  const { maxJobs, currentJobsCount } = useEntitlements();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const limitsReached = jobs.length >= maxJobs;
+  const limitsReached = currentJobsCount >= maxJobs;
 
   const handleOpenCreateModal = () => {
     if (limitsReached) {
