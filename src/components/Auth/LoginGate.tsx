@@ -20,6 +20,84 @@ const getPasswordStrength = (pwd: string) => {
   return { score, label: 'Forte', color: 'bg-emerald-500 w-full', textColor: 'text-emerald-400' };
 };
 
+const LIFECYCLE_STEPS = [
+  {
+    title: "1. Disparo de Agendamento",
+    stepText: "PASSO 1",
+    badgeClass: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
+    description: "O job é disparado conforme o intervalo ou expressão cron definidos, a partir de instâncias isoladas do Scheduler.",
+    glowGradient: "from-cyan-500/20 via-purple-500/20 to-indigo-500/10",
+    lineGradient: "from-cyan-500/60 to-rose-500/40",
+    glowColor: "#22d3ee"
+  },
+  {
+    title: "2. Resposta com Falha",
+    stepText: "PASSO 2",
+    badgeClass: "border-rose-500/20 bg-rose-500/10 text-rose-455",
+    description: "Seu endpoint responde com instabilidades temporárias, erros de rede (HTTP 5xx) ou timeouts inesperados de resposta.",
+    glowGradient: "from-rose-500/20 via-purple-500/20 to-amber-500/10",
+    lineGradient: "from-rose-500/60 to-amber-500/40",
+    glowColor: "#f43f5e"
+  },
+  {
+    title: "3. Retries Inteligentes",
+    stepText: "PASSO 3",
+    badgeClass: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+    description: "O Worker enfileira automaticamente a tarefa para re-executar com backoff exponencial (3x), amortecendo flutuações temporárias.",
+    glowGradient: "from-amber-500/20 via-purple-500/20 to-emerald-500/10",
+    lineGradient: "from-amber-500/60 to-emerald-500/40",
+    glowColor: "#f59e0b"
+  },
+  {
+    title: "4. Alerta & Telemetria",
+    stepText: "PASSO 4",
+    badgeClass: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+    description: "Se o erro persistir, você recebe um webhook assinado ou alerta SMTP com os logs completos de cada tentativa realizada.",
+    glowGradient: "from-emerald-500/20 via-purple-500/20 to-cyan-500/10",
+    lineGradient: "from-emerald-500/60 to-cyan-500/40",
+    glowColor: "#10b981"
+  }
+];
+
+const ONBOARDING_STEPS = [
+  {
+    stepNum: "01",
+    title: "Crie um workspace",
+    description: "Cadastre-se rapidamente com e-mail e senha para criar seu primeiro workspace isolado.",
+    glowGradient: "from-cyan-500/20 via-purple-500/20 to-indigo-500/10",
+    lineGradient: "from-cyan-500/60 to-rose-500/40",
+    glowColor: "#22d3ee",
+    textColor: "text-cyan-400"
+  },
+  {
+    stepNum: "02",
+    title: "Cadastre um endpoint",
+    description: "Forneça a URL de destino das automações e as credenciais HTTP necessárias.",
+    glowGradient: "from-rose-500/20 via-purple-500/20 to-amber-500/10",
+    lineGradient: "from-rose-500/60 to-amber-500/40",
+    glowColor: "#f43f5e",
+    textColor: "text-rose-400"
+  },
+  {
+    stepNum: "03",
+    title: "Escolha o intervalo",
+    description: "Escreva uma expressão cron ou use nossos helpers visuais simplificados (ex: every:10m).",
+    glowGradient: "from-amber-500/20 via-purple-500/20 to-emerald-500/10",
+    lineGradient: "from-amber-500/60 to-emerald-500/40",
+    glowColor: "#f59e0b",
+    textColor: "text-amber-400"
+  },
+  {
+    stepNum: "04",
+    title: "Execute e Acompanhe",
+    description: "Acompanhe a telemetria, veja logs de tentativas e monitore as estatísticas de latência.",
+    glowGradient: "from-emerald-500/20 via-purple-500/20 to-cyan-500/10",
+    lineGradient: "from-emerald-500/60 to-cyan-500/40",
+    glowColor: "#10b981",
+    textColor: "text-emerald-400"
+  }
+];
+
 export const LoginGate: React.FC = () => {
   // Parse URL on initialization to support reset-password and verify-email routing
   const getInitialResetInfo = () => {
@@ -80,6 +158,12 @@ export const LoginGate: React.FC = () => {
   // Interactive Sandbox Tab State
   const [activeSandboxTab, setActiveSandboxTab] = useState<'curl' | 'json' | 'agent'>('curl');
   const [playgroundCopySuccess, setPlaygroundCopySuccess] = useState(false);
+  
+  // Track hovered step for 3D cascading tilt and flow animations
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  
+  // Track hovered step for onboarding flow animations
+  const [hoveredOnboardingCard, setHoveredOnboardingCard] = useState<number | null>(null);
 
   const handleCopyPlaygroundCode = () => {
     const code = activeSandboxTab === 'curl'
@@ -624,53 +708,73 @@ export const LoginGate: React.FC = () => {
         </div>
 
         <div className="relative">
-          {/* Connecting gradient line on desktop */}
-          <div className="hidden md:block absolute top-[28%] left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-cyan-500/30 via-amber-500/30 to-emerald-500/30 z-0 pointer-events-none" />
-
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-6 text-left">
-            {/* Passo 1 */}
-            <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">1. Disparo de Agendamento</div>
-                <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 1</span>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed font-sans">
-                O job é disparado conforme o intervalo ou expressão cron definidos, a partir de instâncias isoladas do Scheduler.
-              </p>
-            </div>
+            {LIFECYCLE_STEPS.map((step, index) => {
+              const isHovered = hoveredCard === index;
+              const isNextHovered = hoveredCard !== null && hoveredCard + 1 === index;
+              
+              // Clean 2D translation and scale (No 3D distortion, keeping text crisp)
+              let transformStyle = 'translateY(0) translateX(0) scale(1)';
+              if (isHovered) {
+                // Hovered card lifts up and shifts slightly right
+                transformStyle = 'translateY(-6px) translateX(4px) scale(1.03)';
+              } else if (isNextHovered) {
+                // The subsequent card responds to the hover flow, shifting right to show push direction
+                transformStyle = 'translateY(0) translateX(10px) scale(1.01)';
+              }
 
-            {/* Passo 2 */}
-            <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">2. Resposta com Falha</div>
-                <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-rose-455 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 2</span>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed font-sans">
-                Seu endpoint responde com instabilidades temporárias, erros de rede (HTTP 5xx) ou timeouts inesperados de resposta.
-              </p>
-            </div>
+              return (
+                <div
+                  key={index}
+                  onMouseEnter={() => setHoveredCard(index)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                  style={{
+                    transform: transformStyle,
+                    transition: 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, box-shadow 0.3s ease',
+                  }}
+                  className={`group relative p-6 rounded-3xl bg-[#0a0d1d]/40 border transition-all duration-300 select-none ${
+                    isHovered
+                      ? 'border-indigo-500/30 shadow-[0_20px_40px_rgba(0,0,0,0.6)] z-20'
+                      : isNextHovered
+                      ? 'border-indigo-500/15 shadow-[0_10px_20px_rgba(0,0,0,0.4)] z-10'
+                      : 'border-indigo-950/50 hover:border-indigo-500/20 z-0'
+                  }`}
+                >
+                  {/* Multi-colored blurred glow behind the card on hover */}
+                  <div
+                    className={`absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r ${step.glowGradient} blur-2xl transition-all duration-500 pointer-events-none ${
+                      isHovered ? 'opacity-100 scale-[1.08]' : isNextHovered ? 'opacity-40 scale-[1.04]' : 'opacity-0'
+                    }`}
+                  />
+                  
+                  {/* Connector Line to next card (only on desktop and for steps 1-3) */}
+                  {index < 3 && (
+                    <div
+                      style={{
+                        width: isHovered ? '26px' : '20px',
+                      }}
+                      className={`hidden md:block absolute top-[28px] left-[calc(100%+2px)] h-[2px] transition-all duration-300 pointer-events-none ${
+                        isHovered
+                          ? `bg-gradient-to-r ${step.lineGradient} opacity-90 shadow-[0_0_8px_${step.glowColor}] h-[3px] z-30`
+                          : isNextHovered
+                          ? `bg-indigo-950/40 opacity-40`
+                          : 'bg-indigo-950/20 opacity-20'
+                      }`}
+                    />
+                  )}
 
-            {/* Passo 3 */}
-            <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">3. Retries Inteligentes</div>
-                <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-amber-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 3</span>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed font-sans">
-                O Worker enfileira automaticamente a tarefa para re-executar com backoff exponencial (3x), amortecendo flutuações temporárias.
-              </p>
-            </div>
-
-            {/* Passo 4 */}
-            <div className="p-6 rounded-3xl bg-[#0a0d1d]/40 border border-indigo-950/50 hover:border-indigo-500/20 transition-all duration-300">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">4. Alerta & Telemetria</div>
-                <span className="inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-emerald-400 text-center leading-none sm:min-w-[72px] sm:text-[9px]">PASSO 4</span>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed font-sans">
-                Se o erro persistir, você recebe um webhook assinado ou alerta SMTP com os logs completos de cada tentativa realizada.
-              </p>
-            </div>
+                  <div className="mb-3 flex items-start justify-between gap-3 relative z-10">
+                    <div className="text-xs font-black text-slate-200 font-mono leading-tight pr-2">{step.title}</div>
+                    <span className={`inline-flex min-h-6 min-w-[68px] shrink-0 items-center justify-center rounded border px-2.5 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-center leading-none sm:min-w-[72px] sm:text-[9px] ${step.badgeClass}`}>
+                      {step.stepText}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-400 leading-relaxed font-sans relative z-10">
+                    {step.description}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -739,33 +843,37 @@ export const LoginGate: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
           {/* Devs */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-2 hover:border-indigo-500/10 transition-all duration-300">
-            <span className="text-xs font-black text-slate-250 block font-mono">Desenvolvedores</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <span className="text-xs font-black text-slate-200 block font-mono relative z-10">Desenvolvedores</span>
+            <p className="text-[11px] text-slate-400 leading-relaxed font-sans relative z-10">
               Substitua de forma limpa os crontabs espalhados por servidores e scripts bash sem logs ou observabilidade.
             </p>
           </div>
 
           {/* SaaS */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-2 hover:border-indigo-500/10 transition-all duration-300">
-            <span className="text-xs font-black text-slate-250 block font-mono">SaaS Pequenos</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-rose-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <span className="text-xs font-black text-slate-200 block font-mono relative z-10">SaaS Pequenos</span>
+            <p className="text-[11px] text-slate-400 leading-relaxed font-sans relative z-10">
               Garanta a execução estável de sincronizações recorrentes de dados, relatórios PDF pesados e envios de newsletters.
             </p>
           </div>
 
           {/* Integrators */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-2 hover:border-indigo-500/10 transition-all duration-300">
-            <span className="text-xs font-black text-slate-250 block font-mono">Times de Integração</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <span className="text-xs font-black text-slate-200 block font-mono relative z-10">Times de Integração</span>
+            <p className="text-[11px] text-slate-400 leading-relaxed font-sans relative z-10">
               Centralize webhooks de terceiros, controle retries exponenciais de parceiros e inspecione logs HTTP centralizados.
             </p>
           </div>
 
           {/* AI Agents */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-2 hover:border-indigo-500/10 transition-all duration-300">
-            <span className="text-xs font-black text-slate-250 block font-mono">Agentes de IA</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <span className="text-xs font-black text-slate-200 block font-mono relative z-10">Agentes de IA</span>
+            <p className="text-[11px] text-slate-400 leading-relaxed font-sans relative z-10">
               Permita que rotinas controladas por IA criem fluxos dinamicamente através de chamadas de API simples, sem perder a governança técnica.
             </p>
           </div>
@@ -783,41 +891,72 @@ export const LoginGate: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-          {/* Step 1 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/50 border border-indigo-950/50">
-            <div className="text-3xl font-black text-indigo-550/30 font-mono mb-2">01</div>
-            <span className="text-xs font-black text-slate-200 block font-mono">Crie um workspace</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed mt-1 font-sans">
-              Cadastre-se rapidamente com e-mail e senha para criar seu primeiro workspace isolado.
-            </p>
-          </div>
+          {ONBOARDING_STEPS.map((step, index) => {
+            const isHovered = hoveredOnboardingCard === index;
+            const isNextHovered = hoveredOnboardingCard !== null && hoveredOnboardingCard + 1 === index;
+            
+            // Clean 2D translation and scale (No 3D distortion, keeping text crisp)
+            let transformStyle = 'translateY(0) translateX(0) scale(1)';
+            if (isHovered) {
+              // Hovered card lifts up and shifts slightly right
+              transformStyle = 'translateY(-6px) translateX(4px) scale(1.03)';
+            } else if (isNextHovered) {
+              // The subsequent card responds to the hover flow, shifting right to show push direction
+              transformStyle = 'translateY(0) translateX(10px) scale(1.01)';
+            }
 
-          {/* Step 2 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/50 border border-indigo-950/50">
-            <div className="text-3xl font-black text-indigo-550/30 font-mono mb-2">02</div>
-            <span className="text-xs font-black text-slate-200 block font-mono">Cadastre um endpoint</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed mt-1 font-sans">
-              Forneça a URL de destino das automações e as credenciais HTTP necessárias.
-            </p>
-          </div>
+            return (
+              <div
+                key={index}
+                onMouseEnter={() => setHoveredOnboardingCard(index)}
+                onMouseLeave={() => setHoveredOnboardingCard(null)}
+                style={{
+                  transform: transformStyle,
+                  transition: 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease, box-shadow 0.3s ease',
+                }}
+                className={`group relative p-6 rounded-3xl bg-[#0a0d1d]/50 border transition-all duration-300 select-none ${
+                  isHovered
+                    ? 'border-indigo-500/30 shadow-[0_20px_40px_rgba(0,0,0,0.6)] z-20'
+                    : isNextHovered
+                    ? 'border-indigo-500/15 shadow-[0_10px_20px_rgba(0,0,0,0.4)] z-10'
+                    : 'border-indigo-950/50 hover:border-indigo-500/20 z-0'
+                }`}
+              >
+                {/* Multi-colored blurred glow behind the card on hover */}
+                <div
+                  className={`absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r ${step.glowGradient} blur-2xl transition-all duration-500 pointer-events-none ${
+                    isHovered ? 'opacity-100 scale-[1.08]' : isNextHovered ? 'opacity-40 scale-[1.04]' : 'opacity-0'
+                  }`}
+                />
+                
+                {/* Connector Line to next card (only on large desktop and for steps 1-3) */}
+                {index < 3 && (
+                  <div
+                    style={{
+                      width: isHovered ? '26px' : '20px',
+                    }}
+                    className={`hidden lg:block absolute top-[28px] left-[calc(100%+2px)] h-[2px] transition-all duration-300 pointer-events-none ${
+                      isHovered
+                        ? `bg-gradient-to-r ${step.lineGradient} opacity-90 shadow-[0_0_8px_${step.glowColor}] h-[3px] z-30`
+                        : isNextHovered
+                        ? `bg-indigo-950/40 opacity-40`
+                        : 'bg-indigo-950/20 opacity-20'
+                    }`}
+                  />
+                )}
 
-          {/* Step 3 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/50 border border-indigo-950/50">
-            <div className="text-3xl font-black text-indigo-550/30 font-mono mb-2">03</div>
-            <span className="text-xs font-black text-slate-200 block font-mono">Escolha o intervalo</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed mt-1 font-sans">
-              Escreva uma expressão cron ou use nossos helpers visuais simplificados (ex: every:10m).
-            </p>
-          </div>
-
-          {/* Step 4 */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/50 border border-indigo-950/50">
-            <div className="text-3xl font-black text-indigo-550/30 font-mono mb-2">04</div>
-            <span className="text-xs font-black text-slate-200 block font-mono">Execute e Acompanhe</span>
-            <p className="text-[11px] text-slate-400 leading-relaxed mt-1 font-sans">
-              Acompanhe a telemetria, veja logs de tentativas e monitore as estatísticas de latência.
-            </p>
-          </div>
+                <div className={`text-3xl font-black font-mono mb-2 transition-colors duration-300 ${
+                  isHovered ? step.textColor : 'text-indigo-550/30'
+                }`}>
+                  {step.stepNum}
+                </div>
+                <span className="text-xs font-black text-slate-200 block font-mono relative z-10">{step.title}</span>
+                <p className="text-[11px] text-slate-400 leading-relaxed mt-1 font-sans relative z-10">
+                  {step.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -833,57 +972,61 @@ export const LoginGate: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
           {/* API */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 relative flex flex-col justify-between min-h-[180px]">
-            <div className="space-y-3">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-[180px] hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">API REST</span>
               <div className="text-xs font-black text-slate-200 font-mono leading-tight">1. API (cmd/api)</div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                 Escrita em Go usando Chi Router, cuida da autenticação por chaves API em hashes timing-safe. Focada em baixíssima latência nas requisições do SDK.
               </p>
             </div>
-            <div className="text-[9px] text-slate-500 font-mono pt-3 border-t border-indigo-950/30 mt-2">
+            <div className="text-[9px] text-slate-500 font-mono pt-3 border-t border-indigo-950/30 mt-2 relative z-10">
               Tradução: <span className="text-indigo-400">Escala de requisições sem lentidão.</span>
             </div>
           </div>
 
           {/* Scheduler */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 relative flex flex-col justify-between min-h-[180px]">
-            <div className="space-y-3">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-[180px] hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">SCHEDULER</span>
               <div className="text-xs font-black text-slate-200 font-mono leading-tight">2. Scheduler (cmd/scheduler)</div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                 Processo em loop isolado que lê tarefas prontas. Resolve as timezones e distribui o lock com locks exclusivos de Redis para evitar dupla execução.
               </p>
             </div>
-            <div className="text-[9px] text-slate-500 font-mono pt-3 border-t border-indigo-950/30 mt-2">
+            <div className="text-[9px] text-slate-500 font-mono pt-3 border-t border-indigo-950/30 mt-2 relative z-10">
               Tradução: <span className="text-indigo-400">Agendamentos não ficam presos à API.</span>
             </div>
           </div>
 
           {/* Worker */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 relative flex flex-col justify-between min-h-[180px]">
-            <div className="space-y-3">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-[180px] hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">WORKER</span>
               <div className="text-xs font-black text-slate-200 font-mono leading-tight">3. Worker (cmd/worker)</div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                 Executa requisições de forma concorrente em Goroutines através de filas Asynq. Gerencia limites de concorrência por plano e fila.
               </p>
             </div>
-            <div className="text-[9px] text-slate-500 font-mono pt-3 border-t border-indigo-950/30 mt-2">
+            <div className="text-[9px] text-slate-500 font-mono pt-3 border-t border-indigo-950/30 mt-2 relative z-10">
               Tradução: <span className="text-indigo-400">Concorrência controlada e fila resiliente.</span>
             </div>
           </div>
 
           {/* Lock/Logs */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 relative flex flex-col justify-between min-h-[180px]">
-            <div className="space-y-3">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-[180px] hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">TELEMETRIA</span>
               <div className="text-xs font-black text-slate-200 font-mono leading-tight">4. Logs de Tentativas</div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                 Persistência de logs imutáveis e estatísticas detalhadas de cada tentativa de execução no Postgres para auditoria.
               </p>
             </div>
-            <div className="text-[9px] text-slate-500 font-mono pt-3 border-t border-indigo-950/30 mt-2">
+            <div className="text-[9px] text-slate-500 font-mono pt-3 border-t border-indigo-950/30 mt-2 relative z-10">
               Tradução: <span className="text-indigo-400">Histórico completo de cada tentativa.</span>
             </div>
           </div>
@@ -902,12 +1045,13 @@ export const LoginGate: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
           {/* Card 1: Proteção SSRF */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-3 hover:border-indigo-500/10 transition-all duration-300">
-            <span className="text-sm font-bold text-slate-200 block font-mono">Proteção Anti-SSRF ativa</span>
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-3 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <span className="text-sm font-bold text-slate-200 block font-mono relative z-10">Proteção Anti-SSRF activa</span>
+            <p className="text-xs text-slate-400 leading-relaxed relative z-10">
               O CronFlow valida ativamente todos os endereços IP de destino e redirecionamentos contra faixas de redes privadas internas (como localhost, 127.0.0.1, 10.0.0.0/8). Impedimos escaneamentos maliciosos na sua rede interna.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 relative z-10">
               <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:underline">
                 Ver documentação →
               </a>
@@ -915,12 +1059,13 @@ export const LoginGate: React.FC = () => {
           </div>
 
           {/* Card 2: Assinaturas HMAC */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-3 hover:border-indigo-500/10 transition-all duration-300">
-            <span className="text-sm font-bold text-slate-200 block font-mono">Webhooks com Assinatura HMAC-SHA256</span>
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-3 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <span className="text-sm font-bold text-slate-200 block font-mono relative z-10">Webhooks com Assinatura HMAC-SHA256</span>
+            <p className="text-xs text-slate-400 leading-relaxed relative z-10">
               Todas as notificações contêm uma assinatura criptográfica no cabeçalho baseada em chaves geradas por projeto. Seus servidores receptores podem validar a autenticidade das mensagens, mitigando ataques de spoofing.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 relative z-10">
               <a href="https://github.com/JanGustavo/Cron/blob/master/README_WEBHOOKS.md" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:underline">
                 Ver documentação →
               </a>
@@ -928,12 +1073,13 @@ export const LoginGate: React.FC = () => {
           </div>
 
           {/* Card 3: Chaves de API Revogáveis */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-3 hover:border-indigo-500/10 transition-all duration-300">
-            <span className="text-sm font-bold text-slate-200 block font-mono">Chaves de API Revogáveis & Isoladas</span>
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-3 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <span className="text-sm font-bold text-slate-200 block font-mono relative z-10">Chaves de API Revogáveis & Isoladas</span>
+            <p className="text-xs text-slate-400 leading-relaxed relative z-10">
               Gere chaves de API exclusivas com escopo restrito para cada workspace. Em caso de comprometimento, revogue ou rotacione suas chaves instantaneamente pelo painel, sem interromper as outras rotinas da sua organização.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 relative z-10">
               <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:underline">
                 Ver documentação →
               </a>
@@ -941,12 +1087,13 @@ export const LoginGate: React.FC = () => {
           </div>
 
           {/* Card 4: Validação de Redirecionamentos */}
-          <div className="p-6 rounded-3xl bg-[#0a0d1d]/30 border border-indigo-950/40 space-y-3 hover:border-indigo-500/10 transition-all duration-300">
-            <span className="text-sm font-bold text-slate-200 block font-mono">Validação de Redirecionamento (Redirects)</span>
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-3 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <span className="text-sm font-bold text-slate-200 block font-mono relative z-10">Validação de Redirecionamento (Redirects)</span>
+            <p className="text-xs text-slate-400 leading-relaxed relative z-10">
               O pipeline do Worker segue as diretrizes HTTP de redirecionamento com validação estrita de segurança. Impedimos redirecionamentos abertos e forçamos o protocolo HTTPS seguro nas transições para proteger chaves e tokens de autenticação.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 relative z-10">
               <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:underline">
                 Ver documentação →
               </a>
