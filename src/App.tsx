@@ -322,6 +322,22 @@ const App: React.FC = () => {
           if (res.data) {
             localStorage.setItem('cf_total_jobs_created', String(res.data.totalJobsCreated));
             localStorage.setItem('cf_profile_active_jobs_count', String(jobs.length));
+            if (res.data.plan) {
+              localStorage.setItem('cf_user_plan', res.data.plan);
+            }
+            
+            // Sync user details and limits into the global Zustand store
+            const authStore = useAuthStore.getState();
+            if (authStore.user) {
+              useAuthStore.setState({
+                user: {
+                  ...authStore.user,
+                  fullName: res.data.fullName,
+                  plan: res.data.plan,
+                  limits: res.data.limits
+                }
+              });
+            }
           }
         } catch (err) {
           console.error('Failed to sync profile metrics', err);

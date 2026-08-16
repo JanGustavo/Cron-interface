@@ -2,9 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { StatCard } from '../components/Dashboard/StatCard';
 import { RecentActivity } from '../components/Dashboard/RecentActivity';
 import { useUiStore } from '../store/uiStore';
-import { useAuthStore } from '../store/authStore';
 import { useJobsStore } from '../store/jobsStore';
 import api from '../services/api';
+import { useEntitlements } from '../hooks/useEntitlements';
 import { PixModal } from '../components/Shared/PixModal';
 import { LogDetail } from '../components/Logs/LogDetail';
 import {
@@ -103,7 +103,6 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 export const DashboardPage: React.FC = () => {
   const { setCreateModalOpen, setDocsOpen, showToast, setLogModalOpen } = useUiStore();
   const { jobs } = useJobsStore();
-  const { user } = useAuthStore();
   const [allRecentLogs, setAllRecentLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [chartFilter, setChartFilter] = useState<'1h' | '24h' | '3d' | '7d' | '30d'>('24h');
@@ -228,9 +227,9 @@ export const DashboardPage: React.FC = () => {
     return categories;
   })();
 
-  const plan = localStorage.getItem('cf_user_plan') || user?.plan || 'free';
-  const isProPlan = plan === 'paid';
-  const globalMaxLimit = isProPlan ? 20 : 5;
+  const { maxJobs, isPro } = useEntitlements();
+  const isProPlan = isPro;
+  const globalMaxLimit = maxJobs;
   const storedTotalJobsCreated = Number(localStorage.getItem('cf_total_jobs_created') || '0');
   const baselineActiveJobsCount = Number(localStorage.getItem('cf_profile_active_jobs_count') || '0');
   const diff = jobs.length - baselineActiveJobsCount;
@@ -466,7 +465,7 @@ export const DashboardPage: React.FC = () => {
               title="Tarefas Cadastradas"
               value={`${createdJobsCount} / ${globalMaxLimit}`}
               color="indigo"
-              description={isProPlan ? 'Plano Pro (20 tarefas máx global)' : 'Plano Gratuito (5 tarefas máx global)'}
+              description={isProPlan ? 'Plano Pro (50 tarefas máx por workspace)' : 'Plano Gratuito (5 tarefas máx por workspace)'}
               tooltip="O número de tarefas criadas em relação ao limite total do seu plano de workspace."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -769,7 +768,7 @@ export const DashboardPage: React.FC = () => {
                 <>
                   {activeMetric === 'overview' && (
                     <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height={256}>
                         <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
                           <defs>
                             <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
@@ -791,7 +790,7 @@ export const DashboardPage: React.FC = () => {
 
                   {activeMetric === 'latency' && (
                     <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height={256}>
                         <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
                           <defs>
                             <linearGradient id="latencyGlow" x1="0" y1="0" x2="0" y2="1">
@@ -813,7 +812,7 @@ export const DashboardPage: React.FC = () => {
                   {activeMetric === 'errors' && (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
                       <div className="lg:col-span-2 h-64">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={256}>
                           <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
                             <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />

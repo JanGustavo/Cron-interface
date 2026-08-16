@@ -9,6 +9,7 @@ import { ProfileSettings } from '../components/Profile/ProfileSettings';
 import { ProjectManager } from '../components/Profile/ProjectManager';
 import { OnboardingSteps } from '../components/Profile/OnboardingSteps';
 import { useEntitlements } from '../hooks/useEntitlements';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 const formatDate = (value?: string | null) => {
   if (!value) return 'Não informado';
@@ -93,8 +94,16 @@ export const ProfilePage: React.FC = () => {
 
   const memberSince = formatDate(user?.createdAt);
   const workspaceName = activeProject?.name || 'Projeto Pessoal';
-	const { isPro } = useEntitlements();
-	const isProPlan = isPro;
+  const { isPro, maxJobs } = useEntitlements();
+  const isProPlan = isPro;
+  const { isInstallable, isInstalled, installApp } = usePWAInstall();
+
+  const handleInstallPWA = async () => {
+    const success = await installApp();
+    if (success) {
+      showToast('CronFlow instalado com sucesso! 🚀', 'success');
+    }
+  };
 
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
@@ -476,7 +485,7 @@ export const ProfilePage: React.FC = () => {
     ? jobs.filter((job) => job.projectId === activeProject.id)
     : jobs;
 
-  const globalMaxLimit = isProPlan ? 20 : 5;
+  const globalMaxLimit = maxJobs;
   const baselineActiveJobsCount = Number(localStorage.getItem('cf_profile_active_jobs_count') || '0');
   const diff = jobs.length - baselineActiveJobsCount;
   const currentTotalJobsCreated = totalJobsCreated + diff;
@@ -569,9 +578,9 @@ export const ProfilePage: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
+      <div className="grid gap-6 lg:grid-cols-12 w-full min-w-0">
         {/* LEFT COLUMN - Profile Card & Workspace Status */}
-        <div className="lg:col-span-5 space-y-6 flex flex-col">
+        <div className="lg:col-span-5 space-y-6 flex flex-col min-w-0">
           
           <ProfileSettings
             avatarLabel={avatarLabel}
@@ -614,7 +623,7 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         {/* RIGHT COLUMN - Tabbed Security Settings & Roadmap */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-7 space-y-6 min-w-0">
           
           {/* TABBED SECURITY PANEL */}
           <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-5 text-left">
@@ -625,7 +634,7 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {/* Sleek Switcher Tabs */}
-              <div className="flex gap-1.5 bg-[#05070e] p-1.5 rounded-xl border border-indigo-950/60 self-start sm:self-auto select-none">
+              <div className="flex gap-1.5 bg-[#05070e] p-1.5 rounded-xl border border-indigo-950/60 self-start sm:self-auto select-none overflow-x-auto max-w-full scrollbar-none whitespace-nowrap">
                 {[
                   { id: 'keys', label: 'Chaves API' },
                   { id: 'webhooks', label: 'Alertas / Webhooks' },
@@ -636,7 +645,7 @@ export const ProfilePage: React.FC = () => {
                     key={t.id}
                     type="button"
                     onClick={() => setSecurityTab(t.id as 'keys' | 'webhooks' | 'sessions' | 'twoFactor')}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                       securityTab === t.id
                         ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 shadow-md'
                         : 'text-slate-500 hover:text-slate-300 border border-transparent'
@@ -771,7 +780,7 @@ export const ProfilePage: React.FC = () => {
                       <span className="uppercase tracking-wider text-slate-500">Exemplo de Código ({techStack})</span>
                       <span className="font-mono text-cyan-400 bg-cyan-950/20 px-2 py-0.5 rounded border border-cyan-500/10">POST /v1/jobs</span>
                     </div>
-                    <div className="relative rounded-2xl overflow-hidden border border-indigo-950/80 bg-[#04060f]/90 p-4 font-mono text-[10px] leading-relaxed text-slate-300">
+                    <div className="relative rounded-2xl overflow-hidden border border-indigo-950/80 bg-[#04060f]/90 p-4 font-mono text-[10px] leading-relaxed text-slate-300 w-full min-w-0">
                       <pre className="overflow-x-auto select-all whitespace-pre pr-14 text-left">
                         {getCodeSnippet()}
                       </pre>
@@ -845,7 +854,7 @@ export const ProfilePage: React.FC = () => {
                           <p className="text-[9.5px] text-slate-500 leading-normal">
                             Utilize o segredo abaixo para decodificar e atestar a integridade do remetente (CronFlow) no seu backend.
                           </p>
-                          <div className="flex items-center justify-between gap-3 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-[10.5px] text-indigo-350 relative pr-36 select-all">
+                          <div className="flex items-center justify-between gap-3 bg-[#04060f] p-2.5 rounded-xl border border-indigo-950/60 font-mono text-[10.5px] text-indigo-350 relative pr-36 select-all w-full min-w-0">
                             <span className="truncate">{activeProject.webhookSecret}</span>
                             <div className="absolute right-1.5 top-1.5 flex gap-1">
                               <button
@@ -1041,6 +1050,39 @@ export const ProfilePage: React.FC = () => {
             progressPercent={progressPercent}
           />
 
+          {/* PWA INSTALLATION PROMPT */}
+          {isInstallable && (
+            <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-indigo-950/40 to-cyan-950/20 p-6 space-y-3.5 text-left animate-in slide-in-from-top-4 duration-300 relative overflow-hidden">
+              <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-cyan-400/10 blur-xl pointer-events-none" />
+              <div>
+                <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                  <span>Instalar CronFlow App</span>
+                  <span className="text-[8px] font-mono px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-full font-bold uppercase tracking-wider">PWA</span>
+                </h4>
+                <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">Adicione o CronFlow à sua tela inicial para obter acesso rápido, janela independente e desempenho aprimorado.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleInstallPWA}
+                className="w-full py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-950 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-450 rounded-xl transition-all shadow-md shadow-cyan-500/15 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                Instalar Aplicativo 📲
+              </button>
+            </div>
+          )}
+
+          {isInstalled && (
+            <div className="rounded-3xl border border-indigo-950/40 bg-slate-950/20 p-6 space-y-3 text-left">
+              <div>
+                <h4 className="text-sm font-bold text-slate-350 flex items-center gap-2">
+                  <span>CronFlow App Instalado</span>
+                  <span className="text-[8px] font-mono px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full font-bold uppercase tracking-wider">Ativo</span>
+                </h4>
+                <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">Você está rodando o CronFlow como um Aplicativo Web Progressivo completo e otimizado.</p>
+              </div>
+            </div>
+          )}
+
           {/* QUICK LINKS GRID */}
           <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-4 text-left">
             <div>
@@ -1110,7 +1152,7 @@ export const ProfilePage: React.FC = () => {
             {/* Scrollable Container */}
             <div className="flex-1 overflow-y-auto py-6 pr-1 custom-scrollbar space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
-                {/* 1. STARTER PLAN (Left) */}
+                {/* 1. FREE PLAN (Left) */}
                 <div className={`p-6 rounded-2xl border transition-all flex flex-col justify-between ${
                   !isProPlan 
                     ? 'bg-[#0b0e22]/50 border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.05)]' 
@@ -1118,7 +1160,7 @@ export const ProfilePage: React.FC = () => {
                 }`}>
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 font-mono">Starter</span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 font-mono">Free</span>
                       {!isProPlan && (
                         <span className="text-[9px] font-bold px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-mono">PLANO ATUAL</span>
                       )}

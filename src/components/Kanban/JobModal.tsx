@@ -329,7 +329,7 @@ export const JobModal: React.FC = () => {
           )}
 
           {/* Metadata Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl flex flex-col justify-between">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Agendamento</span>
               {isEditing ? (
@@ -432,9 +432,10 @@ export const JobModal: React.FC = () => {
                   disabled={!alertsWebhooksEnabled}
                 />
                 {!alertsWebhooksEnabled && (
-                  <span className="text-[9px] text-amber-500 font-semibold block pt-0.5">
-                    ⚠️ Webhook de alerta é exclusivo do Plano PRO.
-                  </span>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200 mt-1.5">
+                    <span className="text-amber-500">🔒</span>
+                    <span>Webhook de alerta é exclusivo do Plano PRO.</span>
+                  </div>
                 )}
               </>
             ) : (
@@ -443,7 +444,7 @@ export const JobModal: React.FC = () => {
               </div>
             )}
           </div>
-
+ 
           {/* Workflow Chaining & Tags Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Próximo Job (Workflow Chaining) */}
@@ -465,9 +466,10 @@ export const JobModal: React.FC = () => {
                     ))}
                   </select>
                   {!workflowsEnabled && (
-                    <span className="text-[9px] text-amber-500 font-semibold block pt-0.5">
-                      ⚠️ Encadeamento (Workflows) é exclusivo do Plano PRO.
-                    </span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200 mt-1.5">
+                      <span className="text-amber-500">🔒</span>
+                      <span>Encadeamento (Workflows) é exclusivo do Plano PRO.</span>
+                    </div>
                   )}
                 </>
               ) : (

@@ -45,7 +45,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             {avatarLabel}
             <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#090b17]" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               {isProPlan ? (
                 <span className="relative inline-flex items-center gap-1 rounded-full border-2 border-[#ffd700]/50 bg-gradient-to-r from-[#856404] via-[#ffdf7e] to-[#856404] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#2d2200] shadow-[0_2px_6px_rgba(0,0,0,0.6),0_0_12px_rgba(255,215,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] transform hover:scale-105 transition-all select-none">
@@ -53,7 +53,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 </span>
               ) : (
                 <span className="rounded-full border border-indigo-500/20 bg-indigo-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
-                  STARTER
+                  FREE
                 </span>
               )}
               <span className="text-[10px] text-slate-500 font-semibold font-mono">
@@ -61,12 +61,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </span>
             </div>
             <h3 className="text-xl font-bold text-slate-100 mt-1">{profileFullName || 'CronFlow User'}</h3>
-            <p className="text-[11px] text-slate-400 font-mono mt-0.5">{userEmail}</p>
+            <p className="text-[11px] text-slate-400 font-mono mt-0.5 truncate" title={userEmail}>{userEmail}</p>
             <div className="mt-3.5 border-t border-indigo-950/30 pt-3 select-none flex flex-col gap-2.5">
-              <p className="text-[10px] text-slate-450 leading-relaxed">
+               <p className="text-[10px] text-slate-450 leading-relaxed">
                 {isProPlan 
                   ? `⭐ Plano PRO ativo: Limite de ${maxJobs} tarefas por workspace, múltiplos projetos e ${logsRetentionDays} dias de logs.`
-                  : `⚡ Plano STARTER: Limite de ${maxJobs} tarefas por workspace, projeto único e ${logsRetentionDays} dias de logs.`}
+                  : `⚡ Plano FREE: Limite de ${maxJobs} tarefas por workspace, projeto único e ${logsRetentionDays} dias de logs.`}
               </p>
               <button
                 type="button"

@@ -167,8 +167,23 @@ export const CreateJobModal: React.FC = () => {
         {/* Scrollable Form */}
         <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-5 flex-1 text-xs">
           {errorMsg && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 font-semibold text-center select-text">
-              ⚠️ {errorMsg}
+            <div className="flex items-start gap-3 p-3.5 rounded-2xl border border-rose-500/20 bg-rose-950/15 text-rose-350 select-text animate-in fade-in slide-in-from-top-2 duration-300 relative overflow-hidden group">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500" />
+              <span className="text-sm shrink-0 mt-0.5">⚠️</span>
+              <div className="flex-1 min-w-0">
+                <h5 className="text-[10px] font-black uppercase tracking-wider text-rose-450 font-mono">Erro de Validação</h5>
+                <p className="text-[11px] text-rose-350/90 mt-1 leading-relaxed">{errorMsg}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorMsg(null)}
+                className="text-rose-500/50 hover:text-rose-450 p-0.5 rounded-lg hover:bg-rose-500/10 transition-all cursor-pointer"
+                title="Fechar aviso"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
 
@@ -283,9 +298,10 @@ export const CreateJobModal: React.FC = () => {
               disabled={loading || !alertsWebhooksEnabled}
             />
             {!alertsWebhooksEnabled && (
-              <span className="text-[9px] text-amber-500 font-semibold block pt-0.5 font-mono">
-                ⚠️ Webhook de alerta é exclusivo do Plano PRO.
-              </span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200">
+                <span className="text-amber-500">🔒</span>
+                <span>Webhook de alerta é exclusivo do Plano PRO.</span>
+              </div>
             )}
             {alertsWebhooksEnabled && (
               <span className="text-[9px] text-slate-500 block pt-0.5">
@@ -293,7 +309,7 @@ export const CreateJobModal: React.FC = () => {
               </span>
             )}
           </div>
-
+ 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Próximo Job (Workflow Chaining) */}
             <div className="space-y-1.5">
@@ -314,9 +330,10 @@ export const CreateJobModal: React.FC = () => {
                 ))}
               </select>
               {!workflowsEnabled && (
-                <span className="text-[9px] text-amber-500 font-semibold block pt-0.5 font-mono">
-                  ⚠️ Encadeamento (Workflows) é exclusivo do Plano PRO.
-                </span>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200">
+                  <span className="text-amber-500">🔒</span>
+                  <span>Encadeamento (Workflows) é exclusivo do Plano PRO.</span>
+                </div>
               )}
             </div>
 

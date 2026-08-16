@@ -157,7 +157,7 @@ export const AgentChat: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -165,7 +165,7 @@ export const AgentChat: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="w-[340px] sm:w-[380px] h-[480px] mb-4 flex flex-col rounded-2xl border border-indigo-500/25 bg-[#0a0d1d]/95 shadow-[0_12px_40px_rgba(99,102,241,0.25)] overflow-hidden"
+            className="w-[calc(100vw-2rem)] sm:w-[380px] h-[480px] mb-4 flex flex-col rounded-2xl border border-indigo-500/25 bg-[#0a0d1d]/95 shadow-[0_12px_40px_rgba(99,102,241,0.25)] overflow-hidden"
           >
             {/* Header */}
             <div className="relative flex items-center justify-between px-4 py-3 bg-[#0c1026]/90 border-b border-indigo-950/40">

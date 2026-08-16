@@ -81,7 +81,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
           />
         </div>
         <p className="text-[9px] text-slate-500 leading-normal">
-          Você está utilizando {jobsUsagePercent}% do limite total de jobs permitidos para o plano {isProPlan ? 'PRO' : 'STARTER'} neste workspace.
+          Você está utilizando {jobsUsagePercent}% do limite total de jobs permitidos para o plano {isProPlan ? 'PRO' : 'FREE'} neste workspace.
         </p>
       </div>
 
