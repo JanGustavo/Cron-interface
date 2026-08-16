@@ -284,7 +284,15 @@ const App: React.FC = () => {
           const activeProj = projectsList.find((p: Project) => p.id === activeProjID) || projectsList[0] || { id: activeProjID, userId: userId, name: 'Projeto Principal', createdAt: userCreatedAt };
 
           login(
-            { id: userId, email: email, plan: plan, createdAt: userCreatedAt, fullName: profile.fullName, limits: profile.limits },
+            { 
+              id: userId, 
+              email: email, 
+              plan: plan, 
+              createdAt: userCreatedAt, 
+              fullName: profile.fullName, 
+              limits: profile.limits,
+              totalJobsCreated: profile.totalJobsCreated
+            },
             { accessToken: savedToken, refreshToken: '', tokenType: 'Bearer', expiresIn: 86400 },
             projectsList.length > 0 ? projectsList : [activeProj]
           );
@@ -334,7 +342,8 @@ const App: React.FC = () => {
                   ...authStore.user,
                   fullName: res.data.fullName,
                   plan: res.data.plan,
-                  limits: res.data.limits
+                  limits: res.data.limits,
+                  totalJobsCreated: res.data.totalJobsCreated
                 }
               });
             }

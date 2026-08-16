@@ -227,15 +227,11 @@ export const DashboardPage: React.FC = () => {
     return categories;
   })();
 
-  const { maxJobs, isPro } = useEntitlements();
+  const { maxJobs, isPro, currentJobsCount } = useEntitlements();
   const isProPlan = isPro;
   const globalMaxLimit = maxJobs;
-  const storedTotalJobsCreated = Number(localStorage.getItem('cf_total_jobs_created') || '0');
-  const baselineActiveJobsCount = Number(localStorage.getItem('cf_profile_active_jobs_count') || '0');
-  const diff = jobs.length - baselineActiveJobsCount;
-  const currentTotalJobsCreated = storedTotalJobsCreated + diff;
-  const createdJobsCount = jobs.length;
-  const isLimitReached = currentTotalJobsCreated >= globalMaxLimit;
+  const createdJobsCount = currentJobsCount;
+  const isLimitReached = createdJobsCount >= globalMaxLimit;
 
   // Prepare chart data chronologically (oldest to newest)
   const chartData = (() => {

@@ -19,6 +19,7 @@ export interface User {
   fullName?: string;
   createdAt: string;
   limits?: PlanLimits;
+  totalJobsCreated?: number;
 }
 
 export interface Project {

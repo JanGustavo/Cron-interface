@@ -8,10 +8,13 @@ export interface Entitlements {
   alertsWebhooksEnabled: boolean;
   multiProjectEnabled: boolean;
   isPro: boolean;
+  currentJobsCount: number;
 }
 
 export const useEntitlements = (): Entitlements => {
   const { user } = useAuthStore();
+
+  const currentJobsCount = user?.totalJobsCreated ?? 0;
 
   // Se o backend retornou os limites dinâmicos no perfil, essa é a fonte única de verdade
   if (user?.limits) {
@@ -23,6 +26,7 @@ export const useEntitlements = (): Entitlements => {
       alertsWebhooksEnabled: user.limits.alertsWebhooksEnabled,
       multiProjectEnabled: user.limits.multiProjectEnabled,
       isPro: user.plan === 'pro',
+      currentJobsCount,
     };
   }
 
@@ -37,6 +41,7 @@ export const useEntitlements = (): Entitlements => {
       alertsWebhooksEnabled: true,
       multiProjectEnabled: true,
       isPro: true,
+      currentJobsCount,
     };
   }
 
@@ -48,5 +53,6 @@ export const useEntitlements = (): Entitlements => {
     alertsWebhooksEnabled: false,
     multiProjectEnabled: false,
     isPro: false,
+    currentJobsCount,
   };
 };

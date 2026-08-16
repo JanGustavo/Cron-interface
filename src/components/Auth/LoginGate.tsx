@@ -565,13 +565,13 @@ export const LoginGate: React.FC = () => {
                 }}
                 className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
               >
-                Criar meu primeiro job grátis ⚡
+                Começar grátis ⚡
               </button>
               <button
                 onClick={() => setIsSimulationOpen(true)}
                 className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
               >
-                Ver uma execução por dentro
+                Ver simulador
               </button>
             </div>
 
@@ -1981,6 +1981,10 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
 
             {/* Simulation Area */}
             <div className="flex-1 bg-[#060812] border border-indigo-950/60 rounded-2xl p-3 md:p-5 min-h-[300px] text-[10px] md:text-xs space-y-2.5 overflow-y-auto select-all text-left">
+              <div className="text-[10px] text-amber-500/80 mb-3 bg-amber-950/10 border border-amber-500/20 px-3 py-2 rounded-xl flex items-center gap-2 select-none font-mono">
+                <span>⚠️</span>
+                <span><strong>Simulação:</strong> Nenhum webhook real será enviado para o destino nesta demonstração.</span>
+              </div>
               {simulationStep >= 1 && (
                 <div className="text-cyan-400 animate-in fade-in duration-300">
                   📡 [08:00:00.000] scheduler: Dispatching job-9a1b (Sync Vendas) on schedule "0 8 * * *"

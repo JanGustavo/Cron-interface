@@ -73,7 +73,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 onClick={onOpenPlans}
                 className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-all bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 hover:border-cyan-500/35 hover:shadow-[0_0_15px_rgba(6,182,212,0.15)] cursor-pointer focus-visible:outline-none"
               >
-                💎 Ver Planos & Benefícios
+                {isProPlan ? '⚙️ Gerenciar Assinatura' : '💎 Ver Planos & Benefícios'}
               </button>
             </div>
           </div>

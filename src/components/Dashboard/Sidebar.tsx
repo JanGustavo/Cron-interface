@@ -1,10 +1,12 @@
 import React from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const Sidebar: React.FC = () => {
   const { sidebarOpen, activeTab, setActiveTab, toggleSidebar, setSidebarOpen } = useUiStore();
   const { user, logout } = useAuthStore();
+  const { isInstallable, installApp } = usePWAInstall();
 
   const navItems = [
     {
@@ -134,6 +136,36 @@ export const Sidebar: React.FC = () => {
           })}
         </nav>
       </div>
+
+      {/* PWA Contextual Installer */}
+      {isInstallable && (
+        <div className="px-3 pb-3 select-none">
+          {sidebarOpen ? (
+            <div className="p-3 rounded-xl bg-gradient-to-r from-cyan-950/40 to-indigo-950/40 border border-cyan-500/20 text-left space-y-2 relative overflow-hidden animate-in fade-in duration-300">
+              <span className="text-[9px] font-mono px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-full font-bold uppercase tracking-wider">
+                PWA INSTALÁVEL
+              </span>
+              <p className="text-[10px] text-slate-400 leading-relaxed font-semibold">Instale o app e tenha acesso direto.</p>
+              <button
+                onClick={installApp}
+                className="w-full py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 rounded-lg transition-colors flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+              >
+                <span>Instalar App 📲</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={installApp}
+              className="w-full flex items-center justify-center py-2.5 rounded-xl text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/20 border border-cyan-500/10 hover:border-cyan-500/30 transition-all cursor-pointer"
+              title="Instalar CronFlow PWA"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Bottom User / Logout Section */}
       <div className="p-3 border-t border-indigo-950/30">

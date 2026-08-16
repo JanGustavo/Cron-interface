@@ -496,8 +496,18 @@ export const ProfilePage: React.FC = () => {
     setCreateModalOpen(true);
   };
 
-  // const handleOpenSettings = () => setSecurityTab('keys');
-  const handleOpenWebhooks = () => setSecurityTab('webhooks');
+  const handleOpenKeys = () => {
+    setSecurityTab('keys');
+    setTimeout(() => {
+      document.getElementById('security-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+  const handleOpenWebhooks = () => {
+    setSecurityTab('webhooks');
+    setTimeout(() => {
+      document.getElementById('security-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
   const handleOpenJobs = () => setActiveTab('jobs');
   const handleOpenLogs = () => setActiveTab('logs');
   const handleOpenDocs = () => setDocsOpen(true);
@@ -522,17 +532,17 @@ export const ProfilePage: React.FC = () => {
       id: 'connect-api',
       title: 'Conectar API Key',
       done: apiKeys.length > 0,
-      detail: apiKeys.length > 0 ? `Configurado e ativo` : 'Conecte sua chave para autenticar as requisições.',
+      detail: apiKeys.length > 0 ? `Chave de API configurada e ativa` : 'Autentique suas integrações programáticas com segurança.',
       action: {
         label: 'Ir para chaves',
-        onClick: () => setSecurityTab('keys'),
+        onClick: handleOpenKeys,
       },
     },
     {
       id: 'first-job',
       title: 'Criar primeira tarefa',
       done: workspaceJobs.length > 0,
-      detail: workspaceJobs.length > 0 ? `${workspaceJobs.length} tarefa cadastrada` : 'Nenhuma tarefa cadastrada no momento',
+      detail: workspaceJobs.length > 0 ? `${workspaceJobs.length} ${workspaceJobs.length === 1 ? 'tarefa cadastrada' : 'tarefas cadastradas'}` : 'Cadastre sua primeira rota/agendamento HTTP.',
       action: {
         label: 'Criar tarefa',
         onClick: handleCreateJob,
@@ -542,7 +552,7 @@ export const ProfilePage: React.FC = () => {
       id: 'webhook',
       title: 'Configurar webhook',
       done: webhookConfigured,
-      detail: webhookConfigured ? 'Webhook ativo para falhas' : 'Não configurado',
+      detail: webhookConfigured ? 'Notificações de falhas ativas!' : 'Receba alertas instantâneos no Discord/Slack se algum job falhar.',
       action: {
         label: 'Configurar',
         onClick: handleOpenWebhooks,
@@ -552,7 +562,7 @@ export const ProfilePage: React.FC = () => {
       id: 'manual-trigger',
       title: 'Disparar execução manual',
       done: workspaceJobs.some((j) => j.lastRunAt != null),
-      detail: workspaceJobs.some((j) => j.lastRunAt != null) ? 'Primeira execução concluída!' : 'Teste o fluxo disparando um job manualmente.',
+      detail: workspaceJobs.some((j) => j.lastRunAt != null) ? 'Primeira execução concluída com sucesso!' : 'Valide o fluxo executando um job manualmente.',
       action: {
         label: 'Ir para tarefas',
         onClick: handleOpenJobs,
@@ -626,7 +636,7 @@ export const ProfilePage: React.FC = () => {
         <div className="lg:col-span-7 space-y-6 min-w-0">
           
           {/* TABBED SECURITY PANEL */}
-          <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-5 text-left">
+          <div id="security-settings" className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-5 text-left">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-indigo-950/30 pb-4">
               <div>
                 <h4 className="text-base font-bold text-slate-250">Segurança & Integrações</h4>
