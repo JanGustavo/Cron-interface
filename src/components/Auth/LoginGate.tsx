@@ -7,17 +7,28 @@ import { authCopy } from './authCopy';
 import type { User, Token, Project } from '../../types/auth';
 
 const getPasswordStrength = (pwd: string) => {
-  if (!pwd) return { score: 0, label: '', color: 'bg-transparent', textColor: 'text-slate-500' };
-  let score = 0;
-  if (pwd.length >= 6) score++;
-  if (pwd.length >= 10) score++;
-  if (/[A-Z]/.test(pwd)) score++;
-  if (/[0-9]/.test(pwd)) score++;
-  if (/[^A-Za-z0-9]/.test(pwd)) score++;
-  
-  if (score <= 2) return { score, label: 'Fraca', color: 'bg-rose-500 w-1/3', textColor: 'text-rose-400' };
-  if (score <= 4) return { score, label: 'Média', color: 'bg-amber-500 w-2/3', textColor: 'text-amber-400' };
-  return { score, label: 'Forte', color: 'bg-emerald-500 w-full', textColor: 'text-emerald-400' };
+  const checks = {
+    length: pwd.length >= 8,
+    uppercase: /[A-Z]/.test(pwd),
+    lowercase: /[a-z]/.test(pwd),
+    number: /[0-9]/.test(pwd),
+    special: /[^A-Za-z0-9]/.test(pwd),
+  };
+
+  if (!pwd) return { score: 0, label: '', color: 'bg-transparent', textColor: 'text-slate-500', checks };
+
+  const score = Object.values(checks).filter(Boolean).length;
+  const levels = [
+    { label: 'Muito fraca', color: 'bg-rose-500 w-1/5', textColor: 'text-rose-400' },
+    { label: 'Fraca', color: 'bg-orange-500 w-2/5', textColor: 'text-orange-400' },
+    { label: 'Média', color: 'bg-amber-500 w-3/5', textColor: 'text-amber-400' },
+    { label: 'Boa', color: 'bg-cyan-500 w-4/5', textColor: 'text-cyan-400' },
+    { label: 'Forte', color: 'bg-emerald-500 w-full', textColor: 'text-emerald-400' },
+  ];
+
+  const level = score === 0 ? { label: '', color: 'bg-transparent', textColor: 'text-slate-500' } : levels[Math.min(score, 5) - 1];
+
+  return { score, ...level, checks };
 };
 
 const LIFECYCLE_STEPS = [
@@ -123,16 +134,19 @@ export const LoginGate: React.FC = () => {
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [fullName, setFullName] = useState('');
+  const [documentType, setDocumentType] = useState<'cpf' | 'cnpj'>('cpf');
   const [cpf, setCpf] = useState('');
+  const [cnpj, setCnpj] = useState('');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [signupSession, setSignupSession] = useState<{ user: User; token: Token; projects: Project[] } | null>(null);
-  
+
   // Forgot Password & Reset Password State
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccessMsg, setForgotSuccessMsg] = useState<string | null>(null);
@@ -246,8 +260,41 @@ export const LoginGate: React.FC = () => {
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password || !projectName.trim() || !fullName.trim() || !cpf.trim()) {
-      setErrorMsg('Por favor, preencha todos os campos do cadastro.');
+    const selectedDocument = documentType === 'cpf' ? cpf : cnpj;
+    if (!email.trim() || !password || !confirmPassword || !projectName.trim() || !fullName.trim() || !selectedDocument.trim()) {
+      setErrorMsg('Por favor, preencha todos os campos do cadastro, incluindo a confirmação da senha e o documento.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg('As senhas não coincidem. Digite novamente para continuar.');
+      return;
+    }
+
+    const cleanDocument = selectedDocument.replace(/\D/g, '');
+    const expectedLength = documentType === 'cpf' ? 11 : 14;
+    if (cleanDocument.length !== expectedLength) {
+      setErrorMsg(documentType === 'cpf' ? 'O CPF deve conter 11 dígitos.' : 'O CNPJ deve conter 14 dígitos.');
+      return;
+    }
+
+    // Validação de nome completo: pelo menos duas partes, sem números, min 6 chars
+    const trimmedName = fullName.trim();
+    const nameParts = trimmedName.split(/\s+/);
+    const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$/;
+
+    if (nameParts.length < 2) {
+      setErrorMsg("Por favor, insira seu nome e sobrenome.");
+      return;
+    }
+
+    if (trimmedName.length < 6) {
+      setErrorMsg("O nome completo deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    if (!nameRegex.test(trimmedName)) {
+      setErrorMsg("O nome contém caracteres inválidos.");
       return;
     }
 
@@ -260,7 +307,9 @@ export const LoginGate: React.FC = () => {
         password: password,
         project_name: projectName.trim(),
         full_name: fullName.trim(),
-        cpf: cpf.trim(),
+        cpf: documentType === 'cpf' ? cleanDocument : '',
+        cnpj: documentType === 'cnpj' ? cleanDocument : '',
+        document_type: documentType,
       });
 
       const { token, user, projects, apiKey, requiresVerification, message, link } = response.data;
@@ -360,6 +409,7 @@ export const LoginGate: React.FC = () => {
         setResetSuccessMsg(null);
         setNewPassword('');
         setConfirmNewPassword('');
+        setShowConfirmPassword(false);
         setActiveTab('login');
         // Clean the URL query params so they don't reload
         const newUrl = window.location.pathname;
@@ -550,11 +600,11 @@ export const LoginGate: React.FC = () => {
             </h1>
 
             <p className="text-base font-bold text-slate-350 tracking-wide">
-              Agende, proteja e monitore suas automações em um só lugar.
+              Chega de falhas silenciosas em tarefas cron e webhooks.
             </p>
 
             <p className="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed">
-              Substitua crontabs espalhados e webhooks sem diagnóstico por uma camada confiável para suas tarefas recorrentes. O CronFlow agenda execuções, tenta novamente quando necessário, assina seus webhooks e mostra o histórico completo de cada resultado.
+              O CronFlow é o agendador de tarefas developer-first com retries exponenciais automáticos, alertas instantâneos de falha e logs completos para garantir que suas automações nunca quebrem no silêncio.
             </p>
 
             <div className="grid gap-4 pt-2 select-none sm:grid-cols-2">
@@ -1661,7 +1711,7 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     </button>
                   </div>
                   {password && (
-                    <div className="space-y-1.5 pt-1 animate-in fade-in duration-200">
+                    <div className="space-y-2 pt-1 animate-in fade-in duration-200">
                       <div className="flex justify-between items-center text-[10px] font-mono">
                         <span className="text-slate-500">Força da senha:</span>
                         <span className={`font-bold ${getPasswordStrength(password).textColor}`}>
@@ -1671,7 +1721,57 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                       <div className="h-1 w-full bg-indigo-950/60 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full transition-all duration-300 ${getPasswordStrength(password).color}`} />
                       </div>
+                      <div className="grid grid-cols-2 gap-1.5 text-[9px] text-slate-400 font-medium">
+                        {[
+                          { label: '8+ caracteres', isValid: getPasswordStrength(password).checks.length },
+                          { label: 'Maiúscula', isValid: getPasswordStrength(password).checks.uppercase },
+                          { label: 'Minúscula', isValid: getPasswordStrength(password).checks.lowercase },
+                          { label: 'Número', isValid: getPasswordStrength(password).checks.number },
+                          { label: 'Símbolo', isValid: getPasswordStrength(password).checks.special },
+                        ].map((rule) => (
+                          <div key={rule.label} className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${rule.isValid ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300' : 'border-slate-700/70 bg-slate-900/40 text-slate-500'}`}>
+                            <span className={`inline-block h-1.5 w-1.5 rounded-full ${rule.isValid ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                            {rule.label}
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                    Confirmar senha
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Repita sua senha"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
+                      disabled={loading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      aria-label="Alternar visibilidade da senha"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 focus:outline-none focus:text-cyan-400 transition-colors"
+                    >
+                      {showPassword ? (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.204.214-2.357.606-3.427m3.2 6.427a4 4 0 116.388 3.25M15 12a3 3 0 00-3-3 M3 3l18 18" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {confirmPassword && password !== confirmPassword && (
+                    <p className="text-[10px] text-rose-400 font-medium">As senhas não coincidem.</p>
                   )}
                 </div>
 
@@ -1707,14 +1807,43 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
 
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-                    CPF (Apenas números)
+                    Tipo de Documento
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDocumentType('cpf')}
+                      className={`flex-1 rounded-xl border px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${documentType === 'cpf' ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300' : 'border-indigo-950/60 bg-[#070913]/90 text-slate-400 hover:text-slate-200'}`}
+                    >
+                      CPF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDocumentType('cnpj')}
+                      className={`flex-1 rounded-xl border px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${documentType === 'cnpj' ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300' : 'border-indigo-950/60 bg-[#070913]/90 text-slate-400 hover:text-slate-200'}`}
+                    >
+                      CNPJ
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
+                    {documentType === 'cpf' ? 'CPF (Apenas números)' : 'CNPJ (Apenas números)'}
                   </label>
                   <input
                     type="text"
-                    placeholder="12345678909"
-                    maxLength={11}
-                    value={cpf}
-                    onChange={(e) => setCpf(e.target.value.replace(/\D/g, ''))}
+                    placeholder={documentType === 'cpf' ? '12345678909' : '11222333000181'}
+                    maxLength={documentType === 'cpf' ? 11 : 14}
+                    value={documentType === 'cpf' ? cpf : cnpj}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '');
+                      if (documentType === 'cpf') {
+                        setCpf(digits.slice(0, 11));
+                      } else {
+                        setCnpj(digits.slice(0, 14));
+                      }
+                    }}
                     className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
                     disabled={loading}
                     required
@@ -1831,7 +1960,7 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                     </button>
                   </div>
                   {newPassword && (
-                    <div className="space-y-1.5 pt-1 animate-in fade-in duration-200">
+                    <div className="space-y-2 pt-1 animate-in fade-in duration-200">
                       <div className="flex justify-between items-center text-[10px] font-mono">
                         <span className="text-slate-500">Força da senha:</span>
                         <span className={`font-bold ${getPasswordStrength(newPassword).textColor}`}>
@@ -1840,6 +1969,20 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                       </div>
                       <div className="h-1 w-full bg-indigo-950/60 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full transition-all duration-300 ${getPasswordStrength(newPassword).color}`} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5 text-[9px] text-slate-400 font-medium">
+                        {[
+                          { label: '8+ caracteres', isValid: getPasswordStrength(newPassword).checks.length },
+                          { label: 'Maiúscula', isValid: getPasswordStrength(newPassword).checks.uppercase },
+                          { label: 'Minúscula', isValid: getPasswordStrength(newPassword).checks.lowercase },
+                          { label: 'Número', isValid: getPasswordStrength(newPassword).checks.number },
+                          { label: 'Símbolo', isValid: getPasswordStrength(newPassword).checks.special },
+                        ].map((rule) => (
+                          <div key={rule.label} className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${rule.isValid ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300' : 'border-slate-700/70 bg-slate-900/40 text-slate-500'}`}>
+                            <span className={`inline-block h-1.5 w-1.5 rounded-full ${rule.isValid ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                            {rule.label}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -1876,6 +2019,9 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
                       )}
                     </button>
                   </div>
+                  {confirmNewPassword && newPassword !== confirmNewPassword && (
+                    <p className="text-[10px] text-rose-400 font-medium">As senhas não coincidem.</p>
+                  )}
                 </div>
 
                 {errorMsg && (
