@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { KanbanColumn } from './KanbanColumn';
@@ -45,25 +47,62 @@ export const KanbanBoard: React.FC = () => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeMobileColumn, setActiveMobileColumn] = useState<KanbanStatus>('draft');
 
-  const onDragEnd = (result: DropResult) => {
+  const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
-    // Dropped outside a valid droppable area
     if (!destination) return;
 
-    // Dropped in the exact same spot
+    const sourceStatus = source.droppableId as KanbanStatus;
+    const nextStatus = destination.droppableId as KanbanStatus;
+
     if (
-      destination.droppableId === source.droppableId &&
+      sourceStatus === nextStatus &&
       destination.index === source.index
     ) {
       return;
     }
 
-    // Cast the target droppable ID to KanbanStatus
-    const nextStatus = destination.droppableId as KanbanStatus;
-    
-    // Call Zustand action to persist frontend move
-    moveJobKanbanStatus(draggableId, nextStatus);
+    const currentJob = jobs.find((job) => job.id === draggableId);
+    if (!currentJob) return;
+
+    if (sourceStatus === nextStatus) {
+      return;
+    }
+
+    if (nextStatus !== 'draft' && nextStatus !== 'scheduled') {
+      await moveJobKanbanStatus(draggableId, nextStatus);
+      return;
+    }
+
+    const isActivating = nextStatus === 'scheduled';
+    const confirmed = await Swal.fire({
+      title: isActivating ? 'Ativar tarefa?' : 'Pausar tarefa?',
+      text: isActivating
+        ? `Deseja realmente ativar a tarefa "${currentJob.name}" e permitir que ela comece a rodar no agendamento?`
+        : `Deseja realmente pausar a tarefa "${currentJob.name}" e impedir novas execuções até que ela seja reativada?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: isActivating ? 'Sim, ativar' : 'Sim, pausar',
+      cancelButtonText: 'Cancelar',
+      background: '#0a0f1d',
+      color: '#cbd5e1',
+      iconColor: isActivating ? '#22c55e' : '#f59e0b',
+      customClass: {
+        popup: 'border border-indigo-950/60 rounded-3xl shadow-2xl bg-[#090c15] text-left font-sans',
+        title: 'text-base font-bold text-slate-100 px-6 pt-6',
+        htmlContainer: 'text-xs text-slate-400 font-medium leading-normal px-6 pb-4',
+        actions: 'px-6 pb-6 flex justify-end gap-2',
+        confirmButton: isActivating
+          ? 'px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-md cursor-pointer'
+          : 'px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded-xl transition-all shadow-md cursor-pointer',
+        cancelButton: 'px-4 py-2 text-xs font-semibold text-slate-450 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer',
+      },
+      buttonsStyling: false,
+    });
+
+    if (!confirmed.isConfirmed) return;
+
+    await moveJobKanbanStatus(draggableId, nextStatus);
   };
 
   // Filter jobs based on search term and advanced parameters

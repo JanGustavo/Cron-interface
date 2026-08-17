@@ -274,75 +274,65 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       backendStatus = 'paused';
     }
 
-    try {
+    const previousJobs = get().jobs;
+    const previousActiveJob = get().activeJob;
 
+    try {
       if (newKanbanStatus === 'executing') {
-        // Se movido para executing, garante que o status é active no backend
-        await api.patch(`/v1/jobs/${jobId}`, { status: 'active' });
-        
-        // Atualiza o estado local para active para que triggerJob obtenha o prevLastRunAt correto
         set((state) => ({
           jobs: state.jobs.map((job) =>
-            job.id === jobId
-              ? {
-                  ...job,
-                  status: 'active',
-                }
-              : job
+            job.id === jobId ? { ...job, status: 'active', kanbanStatus: 'executing' } : job
           ),
           activeJob:
             state.activeJob?.id === jobId
-              ? {
-                  ...state.activeJob,
-                  status: 'active',
-                }
+              ? { ...state.activeJob, status: 'active', kanbanStatus: 'executing' }
               : state.activeJob,
         }));
 
-        // Dispara o job imediatamente
+        await api.patch(`/v1/jobs/${jobId}`, { status: 'active' });
         await get().triggerJob(jobId);
         return;
       }
 
-      // Se movido para outro status, remove dos executingJobs se estiver lá
+      const resetFields = newKanbanStatus === 'scheduled'
+        ? { consecutiveFailures: 0, lastRunAt: null, lastRunStatus: null }
+        : {};
+
+      set((state) => ({
+        jobs: state.jobs.map((job) =>
+          job.id === jobId
+            ? {
+                ...job,
+                status: backendStatus,
+                kanbanStatus: newKanbanStatus,
+                ...resetFields,
+              }
+            : job
+        ),
+        activeJob:
+          state.activeJob?.id === jobId
+            ? {
+                ...state.activeJob,
+                status: backendStatus,
+                kanbanStatus: newKanbanStatus,
+                ...resetFields,
+              }
+            : state.activeJob,
+      }));
+
       const executingJobs = { ...get().executingJobs };
       if (executingJobs[jobId]) {
         delete executingJobs[jobId];
       }
+      set({ executingJobs });
 
       await api.patch(`/v1/jobs/${jobId}`, { status: backendStatus });
-      set((state) => {
-        const resetFields = newKanbanStatus === 'scheduled' ? {
-          consecutiveFailures: 0,
-          lastRunAt: null,
-          lastRunStatus: null,
-        } : {};
-
-        return {
-          jobs: state.jobs.map((job) =>
-            job.id === jobId
-              ? {
-                  ...job,
-                  status: backendStatus,
-                  kanbanStatus: newKanbanStatus,
-                  ...resetFields,
-                }
-              : job
-          ),
-          activeJob:
-            state.activeJob?.id === jobId
-              ? {
-                  ...state.activeJob,
-                  status: backendStatus,
-                  kanbanStatus: newKanbanStatus,
-                  ...resetFields,
-                }
-              : state.activeJob,
-          executingJobs,
-        };
-      });
     } catch (err) {
       console.error(err);
+      set({
+        jobs: previousJobs,
+        activeJob: previousActiveJob,
+      });
       const errResponse = err as ErrorWithResponse;
       const errMsg = errResponse.response?.data?.error || errResponse.response?.data?.reason || 'Erro ao mover tarefa no backend';
       set({ error: errMsg });
