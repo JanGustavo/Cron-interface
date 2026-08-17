@@ -44,9 +44,9 @@ const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage').then(m => 
 
 const PageLoader: React.FC = () => (
   <div className="flex flex-col justify-center items-center py-20 min-h-[50vh] select-none font-mono">
-    <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-950/40 border border-cyan-500/30 shadow-[0_0_20px_rgba(0,217,255,0.2)] mb-4 z-10 animate-spin">
-      <svg className="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H12v9" />
+    <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.18)] mb-4 z-10 animate-spin">
+      <svg className="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
       </svg>
     </div>
     <p className="text-[10px] text-slate-500 tracking-widest uppercase z-10 animate-pulse">Carregando...</p>

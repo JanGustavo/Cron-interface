@@ -161,8 +161,8 @@ export const DashboardPage: React.FC = () => {
       try {
         const fetchPromises = jobs.map(async (job) => {
           try {
-            // Fetch 100 executions per job to populate chart and activity feed
-            const res = await api.get(`/v1/jobs/${job.id}/executions?limit=100`);
+            // Fetch a larger window so 24h/7d/30d charts remain populated even for 1-minute jobs.
+            const res = await api.get(`/v1/jobs/${job.id}/executions?limit=50000`);
             const data = (res.data || []) as LogEntry[];
             return data.map((log) => ({
               ...log,
