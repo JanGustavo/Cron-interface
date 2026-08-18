@@ -439,13 +439,14 @@ export const ProfilePage: React.FC = () => {
   };
 
   const [upgrading, setUpgrading] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   const handleUpgrade = async () => {
     if (upgrading) return;
     setUpgrading(true);
     try {
       showToast('Redirecionando para o checkout seguro da Stripe...', 'info');
-      const res = await api.post('/v1/billing/checkout', {});
+      const res = await api.post('/v1/billing/checkout', { period: billingPeriod });
       if (res.data && res.data.url) {
         window.location.href = res.data.url;
       } else {
@@ -1161,6 +1162,36 @@ export const ProfilePage: React.FC = () => {
             
             {/* Scrollable Container */}
             <div className="flex-1 overflow-y-auto py-6 pr-1 custom-scrollbar space-y-6">
+
+              {/* Billing Period Toggle */}
+              <div className="flex items-center justify-center gap-1 p-1 bg-slate-900/60 border border-indigo-950/40 rounded-2xl w-fit mx-auto select-none">
+                <button
+                  type="button"
+                  onClick={() => setBillingPeriod('monthly')}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
+                    billingPeriod === 'monthly'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Mensal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingPeriod('yearly')}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    billingPeriod === 'yearly'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Anual
+                  <span className="text-[9px] font-black px-1.5 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-md">
+                    2 meses grátis
+                  </span>
+                </button>
+              </div>
+
               <div className="grid gap-6 md:grid-cols-2">
                 {/* 1. FREE PLAN (Left) */}
                 <div className={`p-6 rounded-2xl border transition-all flex flex-col justify-between ${
@@ -1180,40 +1211,64 @@ export const ProfilePage: React.FC = () => {
                       <span className="text-xs font-semibold text-slate-500">/ grátis</span>
                     </h4>
                     <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                      Infraestrutura básica e agendamentos simples para desenvolvedores individuais testarem suas rotinas de cron.
+                      Ideal para testar integrações, projetos pessoais e automatizar rotinas simples — sem cartão de crédito.
                     </p>
-                    
+
                     {/* Benefits List */}
-                    <ul className="mt-6 space-y-3.5 text-xs text-slate-300">
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <ul className="mt-6 space-y-3 text-xs text-slate-300">
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Até <strong>5 tarefas (jobs)</strong> ativos</span>
+                        <span>Até <strong>5 jobs</strong> ativos — disparo a cada 30s</span>
                       </li>
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Workspace / Projeto único</span>
+                        <span>Retentativas automáticas com backoff exponencial</span>
                       </li>
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Histórico de logs retido por <strong>7 dias</strong></span>
+                        <span>Histórico de execuções por <strong>7 dias</strong></span>
                       </li>
-                      <li className="flex items-center gap-2.5 text-slate-500 line-through">
-                        <svg className="w-4 h-4 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Digest diário de falhas por <strong>e-mail</strong></span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Assinatura HMAC + proteção SSRF incluídas</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-indigo-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>API Key ilimitada + OAuth Google & GitHub</span>
+                      </li>
+                      <li className="flex items-start gap-2.5 text-slate-500 line-through decoration-slate-600">
+                        <svg className="w-4 h-4 shrink-0 text-slate-600 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <span>Alertas críticos via e-mail e webhook</span>
+                        <span>Alertas imediatos via Slack / Discord / Webhook</span>
                       </li>
-                      <li className="flex items-center gap-2.5 text-slate-500 line-through">
-                        <svg className="w-4 h-4 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <li className="flex items-start gap-2.5 text-slate-500 line-through decoration-slate-600">
+                        <svg className="w-4 h-4 shrink-0 text-slate-600 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <span>Suporte prioritário via SLA</span>
+                        <span>Workflows encadeados entre jobs</span>
+                      </li>
+                      <li className="flex items-start gap-2.5 text-slate-500 line-through decoration-slate-600">
+                        <svg className="w-4 h-4 shrink-0 text-slate-600 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Flow AI Copilot — criação por linguagem natural</span>
                       </li>
                     </ul>
                   </div>
@@ -1251,50 +1306,81 @@ export const ProfilePage: React.FC = () => {
                       )}
                     </div>
                     <h4 className="text-2xl font-black text-slate-100 flex items-baseline gap-1.5">
-                      <span>R$ 29</span>
-                      <span className="text-xs font-semibold text-slate-500">/ mês</span>
+                      <span>{billingPeriod === 'yearly' ? 'R$ 290' : 'R$ 29'}</span>
+                      <span className="text-xs font-semibold text-slate-500">
+                        {billingPeriod === 'yearly' ? '/ ano' : '/ mês'}
+                      </span>
+                      {billingPeriod === 'yearly' && (
+                        <span className="ml-1 text-[9px] font-black px-1.5 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-md">
+                          −16%
+                        </span>
+                      )}
                     </h4>
                     <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                      Ideal para squads e plataformas de produção que exigem múltiplos tenants, alta retenção de auditoria e monitoramento em tempo real.
+                      Para times e produtos em produção que não podem se dar ao luxo de falhas silenciosas.
                     </p>
-                    
+
                     {/* Benefits List */}
-                    <ul className="mt-6 space-y-3.5 text-xs text-slate-200">
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <ul className="mt-6 space-y-3 text-xs text-slate-200">
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Até <strong>50 tarefas (jobs)</strong> ativos por workspace</span>
+                        <span>Até <strong>50 jobs</strong> ativos — disparo a cada 30s</span>
                       </li>
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Até <strong>5 projetos (workspaces)</strong> ativos</span>
+                        <span>Múltiplos projetos <strong>(workspaces)</strong> ativos</span>
                       </li>
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Logs e auditoria retidos por <strong>90 dias</strong></span>
+                        <span>Logs e auditoria por <strong>90 dias</strong></span>
                       </li>
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Alertas críticos via e-mail e webhook (OpsGenie, PagerDuty)</span>
+                        <span>Alertas imediatos por e-mail na 3ª falha consecutiva</span>
                       </li>
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Scheduler Engine em fila prioritária dedicada</span>
+                        <span>Webhooks de alerta — <strong>Slack, Discord, ntfy</strong> e genérico</span>
                       </li>
-                      <li className="flex items-center gap-2.5">
-                        <svg className="w-4.5 h-4.5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Suporte preferencial via chat SLA &lt; 4h</span>
+                        <span>Workflows encadeados — <strong>pipeline de jobs</strong></span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span><strong>Flow AI Copilot</strong> — crie jobs por linguagem natural</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Assinatura HMAC + SSRF + API Keys ilimitadas</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Suporte prioritário por e-mail</span>
+                      </li>
+                      <li className="flex items-start gap-2.5 text-slate-500">
+                        <svg className="w-4 h-4 text-slate-600 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Exportação de logs CSV/JSON <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-400/10 text-amber-400/70 border border-amber-400/20 rounded ml-1">em breve</span></span>
                       </li>
                     </ul>
                   </div>

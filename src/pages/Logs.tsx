@@ -106,7 +106,7 @@ export const Logs: React.FC = () => {
         </div>
         
         {/* Export Buttons Stack */}
-        <LogExport logs={formattedLogs} />
+        <LogExport filter={filter} />
       </div>
 
       {/* Advanced Filter Toolbar */}
