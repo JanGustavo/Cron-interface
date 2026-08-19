@@ -1317,19 +1317,24 @@ curl -X POST https://cron.jangustavo.me/v1/jobs \
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 animate-in fade-in duration-200">
           
-          <div className="relative grid w-full max-w-md lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-hidden rounded-3xl border border-indigo-500/30 bg-[#0a0d1d]/95 shadow-[0_0_50px_rgba(0,217,255,0.2)] animate-in zoom-in-95 duration-200 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,0.75fr)]">
+          <div className="relative grid w-full max-w-md lg:max-w-6xl max-h-[90vh] overflow-hidden rounded-3xl border border-indigo-500/30 bg-[#0a0d1d]/95 shadow-[0_0_50px_rgba(0,217,255,0.2)] animate-in zoom-in-95 duration-200 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,0.75fr)]">
             <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
-            <AuthProductPanel
-              onCreateAccount={() => {
-                setActiveTab('signup');
-                setErrorMsg(null);
-              }}
-              onExplore={() => {
-                setIsModalOpen(false);
-                scrollToSection('failure-lifecycle');
-              }}
-            />
-            <div className="relative min-w-0 p-6 md:p-8 lg:flex lg:h-full lg:flex-col lg:justify-center">
+            
+            {/* Oculta o banner esquerdo em telas menores que lg para liberar espaço no mobile */}
+            <div className="hidden lg:block">
+              <AuthProductPanel
+                onCreateAccount={() => {
+                  setActiveTab('signup');
+                  setErrorMsg(null);
+                }}
+                onExplore={() => {
+                  setIsModalOpen(false);
+                  scrollToSection('failure-lifecycle');
+                }}
+              />
+            </div>
+
+            <div className="relative min-w-0 p-6 md:p-8 max-h-[90vh] overflow-y-auto lg:flex lg:flex-col lg:justify-center">
             
             {/* Close Button */}
             <button
