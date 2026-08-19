@@ -9,9 +9,101 @@ import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import { useEntitlements } from '../../hooks/useEntitlements';
 
+const formatNextRun = (nextRunAt: string): string => {
+  if (!nextRunAt) return '—';
+  try {
+    const date = new Date(nextRunAt);
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZoneName: 'short'
+    });
+  } catch {
+    return nextRunAt;
+  }
+};
+
+const getNextRunPreview = (schedule: string, timezone: string): string => {
+  if (!schedule || !timezone) return '—';
+  try {
+    const now = new Date();
+    
+    if (schedule.startsWith('every:')) {
+      const parts = schedule.split(':');
+      if (parts.length < 2) return '—';
+      const val = parts[1];
+      const num = parseInt(val, 10);
+      const unit = val.replace(/[0-9]/g, '');
+      if (isNaN(num)) return '—';
+      
+      let duration: number;
+      if (unit === 'm') duration = num * 60 * 1000;
+      else if (unit === 'h') duration = num * 60 * 60 * 1000;
+      else return '—';
+      
+      const next = new Date(now.getTime() + duration);
+      return next.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZoneName: 'short'
+      });
+    }
+    
+    // For cron expressions, use a simple approximation
+    // This is a basic preview - exact calculation happens on backend
+    const cronParts = schedule.split(/\s+/);
+    if (cronParts.length !== 5) return 'Calculado no servidor';
+    
+    const [min, hour] = cronParts;
+    if (min !== '*' && hour !== '*' && cronParts[2] === '*' && cronParts[3] === '*' && cronParts[4] === '*') {
+      // Daily at specific time
+      const next = new Date(now);
+      next.setHours(parseInt(hour, 10), parseInt(min, 10), 0, 0);
+      if (next <= now) next.setDate(next.getDate() + 1);
+      return next.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZoneName: 'short'
+      });
+    }
+    
+    if (min.startsWith('*/') && hour === '*') {
+      const step = parseInt(min.split('/')[1], 10);
+      if (!isNaN(step)) {
+        const next = new Date(now.getTime() + step * 60 * 1000);
+        return next.toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZoneName: 'short'
+        });
+      }
+    }
+    
+    return 'Calculado no servidor';
+  } catch {
+    return '—';
+  }
+};
+
 export const JobModal: React.FC = () => {
   const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob, jobs } = useJobsStore();
-  const { isJobModalOpen, setJobModalOpen, showToast } = useUiStore();
+  const { isJobModalOpen, setJobModalOpen, showToast, setPlansModalOpen } = useUiStore();
   const { alertsWebhooksEnabled, workflowsEnabled } = useEntitlements();
   const [jobLogs, setJobLogs] = useState<JobLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -236,7 +328,7 @@ export const JobModal: React.FC = () => {
     }
 
     let parsedPayload = null;
-    if (editPayload.trim() && editMethod !== 'GET') {
+    if (editPayload.trim() && editMethod !== 'GET' && editMethod !== 'HEAD') {
       try {
         parsedPayload = JSON.parse(editPayload);
       } catch (e) {
@@ -253,7 +345,7 @@ export const JobModal: React.FC = () => {
         url: editUrl.trim(),
         schedule: editSchedule.trim(),
         timezone: editTimezone.trim(),
-        httpMethod: editMethod as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+        httpMethod: editMethod as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD',
         headers: parsedHeaders || undefined,
         payload: parsedPayload || undefined,
         webhookAlertUrl: editWebhookAlertUrl.trim() || undefined,
@@ -346,6 +438,12 @@ export const JobModal: React.FC = () => {
                       ⏱️ {translateSchedule(editSchedule)}
                     </span>
                   )}
+                  {editSchedule.trim() && editTimezone.trim() && (
+                    <span className="text-[9px] text-indigo-400 font-semibold block pt-1.5 font-mono flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                      Próxima execução estimada: {getNextRunPreview(editSchedule, editTimezone)}
+                    </span>
+                  )}
                 </>
               ) : (
                 <>
@@ -353,6 +451,12 @@ export const JobModal: React.FC = () => {
                   <span className="text-[9px] text-cyan-500 font-semibold block pt-0.5 font-mono">
                     ⏱️ {translateSchedule(activeJob.schedule)}
                   </span>
+                  {activeJob.nextRunAt && (
+                    <span className="text-[9px] text-indigo-400 font-semibold block pt-1.5 font-mono flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                      Próxima execução: {formatNextRun(activeJob.nextRunAt)}
+                    </span>
+                  )}
                 </>
               )}
             </div>
@@ -389,6 +493,7 @@ export const JobModal: React.FC = () => {
                   <option value="PUT">PUT</option>
                   <option value="DELETE">DELETE</option>
                   <option value="PATCH">PATCH</option>
+                  <option value="HEAD">HEAD</option>
                 </select>
               ) : (
                 <div className="text-xs font-black text-indigo-400 mt-1">{activeJob.httpMethod}</div>
@@ -432,7 +537,9 @@ export const JobModal: React.FC = () => {
                   disabled={!alertsWebhooksEnabled}
                 />
                 {!alertsWebhooksEnabled && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200 mt-1.5">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200 mt-1.5 cursor-pointer hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
+                    onClick={() => setPlansModalOpen(true)}
+                  >
                     <span className="text-amber-500">🔒</span>
                     <span>Webhook de alerta é exclusivo do Plano PRO.</span>
                   </div>
@@ -466,7 +573,9 @@ export const JobModal: React.FC = () => {
                     ))}
                   </select>
                   {!workflowsEnabled && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200 mt-1.5">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200 mt-1.5 cursor-pointer hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
+                      onClick={() => setPlansModalOpen(true)}
+                    >
                       <span className="text-amber-500">🔒</span>
                       <span>Encadeamento (Workflows) é exclusivo do Plano PRO.</span>
                     </div>
@@ -543,11 +652,11 @@ export const JobModal: React.FC = () => {
                 <textarea
                   value={editPayload}
                   onChange={(e) => setEditPayload(e.target.value)}
-                  disabled={editMethod === 'GET'}
+                  disabled={editMethod === 'GET' || editMethod === 'HEAD'}
                   className={`w-full min-h-[140px] px-4 py-3 bg-slate-950 border rounded-xl font-mono text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 placeholder-slate-600 ${
-                    editMethod === 'GET' ? 'opacity-40 cursor-not-allowed border-indigo-950/20' : 'border-indigo-500/20'
+                    editMethod === 'GET' || editMethod === 'HEAD' ? 'opacity-40 cursor-not-allowed border-indigo-950/20' : 'border-indigo-500/20'
                   }`}
-                  placeholder={editMethod === 'GET' ? 'Não disponível para método GET' : '{\n  "data": "value"\n}'}
+                  placeholder={editMethod === 'GET' || editMethod === 'HEAD' ? `Não disponível para método ${editMethod}` : '{\n  "data": "value"\n}'}
                 />
               ) : (
                 <div className="flex-1 min-h-[140px] px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl font-mono text-xs text-indigo-400 overflow-auto max-h-[140px]">

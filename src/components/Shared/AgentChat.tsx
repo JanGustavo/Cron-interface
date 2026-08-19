@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import api from '../../services/api';
 import { useJobsStore } from '../../store/jobsStore';
+import { useUiStore } from '../../store/uiStore';
 import { useEntitlements } from '../../hooks/useEntitlements';
 
 interface GeminiPart {
@@ -29,6 +30,7 @@ interface Message {
 
 export const AgentChat: React.FC = () => {
   const { workflowsEnabled } = useEntitlements();
+  const { setPlansModalOpen } = useUiStore();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -251,7 +253,9 @@ export const AgentChat: React.FC = () => {
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="p-2.5 border-t border-indigo-950/40 bg-[#0c1026]/90 flex gap-2">
               {!workflowsEnabled ? (
-                <div className="flex-1 flex items-center justify-between px-3 py-1.5 bg-indigo-950/20 border border-amber-500/20 rounded-xl">
+                <div className="flex-1 flex items-center justify-between px-3 py-1.5 bg-indigo-950/20 border border-amber-500/20 rounded-xl cursor-pointer hover:bg-amber-500/10 transition-colors"
+                  onClick={() => setPlansModalOpen(true)}
+                >
                   <span className="text-[10px] text-amber-500 font-semibold font-mono">
                     🔒 AI Copilot exclusivo do Plano PRO
                   </span>

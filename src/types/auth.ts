@@ -20,6 +20,7 @@ export interface User {
   createdAt: string;
   limits?: PlanLimits;
   totalJobsCreated?: number;
+  currentPeriodEnd?: string;
 }
 
 export interface Project {

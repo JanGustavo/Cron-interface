@@ -77,7 +77,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, jobs, has
             }`}
           >
             {jobs.map((job, index) => (
-              <JobCard key={job.id} job={job} index={index} />
+              <JobCard key={job.id} job={job} index={index} columnId={id} />
             ))}
             
             {provided.placeholder}

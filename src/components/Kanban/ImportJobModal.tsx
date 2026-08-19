@@ -1,31 +1,71 @@
 import React, { useState } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
+import { useAuthStore } from '../../store/authStore';
 import { parseCurl } from '../Shared/cronTranslator';
 
-const EXAMPLE_JSON = `{
-  "name": "Monitor PromoPulse",
-  "schedule": "every:1m",
-  "timezone": "America/Sao_Paulo",
-  "url": "https://jangustavo.me/apis/promopulse/",
-  "httpMethod": "GET",
-  "headers": {
-    "Content-Type": "application/json"
+const EXAMPLE_JSON_FREE = `[
+  {
+    "name": "Monitor PromoPulse",
+    "schedule": "every:1m",
+    "timezone": "America/Sao_Paulo",
+    "url": "https://jangustavo.me/apis/promopulse/health",
+    "httpMethod": "HEAD",
+    "headers": {
+      "accept": "application/json"
+    }
   },
-  "payload": {
-    "status": "ping"
+  {
+    "name": "Monitor BrasilAPI",
+    "schedule": "every:5m",
+    "timezone": "America/Sao_Paulo",
+    "url": "https://brasilapi.com.br/api/banks/v1",
+    "httpMethod": "GET",
+    "headers": {
+      "accept": "application/json"
+    }
+  }
+]`;
+
+const EXAMPLE_JSON_PAID = `[
+  {
+    "name": "Monitor PromoPulse",
+    "schedule": "every:1m",
+    "timezone": "America/Sao_Paulo",
+    "url": "https://jangustavo.me/apis/promopulse/health",
+    "httpMethod": "HEAD",
+    "headers": {
+      "accept": "application/json"
+    },
+    "webhookAlertUrl": "https://ntfy.sh/monitor-promopulse-jangustavo"
   },
-  "webhookAlertUrl": "https://ntfy.sh/monitor-promopulse-jangustavo"
-}`;
+  {
+    "name": "Gerar Relatório Diário",
+    "schedule": "0 8 * * *",
+    "timezone": "America/Sao_Paulo",
+    "url": "https://minha-api.com/relatorio/gerar",
+    "httpMethod": "POST",
+    "headers": {
+      "accept": "application/json",
+      "x-api-key": "minha-chave"
+    },
+    "webhookAlertUrl": "https://ntfy.sh/relatorio-jangustavo",
+    "nextJobId": "uuid-do-job-enviar-email"
+  }
+]`;
 
 export const ImportJobModal: React.FC = () => {
   const { addJob } = useJobsStore();
   const { isImportModalOpen, setImportModalOpen, showToast } = useUiStore();
+  const { user } = useAuthStore();
   const [jsonText, setJsonText] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isImportModalOpen) return null;
+
+  const isPaid = !!(user?.limits?.alertsWebhooksEnabled || user?.limits?.workflowsEnabled);
+  const EXAMPLE_JSON = isPaid ? EXAMPLE_JSON_PAID : EXAMPLE_JSON_FREE;
 
   const handleClose = () => {
     setImportModalOpen(false);
@@ -54,7 +94,7 @@ export const ImportJobModal: React.FC = () => {
     setLoading(true);
 
     try {
-      let parsed: {
+      type RawJob = {
         name?: string;
         schedule?: string;
         url?: string;
@@ -63,64 +103,91 @@ export const ImportJobModal: React.FC = () => {
         headers?: Record<string, string>;
         payload?: Record<string, unknown> | string;
         webhookAlertUrl?: string;
+        nextJobId?: string;
+        region?: string; // campo opcional, ignorado pelo backend
       };
+
+      const VALID_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'];
+
+      const validateAndNormalize = (parsed: RawJob, idx?: number) => {
+        const label = idx !== undefined ? `Job #${idx + 1}` : 'Job';
+        if (!parsed.name || typeof parsed.name !== 'string' || !parsed.name.trim())
+          throw new Error(`${label}: o campo "name" é obrigatório.`);
+        if (!parsed.schedule || typeof parsed.schedule !== 'string' || !parsed.schedule.trim())
+          throw new Error(`${label}: o campo "schedule" é obrigatório.`);
+        if (!parsed.url || typeof parsed.url !== 'string' || !parsed.url.trim())
+          throw new Error(`${label}: o campo "url" é obrigatório.`);
+
+        const method = (parsed.httpMethod || 'POST').toUpperCase();
+        if (!VALID_METHODS.includes(method))
+          throw new Error(`${label}: "httpMethod" deve ser ${VALID_METHODS.join(', ')}.`);
+
+        return {
+          name: parsed.name.trim(),
+          schedule: parsed.schedule.trim(),
+          timezone: parsed.timezone ? parsed.timezone.trim() : 'UTC',
+          url: parsed.url.trim(),
+          httpMethod: method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD',
+          headers: parsed.headers || undefined,
+          payload: parsed.payload || undefined,
+          status: 'active' as const,
+          webhookAlertUrl: parsed.webhookAlertUrl ? parsed.webhookAlertUrl.trim() : undefined,
+          nextJobId: parsed.nextJobId ? parsed.nextJobId.trim() : undefined,
+        };
+      };
+
       const text = jsonText.trim();
+      let jobs: ReturnType<typeof validateAndNormalize>[];
+
       if (text.startsWith('curl')) {
         const curlParsed = parseCurl(text);
-        if (!curlParsed) {
-          throw new Error('Comando cURL inválido ou impossível de extrair parâmetros.');
-        }
-        parsed = curlParsed;
+        if (!curlParsed) throw new Error('Comando cURL inválido ou impossível de extrair parâmetros.');
+        jobs = [validateAndNormalize(curlParsed)];
       } else {
+        let rawParsed: unknown;
         try {
-          parsed = JSON.parse(text);
+          rawParsed = JSON.parse(text);
         } catch (err) {
-          const errorObj = err as Error;
-          throw new Error(`JSON inválido: ${errorObj.message}`, { cause: err });
+          throw new Error(`JSON inválido: ${(err as Error).message}`, { cause: err });
+        }
+
+        if (Array.isArray(rawParsed)) {
+          jobs = rawParsed.map((item, i) => validateAndNormalize(item as RawJob, i));
+        } else {
+          jobs = [validateAndNormalize(rawParsed as RawJob)];
         }
       }
 
-      if (!parsed.name || typeof parsed.name !== 'string' || !parsed.name.trim()) {
-        throw new Error('O campo "name" é obrigatório e deve ser uma string.');
-      }
-      if (!parsed.schedule || typeof parsed.schedule !== 'string' || !parsed.schedule.trim()) {
-        throw new Error('O campo "schedule" é obrigatório e deve ser uma string.');
-      }
-      if (!parsed.url || typeof parsed.url !== 'string' || !parsed.url.trim()) {
-        throw new Error('O campo "url" é obrigatório e deve ser uma string.');
+      // Importa todos em paralelo, coletando erros individuais
+      const results = await Promise.allSettled(jobs.map((j) => addJob(j)));
+      const failures = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
+
+      if (failures.length === results.length) {
+        // Exibe a mensagem real do primeiro erro (vinda do backend)
+        const firstError = failures[0]?.reason as Error | undefined;
+        throw new Error(firstError?.message || 'Nenhum job importado. Verifique os dados e tente novamente.');
       }
 
-      const method = (parsed.httpMethod || 'POST').toUpperCase();
-      if (!['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-        throw new Error('O campo "httpMethod" deve ser GET, POST, PUT, DELETE ou PATCH.');
-      }
-
-      await addJob({
-        name: parsed.name.trim(),
-        schedule: parsed.schedule.trim(),
-        timezone: parsed.timezone ? parsed.timezone.trim() : 'UTC',
-        url: parsed.url.trim(),
-        httpMethod: method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
-        headers: parsed.headers || undefined,
-        payload: parsed.payload || undefined,
-        status: 'active',
-        webhookAlertUrl: parsed.webhookAlertUrl ? parsed.webhookAlertUrl.trim() : undefined,
-      });
-
-      showToast('Tarefa importada e criada com sucesso! 🚀', 'success');
+      const successCount = results.length - failures.length;
+      showToast(
+        failures.length === 0
+          ? `${successCount} tarefa${successCount > 1 ? 's importadas' : ' importada'} com sucesso! 🚀`
+          : `${successCount} importada${successCount > 1 ? 's' : ''}, ${failures.length} falhou. Verifique o console.`,
+        failures.length === 0 ? 'success' : 'error',
+      );
       handleClose();
     } catch (err) {
       console.error(err);
-      const errorObj = err as Error;
-      setErrorMsg(errorObj.message || 'Erro ao importar a tarefa.');
+      setErrorMsg((err as Error).message || 'Erro ao importar a tarefa.');
     } finally {
       setLoading(false);
     }
   };
 
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg flex flex-col rounded-2xl border border-indigo-500/30 bg-[#0a0d1d]/95 p-6 shadow-[0_0_50px_rgba(99,102,241,0.25)] overflow-hidden transition-all duration-300">
+      <div className="relative w-full max-w-2xl flex flex-col rounded-2xl border border-indigo-500/30 bg-[#0a0d1d]/95 p-6 shadow-[0_0_50px_rgba(99,102,241,0.25)] overflow-hidden transition-all duration-300">
         <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 opacity-90" />
         
         {/* Header */}
@@ -152,16 +219,24 @@ export const ImportJobModal: React.FC = () => {
           {/* Explanation Banner */}
           <div className="p-3 bg-indigo-950/20 border border-indigo-500/10 rounded-xl text-slate-400 text-xs leading-relaxed space-y-1.5 select-none">
             <p>
-              Cole a estrutura JSON do job ou um <strong>comando cURL bruto</strong> direto do seu terminal/postman.
+              Cole um <strong>objeto JSON</strong> único ou um <strong>array</strong> para importar vários jobs de uma vez. Aceita também um <strong>comando cURL</strong> direto do terminal.
+            </p>
+            <p className="text-[10px] text-slate-500">
+              Métodos suportados: <code className="text-cyan-400">GET POST PUT DELETE PATCH HEAD</code>
+              {isPaid ? (
+                <> · <code className="text-violet-400">webhookAlertUrl</code> e <code className="text-violet-400">nextJobId</code> disponíveis no seu plano ✨</>
+              ) : (
+                <> · <code className="text-slate-600">webhookAlertUrl</code> e <code className="text-slate-600">nextJobId</code> exclusivos do Plano PRO</>
+              )}
             </p>
             <div className="flex justify-between items-center pt-1 border-t border-indigo-950/40">
-              <span className="text-[10px] text-slate-500 font-mono">{"curl -X POST \"https://api...\" -d '{\"status\":\"ping\"}'"}</span>
+              <span className="text-[10px] text-slate-500 font-mono">{"[ {...}, {...} ]  ou  { ... }  ou  curl ..."}</span>
               <button
                 type="button"
                 onClick={handleCopyExample}
                 className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
               >
-                Copiar Exemplo JSON 📋
+                Copiar Exemplo {isPaid ? 'PRO' : 'Free'} 📋
               </button>
             </div>
           </div>

@@ -203,3 +203,44 @@ button, a, select, input, textarea {
   pointer-events: none;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* PRO badge: shimmer animado no username dourado */
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* PRO badge: contorno rotativo cyberpunk nos botões */
+@keyframes border-spin {
+  to { --pro-border-angle: 360deg; }
+}
+
+@property --pro-border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.pro-border-shimmer {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.pro-border-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--pro-border-angle),
+    #facc15, #a855f7, #ec4899, #facc15
+  );
+  animation: border-spin 4s linear infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}

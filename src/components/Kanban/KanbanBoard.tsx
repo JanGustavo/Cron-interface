@@ -19,7 +19,7 @@ const COLUMNS: { id: KanbanStatus; title: string }[] = [
 
 export const KanbanBoard: React.FC = () => {
   const { jobs, moveJobKanbanStatus } = useJobsStore();
-  const { setCreateModalOpen, setImportModalOpen, showToast } = useUiStore();
+  const { setCreateModalOpen, setImportModalOpen, showToast, setPlansModalOpen } = useUiStore();
   const { maxJobs, currentJobsCount } = useEntitlements();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -27,7 +27,8 @@ export const KanbanBoard: React.FC = () => {
 
   const handleOpenCreateModal = () => {
     if (limitsReached) {
-      showToast(`Você atingiu o limite de ${maxJobs} jobs do seu plano atual. Vá em Perfil e faça o upgrade para o Plano PRO para criar mais tarefas! 💎`, 'warning');
+      showToast(`Você atingiu o limite de ${maxJobs} jobs. Clique para ver os planos! 💎`, 'warning');
+      setTimeout(() => setPlansModalOpen(true), 100);
     } else {
       setCreateModalOpen(true);
     }
@@ -35,7 +36,8 @@ export const KanbanBoard: React.FC = () => {
 
   const handleOpenImportModal = () => {
     if (limitsReached) {
-      showToast(`Você atingiu o limite de ${maxJobs} jobs do seu plano atual. Vá em Perfil e faça o upgrade para o Plano PRO para importar tarefas! 💎`, 'warning');
+      showToast(`Você atingiu o limite de ${maxJobs} jobs. Clique para ver os planos! 💎`, 'warning');
+      setTimeout(() => setPlansModalOpen(true), 100);
     } else {
       setImportModalOpen(true);
     }

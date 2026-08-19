@@ -72,10 +72,9 @@ const InfoTip: React.FC<{ text: string }> = ({ text }) => (
 export const ProfilePage: React.FC = () => {
   const { user, activeProject, projects, setActiveProject, setProjects } = useAuthStore();
   const { jobs, fetchJobs } = useJobsStore();
-  const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen } = useUiStore();
+  const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen, isPlansModalOpen, setPlansModalOpen } = useUiStore();
   const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
   const [isSwitchingProject, setIsSwitchingProject] = useState(false);
-  const [isPlansModalOpen, setIsPlansModalOpen] = useState(false);
 
   // Load custom profile details saved during onboarding
   const [profileFullName, setProfileFullName] = useState(() => localStorage.getItem('cf_user_name') || user?.fullName || '');
@@ -308,7 +307,8 @@ export const ProfilePage: React.FC = () => {
               ...authStore.user,
               fullName: res.data.fullName,
               plan: res.data.plan,
-              limits: res.data.limits
+              limits: res.data.limits,
+              currentPeriodEnd: res.data.currentPeriodEnd
             }
           });
         }
@@ -605,7 +605,7 @@ export const ProfilePage: React.FC = () => {
             company={company}
             memberDays={memberDays}
             memberSince={memberSince}
-            onOpenPlans={() => setIsPlansModalOpen(true)}
+            onOpenPlans={() => setPlansModalOpen(true)}
           />
 
           <ProjectManager
@@ -1150,7 +1150,7 @@ export const ProfilePage: React.FC = () => {
                 <p className="text-xs text-slate-400">Escolha o plano ideal para a escala de agendamentos e integrações de sua infraestrutura.</p>
               </div>
               <button
-                onClick={() => setIsPlansModalOpen(false)}
+                onClick={() => setPlansModalOpen(false)}
                 className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/60 transition-colors cursor-pointer"
                 title="Fechar"
               >
@@ -1411,7 +1411,7 @@ export const ProfilePage: React.FC = () => {
             {/* Footer */}
             <div className="flex justify-end pt-4 border-t border-indigo-950/40">
               <button
-                onClick={() => setIsPlansModalOpen(false)}
+                onClick={() => setPlansModalOpen(false)}
                 className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-350 hover:text-white bg-slate-800/60 hover:bg-slate-800/90 rounded-xl transition-all cursor-pointer"
               >
                 Fechar

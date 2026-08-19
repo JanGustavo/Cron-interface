@@ -6,14 +6,14 @@ import { useEntitlements } from '../../hooks/useEntitlements';
 
 export const CreateJobModal: React.FC = () => {
 	const { addJob, jobs } = useJobsStore();
-	const { isCreateModalOpen, setCreateModalOpen } = useUiStore();
+	const { isCreateModalOpen, setCreateModalOpen, setPlansModalOpen } = useUiStore();
 	const { alertsWebhooksEnabled, workflowsEnabled } = useEntitlements();
 
 	const [name, setName] = useState('');
 	const [schedule, setSchedule] = useState('every:5m');
 	const [timezone, setTimezone] = useState(() => localStorage.getItem('cf_user_timezone') || 'UTC');
 	const [url, setUrl] = useState('https://httpbin.org/post');
-	const [httpMethod, setHttpMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>('POST');
+	const [httpMethod, setHttpMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD'>('POST');
 	const [headersText, setHeadersText] = useState('{\n  "Content-Type": "application/json"\n}');
 	const [payloadText, setPayloadText] = useState('{\n  "status": "ping"\n}');
 	const [webhookAlertUrl, setWebhookAlertUrl] = useState(() => localStorage.getItem('cf_global_webhook') || '');
@@ -154,7 +154,7 @@ export const CreateJobModal: React.FC = () => {
 
       // Parse optional payload
       let payload: Record<string, unknown> | string | undefined;
-      if (payloadText.trim() && httpMethod !== 'GET') {
+      if (payloadText.trim() && httpMethod !== 'GET' && httpMethod !== 'HEAD') {
         try {
           payload = JSON.parse(payloadText) as Record<string, unknown>;
         } catch (err) {
@@ -207,7 +207,7 @@ export const CreateJobModal: React.FC = () => {
       />
 
       {/* Modal Container */}
-      <div className="w-full max-w-xl rounded-2xl border border-cyan-500/30 glass-panel shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden select-none animate-in fade-in zoom-in duration-300 relative">
+      <div className="w-full max-w-2xl rounded-2xl border border-cyan-500/30 glass-panel shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden select-none animate-in fade-in zoom-in duration-300 relative">
         <div className="absolute top-0 inset-x-12 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
 
         {/* Header Section */}
@@ -390,7 +390,7 @@ export const CreateJobModal: React.FC = () => {
                   </label>
                   <select
                     value={httpMethod}
-                    onChange={(e) => setHttpMethod(e.target.value as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH')}
+                    onChange={(e) => setHttpMethod(e.target.value as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD')}
                     className="w-full px-3 py-2.5 pr-10 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 hover:border-indigo-900/80 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono cursor-pointer appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25em_1.25em] bg-[image:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2322d3ee%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]"
                     disabled={loading}
                   >
@@ -399,6 +399,7 @@ export const CreateJobModal: React.FC = () => {
                     <option value="PUT">PUT</option>
                     <option value="DELETE">DELETE</option>
                     <option value="PATCH">PATCH</option>
+                    <option value="HEAD">HEAD</option>
                   </select>
                 </div>
 
@@ -436,7 +437,9 @@ export const CreateJobModal: React.FC = () => {
                   disabled={loading || !alertsWebhooksEnabled}
                 />
                 {!alertsWebhooksEnabled && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200 cursor-pointer hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
+                    onClick={() => setPlansModalOpen(true)}
+                  >
                     <span className="text-amber-500">🔒</span>
                     <span>Webhook de alerta é exclusivo do Plano PRO.</span>
                   </div>
@@ -468,7 +471,9 @@ export const CreateJobModal: React.FC = () => {
                     ))}
                   </select>
                   {!workflowsEnabled && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-[9px] font-semibold font-mono select-none animate-in fade-in slide-in-from-top-1 duration-200 cursor-pointer hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
+                      onClick={() => setPlansModalOpen(true)}
+                    >
                       <span className="text-amber-500">🔒</span>
                       <span>Encadeamento (Workflows) é exclusivo do Plano PRO.</span>
                     </div>
@@ -521,10 +526,10 @@ export const CreateJobModal: React.FC = () => {
                     value={payloadText}
                     onChange={(e) => setPayloadText(e.target.value)}
                     className={`w-full flex-1 px-3.5 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-indigo-400 placeholder-slate-700 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono text-[11px] leading-relaxed resize-none ${
-                      httpMethod === 'GET' ? 'opacity-40 cursor-not-allowed' : ''
+                      httpMethod === 'GET' || httpMethod === 'HEAD' ? 'opacity-40 cursor-not-allowed' : ''
                     }`}
-                    disabled={loading || httpMethod === 'GET'}
-                    placeholder={httpMethod === 'GET' ? 'Indisponível em requisições GET' : '{"key": "value"}'}
+                    disabled={loading || httpMethod === 'GET' || httpMethod === 'HEAD'}
+                    placeholder={httpMethod === 'GET' || httpMethod === 'HEAD' ? `Indisponível em requisições ${httpMethod}` : '{"key": "value"}'}
                   />
                 </div>
               </div>

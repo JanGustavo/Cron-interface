@@ -117,7 +117,19 @@ export const useJobsStore = create<JobsState>((set, get) => ({
   addJob: async (jobData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.post('/v1/jobs', jobData);
+      const payload = {
+        name: jobData.name,
+        schedule: jobData.schedule,
+        timezone: jobData.timezone,
+        url: jobData.url,
+        http_method: jobData.httpMethod,
+        headers: jobData.headers,
+        payload: jobData.payload,
+        webhook_alert_url: jobData.webhookAlertUrl || null,
+        next_job_id: jobData.nextJobId || null,
+        tags: jobData.tags,
+      };
+      const response = await api.post('/v1/jobs', payload);
       const newJob = response.data as Job;
       const mappedJob = {
         ...newJob,

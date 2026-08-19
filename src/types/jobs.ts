@@ -20,7 +20,7 @@ export interface Job {
   schedule: string; // e.g., "* * * * *" (cron) or "every:15m" (interval)
   timezone: string; // e.g., "UTC", "America/Sao_Paulo"
   url: string;
-  httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD';
   headers?: Record<string, string>;
   payload?: Record<string, unknown> | string;
   status: JobStatus;

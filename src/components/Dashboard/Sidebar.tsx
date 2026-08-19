@@ -8,6 +8,8 @@ export const Sidebar: React.FC = () => {
   const { user, logout } = useAuthStore();
   const { isInstallable, installApp } = usePWAInstall();
 
+  const isPro = !!(user?.limits?.alertsWebhooksEnabled || user?.limits?.workflowsEnabled);
+
   const navItems = [
     {
       id: 'dashboard',
@@ -86,9 +88,19 @@ export const Sidebar: React.FC = () => {
               <img src="/logo.svg" alt="Logo CronFlow" className="block w-full h-full object-contain p-1" />
             </div>
             {sidebarOpen && (
-              <span className="font-extrabold text-lg tracking-wider text-gradient-cyber select-none transition-opacity duration-200 ease-out group-hover:opacity-95">
-                CRONFLOW
-              </span>
+              <div className="flex flex-col select-none">
+                <span className="font-extrabold text-lg tracking-wider text-gradient-cyber transition-opacity duration-200 ease-out group-hover:opacity-95">
+                  CRONFLOW
+                </span>
+                {isPro && (
+                  <span
+                    className="self-start text-[8px] font-black uppercase tracking-widest bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 bg-[length:200%_auto] bg-clip-text text-transparent animate-[shimmer_2.5s_linear_infinite]"
+                    title="Plano PRO Ativo ✨"
+                  >
+                    PRO Version 💎
+                  </span>
+                )}
+              </div>
             )}
           </button>
           
@@ -170,16 +182,20 @@ export const Sidebar: React.FC = () => {
       {/* Bottom User / Logout Section */}
       <div className="p-3 border-t border-indigo-950/30">
         {sidebarOpen ? (
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-indigo-950/20 border border-indigo-950/30">
+          <div className={`flex items-center justify-between p-2.5 rounded-xl bg-indigo-950/20 border transition-all ${
+            isPro 
+              ? 'border-transparent pro-border-shimmer shadow-[0_0_15px_rgba(244,63,94,0.06)]' 
+              : 'border-indigo-950/30'
+          }`}>
             <div className="flex flex-col min-w-0">
               <span className="text-xs text-slate-500 truncate">Autenticado como</span>
-              <span className="text-xs font-medium text-slate-300 truncate">
+              <span className="text-xs font-semibold text-slate-350 truncate">
                 {user?.email || 'admin@cronflow.sh'}
               </span>
             </div>
             <button
               onClick={logout}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-950/20 transition-colors flex-shrink-0"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-950/20 transition-colors flex-shrink-0 cursor-pointer"
               title="Sair"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -190,7 +206,11 @@ export const Sidebar: React.FC = () => {
         ) : (
           <button
             onClick={logout}
-            className="w-full flex items-center justify-center py-3 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-950/20 border border-transparent transition-colors"
+            className={`w-full flex items-center justify-center py-3 rounded-xl border transition-all ${
+              isPro 
+                ? 'border-transparent pro-border-shimmer text-slate-400 hover:text-red-400 hover:bg-red-950/20' 
+                : 'text-slate-500 hover:text-red-400 hover:bg-red-950/20 border-transparent'
+            }`}
             title="Sair"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

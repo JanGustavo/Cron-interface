@@ -26,6 +26,7 @@ export const TopNav: React.FC = () => {
   const userEmail = user?.email || 'admin@cronflow.sh';
   const userHandle = userEmail.split('@')[0] || 'cronflow';
   const avatarLabel = userHandle.slice(0, 2).toUpperCase();
+  const isPro = !!(user?.limits?.alertsWebhooksEnabled || user?.limits?.workflowsEnabled);
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -86,7 +87,11 @@ export const TopNav: React.FC = () => {
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-950/30 border border-indigo-950/40 transition-colors"
+          className={`p-2 rounded-xl transition-colors border ${
+            isPro
+              ? 'pro-border-shimmer border-transparent text-yellow-400 hover:text-amber-300 hover:bg-indigo-950/30'
+              : 'text-slate-400 hover:text-white hover:bg-indigo-950/30 border-indigo-950/40'
+          }`}
           title={theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
         >
           {theme === 'dark' ? (
@@ -104,13 +109,26 @@ export const TopNav: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/30 border border-indigo-950/40 transition-all select-none"
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium bg-indigo-950/20 hover:bg-indigo-950/30 border transition-all select-none ${
+              isPro
+                ? 'border-transparent pro-border-shimmer'
+                : 'border-indigo-950/40 text-slate-300 hover:text-white'
+            }`}
           >
-            <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={`w-4 h-4 ${isPro ? 'text-yellow-400' : 'text-indigo-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            <span className="max-w-[120px] truncate">{currentProjectName}</span>
-            <svg className={`w-4 h-4 text-slate-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {isPro ? (
+              <span
+                className="max-w-[120px] truncate bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+                style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
+              >
+                {currentProjectName}
+              </span>
+            ) : (
+              <span className="max-w-[120px] truncate">{currentProjectName}</span>
+            )}
+            <svg className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''} ${isPro ? 'text-violet-400' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -162,12 +180,39 @@ export const TopNav: React.FC = () => {
 
         {/* Profile Info Indicator */}
         <div className="flex items-center gap-3 border-l border-indigo-950/40 pl-4 select-none">
-          <span className="hidden md:inline text-xs font-semibold text-slate-350 max-w-[120px] truncate">
-            {userHandle}
-          </span>
-          <div className="w-8.5 h-8.5 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md border border-indigo-400/20">
-            {avatarLabel}
-          </div>
+          {/* Username — dourado animado para PRO, slate padrão para Free */}
+          {isPro ? (
+            <span
+              className="hidden md:inline text-xs font-bold max-w-[120px] truncate bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+              style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
+              title={user?.currentPeriodEnd ? `Plano PRO ativo ✨ (Válido até ${new Date(user.currentPeriodEnd).toLocaleDateString('pt-BR')})` : 'Plano PRO Ativo ✨'}
+            >
+              {userHandle}
+            </span>
+          ) : (
+            <span className="hidden md:inline text-xs font-semibold text-slate-350 max-w-[120px] truncate">
+              {userHandle}
+            </span>
+          )}
+
+          {/* Avatar — contorno cyberpunk dourado/roxo para PRO */}
+          {isPro ? (
+            <div
+              className="rounded-full p-[2px] animate-[spin_4s_linear_infinite]"
+              style={{
+                background: 'conic-gradient(from 0deg, #facc15, #a855f7, #ec4899, #facc15)',
+              }}
+              title={user?.currentPeriodEnd ? `Plano PRO ativo ✨ (Válido até ${new Date(user.currentPeriodEnd).toLocaleDateString('pt-BR')})` : 'Plano PRO Ativo ✨'}
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md [animation:none]">
+                {avatarLabel}
+              </div>
+            </div>
+          ) : (
+            <div className="w-8.5 h-8.5 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md border border-indigo-400/20">
+              {avatarLabel}
+            </div>
+          )}
         </div>
 
       </div>

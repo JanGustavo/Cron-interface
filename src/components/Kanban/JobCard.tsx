@@ -1,17 +1,34 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import type { Job } from '../../types/jobs';
+import type { Job, KanbanStatus } from '../../types/jobs';
 import { translateSchedule } from '../Shared/cronTranslator';
 import { StatusBadge } from '../Dashboard/StatusBadge';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 
+const formatNextRun = (nextRunAt: string): string => {
+  if (!nextRunAt) return '—';
+  try {
+    const date = new Date(nextRunAt);
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  } catch {
+    return nextRunAt;
+  }
+};
+
 interface JobCardProps {
   job: Job;
   index: number;
+  columnId: KanbanStatus;
 }
 
-export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
+export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
   const { setActiveJob } = useJobsStore();
   const { setJobModalOpen } = useUiStore();
 
@@ -36,21 +53,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
     }
   };
 
-  const getKanbanStatusGlow = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'hover:border-emerald-500/30 hover:shadow-[0_0_15px_rgba(16,185,129,0.12)]';
-      case 'failed':
-        return 'hover:border-rose-500/30 hover:shadow-[0_0_15px_rgba(244,63,94,0.12)]';
-      case 'executing':
-        return 'hover:border-sky-500/30 hover:shadow-[0_0_15px_rgba(56,189,248,0.12)]';
-      case 'scheduled':
-        return 'hover:border-indigo-500/30 hover:shadow-[0_0_15px_rgba(99,102,241,0.12)]';
-      case 'draft':
-      default:
-        return 'hover:border-slate-500/30 hover:shadow-[0_0_15px_rgba(100,116,139,0.12)]';
-    }
-  };
+
 
   const formatSchedule = (sched: string) => {
     const translation = translateSchedule(sched);
@@ -109,13 +112,29 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
             }
           }}
           tabIndex={0}
-          className={`p-4 rounded-xl glass-panel border cursor-grab active:cursor-grabbing select-none transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/80 ${
-            snapshot.isDragging
-              ? 'scale-105 border-indigo-500/40 shadow-[0_8px_32px_rgba(99,102,241,0.25)] neon-glow-primary'
-              : (job.consecutiveFailures >= 3 || job.status === 'failing')
-                ? 'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.06)] hover:border-rose-500/50 hover:shadow-[0_0_20px_rgba(244,63,94,0.15)] bg-rose-950/5'
-                : getKanbanStatusGlow(job.kanbanStatus || 'draft')
+          className={`p-4 rounded-xl bg-[#0a0e27]/85 border cursor-grab active:cursor-grabbing select-none transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/80 ${
+            snapshot.isDragging ? 'scale-105' : ''
           }`}
+          style={{
+            ...provided.draggableProps.style,
+            borderColor: (columnId === 'draft' || job.status === 'paused' || job.status === 'failing' || job.consecutiveFailures >= 3)
+              ? 'rgba(239, 68, 68, 0.65)' // Borda vermelha forte
+              : (columnId === 'failed')
+                ? 'rgba(244, 63, 94, 0.45)' // Borda vermelha média
+                : (columnId === 'success')
+                  ? 'rgba(16, 185, 129, 0.5)' // Borda verde success
+                  : 'rgba(99, 102, 241, 0.2)', // Borda azulada padrão
+
+            boxShadow: snapshot.isDragging
+              ? '0 8px 32px rgba(99, 102, 241, 0.25), 0 0 20px rgba(99, 102, 241, 0.35)'
+              : (columnId === 'draft' || job.status === 'paused' || job.status === 'failing' || job.consecutiveFailures >= 3)
+                ? '0 4px 20px rgba(0, 0, 0, 0.5), 0 0 25px rgba(239, 68, 68, 0.35)'
+                : (columnId === 'failed')
+                  ? '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 16px rgba(244, 63, 94, 0.22)'
+                  : (columnId === 'success')
+                    ? '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 16px rgba(16, 185, 129, 0.22)'
+                    : '0 4px 15px rgba(0, 0, 0, 0.5)'
+          }}
         >
           {/* Card Title & Method */}
           <div className="flex justify-between items-start gap-2.5">
@@ -173,6 +192,13 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index }) => {
                 </svg>
                 {formatSchedule(job.schedule)}
               </div>
+              {/* Next Run Info */}
+              {job.nextRunAt && (
+                <div className="flex items-center gap-1 text-[10px] text-indigo-400 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                  <span className="font-mono">{formatNextRun(job.nextRunAt)}</span>
+                </div>
+              )}
               {/* Webhook Alert Status */}
               <div className="flex items-center gap-1 text-[9px] font-semibold mt-0.5">
                 {getWebhookAlertStatus(job)}

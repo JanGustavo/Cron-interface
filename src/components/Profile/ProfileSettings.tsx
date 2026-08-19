@@ -48,7 +48,11 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               {isProPlan ? (
-                <span className="relative inline-flex items-center gap-1 rounded-full border-2 border-[#ffd700]/50 bg-gradient-to-r from-[#856404] via-[#ffdf7e] to-[#856404] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#2d2200] shadow-[0_2px_6px_rgba(0,0,0,0.6),0_0_12px_rgba(255,215,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] transform hover:scale-105 transition-all select-none">
+                <span
+                  className="relative inline-flex items-center gap-1 rounded-full border border-purple-500/35 bg-indigo-950/40 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+                  style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)', borderImage: 'conic-gradient(from 0deg, #facc15, #a855f7, #ec4899, #facc15) 1' }}
+                  title="Plano PRO ✨"
+                >
                   👑 PRO
                 </span>
               ) : (

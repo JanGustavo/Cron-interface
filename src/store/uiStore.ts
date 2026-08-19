@@ -12,6 +12,7 @@ interface UiState {
   isImportModalOpen: boolean;
   isDocsOpen: boolean;
   isOnboardingOpen: boolean;
+  isPlansModalOpen: boolean;
   selectedLogId: string | null;
   toast: { message: string; variant: ToastVariant } | null;
 
@@ -22,11 +23,12 @@ interface UiState {
   setSidebarOpen: (isOpen: boolean) => void;
   setActiveTab: (tab: string) => void;
   setJobModalOpen: (isOpen: boolean) => void;
-  setLogModalOpen: (isOpen: boolean, logId?: string | null) => void;
+  setLogModalOpen: (isLogModalOpen: boolean, logId?: string | null) => void;
   setCreateModalOpen: (isOpen: boolean) => void;
   setImportModalOpen: (isOpen: boolean) => void;
   setDocsOpen: (isOpen: boolean) => void;
   setOnboardingOpen: (isOpen: boolean) => void;
+  setPlansModalOpen: (isOpen: boolean) => void;
   showToast: (message: string, variant?: ToastVariant) => void;
   clearToast: () => void;
 }
@@ -41,6 +43,7 @@ export const useUiStore = create<UiState>((set) => ({
   isImportModalOpen: false,
   isDocsOpen: false,
   isOnboardingOpen: false,
+  isPlansModalOpen: false,
   selectedLogId: null,
   toast: null,
 
@@ -83,6 +86,8 @@ export const useUiStore = create<UiState>((set) => ({
   setDocsOpen: (isDocsOpen) => set({ isDocsOpen }),
 
   setOnboardingOpen: (isOnboardingOpen) => set({ isOnboardingOpen }),
+
+  setPlansModalOpen: (isPlansModalOpen) => set({ isPlansModalOpen }),
 
   showToast: (message, variant = 'info') =>
     set({ toast: { message, variant } }),
