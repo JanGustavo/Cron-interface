@@ -83,29 +83,34 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 		setConfettis(newConfetti);
 	}, []);
 
+	const [customValue, setCustomValue] = useState('');
+	const [activeTab, setActiveTab] = useState<'suggested' | 'custom'>('suggested');
+
 	const loadValores = useCallback(async () => {
 		setLoadingValores(true);
 		try {
 			const res = await api.get('/v1/pix/valores');
 			const data = res.data as SugestaoValor[];
 			setValores(data);
-			if (data.length > 1) {
-				setCurrentValor(data[1].valor);
+			if (data.length > 0) {
+				setCurrentValor(data[0].valor);
 			}
 		} catch (err) {
 			console.error('Failed to load PIX values, using fallback', err);
 			setValores([
-				{ label: '☕ Café', valor: '0.50' },
-				{ label: '🍕 Apoio', valor: '1.00' },
-				{ label: '🚀 Top', valor: '2.00' }
+				{ label: '☕ Café', valor: '5.00' },
+				{ label: '🍺 Breja', valor: '10.00' },
+				{ label: '🍕 Pizza', valor: '20.00' }
 			]);
-			setCurrentValor('1.00');
+			setCurrentValor('5.00');
 		} finally {
 			setLoadingValores(false);
 		}
 	}, []);
 
 	const loadQR = useCallback(async (valor: string) => {
+		const num = parseFloat(valor);
+		if (isNaN(num) || num <= 0) return;
 		setLoadingQR(true);
 		try {
 			const res = await api.get(`/v1/pix/qr?valor=${valor}`);
@@ -243,40 +248,100 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 						</p>
 					</div>
 
-					{/* Valores sugeridos */}
-					<div className="grid grid-cols-3 gap-2.5 mb-6">
-						{loadingValores ? (
-							<div className="col-span-3 py-4 text-xs text-slate-500 border border-dashed border-indigo-950/40 rounded-xl bg-indigo-950/5">
-								Carregando valores...
-							</div>
-						) : (
-							valores.map((item) => {
-								const isSelected = item.valor === currentValor;
-								return (
-									<button
-										key={item.valor}
-										onClick={() => setCurrentValor(item.valor)}
-										className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${
-											isSelected
-												? 'bg-indigo-650/20 border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.2)]'
-												: 'bg-[#080a17]/80 hover:bg-indigo-955/20 border-indigo-950/80 hover:border-indigo-900/60'
-										}`}
-									>
-										<span className="text-lg">{item.label.split(' ')[0]}</span>
-										<span className="text-[10px] text-slate-450 mt-1 uppercase font-semibold">
-											{item.label.split(' ').slice(1).join(' ') || 'Apoio'}
-										</span>
-										<span className="text-xs font-bold text-slate-200 mt-0.5">
-											{Number(item.valor).toLocaleString('pt-BR', {
-												style: 'currency',
-												currency: 'BRL'
-											})}
-										</span>
-									</button>
-								);
-							})
-						)}
+					{/* Tabs Seletoras */}
+					<div className="flex border-b border-indigo-950/20 mb-5 font-mono text-[10px] uppercase font-bold tracking-wider">
+						<button
+							onClick={() => {
+								setActiveTab('suggested');
+								setQrB64('');
+								setPayload('');
+								setCurrentValor('5.00');
+							}}
+							className={`flex-1 pb-2 border-b-2 transition-colors cursor-pointer ${
+								activeTab === 'suggested' ? 'text-indigo-400 border-indigo-500' : 'text-slate-500 hover:text-slate-400 border-transparent'
+							}`}
+						>
+							Sugeridos
+						</button>
+						<button
+							onClick={() => {
+								setActiveTab('custom');
+								setQrB64('');
+								setPayload('');
+								setCurrentValor('');
+							}}
+							className={`flex-1 pb-2 border-b-2 transition-colors cursor-pointer ${
+								activeTab === 'custom' ? 'text-indigo-400 border-indigo-500' : 'text-slate-500 hover:text-slate-400 border-transparent'
+							}`}
+						>
+							Outro Valor
+						</button>
 					</div>
+
+					{/* Layout dos valores sugeridos */}
+					{activeTab === 'suggested' ? (
+						<div className="grid grid-cols-3 gap-2.5 mb-5 animate-in fade-in duration-200">
+							{loadingValores ? (
+								<div className="col-span-3 py-4 text-xs text-slate-500 border border-dashed border-indigo-950/40 rounded-xl bg-indigo-950/5">
+									Carregando valores...
+								</div>
+							) : (
+								valores.map((item) => {
+									const isSelected = item.valor === currentValor;
+									return (
+										<button
+											key={item.valor}
+											onClick={() => setCurrentValor(item.valor)}
+											className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${
+												isSelected
+													? 'bg-indigo-650/20 border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.2)]'
+													: 'bg-[#080a17]/80 hover:bg-indigo-955/20 border-indigo-950/80 hover:border-indigo-900/60'
+											}`}
+										>
+											<span className="text-lg">{item.label.split(' ')[0]}</span>
+											<span className="text-[10px] text-slate-450 mt-1 uppercase font-semibold">
+												{item.label.split(' ').slice(1).join(' ') || 'Apoio'}
+											</span>
+											<span className="text-xs font-bold text-slate-200 mt-0.5">
+												{Number(item.valor).toLocaleString('pt-BR', {
+													style: 'currency',
+													currency: 'BRL'
+												})}
+											</span>
+										</button>
+									);
+								})
+							)}
+						</div>
+					) : (
+						/* Layout de valor personalizado */
+						<div className="space-y-2 mb-5 text-left animate-in fade-in duration-200">
+							<label className="text-[9px] uppercase font-bold text-slate-500 tracking-wider block font-mono">
+								Digite o valor desejado (BRL)
+							</label>
+							<div className="relative">
+								<span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-450 font-mono">
+									R$
+								</span>
+								<input
+									type="text"
+									placeholder="0,00"
+									value={customValue}
+									onChange={(e) => {
+										// Apenas números e separadores de decimais básicos
+										const clean = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
+										setCustomValue(clean);
+										// Agenda atualização ao parar de digitar
+										const parsed = parseFloat(clean);
+										if (!isNaN(parsed) && parsed > 0) {
+											setCurrentValor(parsed.toFixed(2));
+										}
+									}}
+									className="w-full pl-10 pr-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs font-bold text-slate-200 placeholder-slate-650 focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 font-mono transition-all"
+								/>
+							</div>
+						</div>
+					)}
 
 					{/* QR Code */}
 					<div className="flex items-center justify-center min-h-[170px] mb-5">
