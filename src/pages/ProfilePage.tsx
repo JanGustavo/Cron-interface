@@ -139,11 +139,12 @@ export const ProfilePage: React.FC = () => {
   const fetchAPIKeys = useCallback(async () => {
     setLoadingKeys(true);
     try {
-      const res = await api.get('/v1/keys');
+      const res = await api.get('/v1/keys', { timeout: 10000 });
       setApiKeys(res.data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch API keys', err);
-      showToast('Falha ao listar chaves de API.', 'error');
+      const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
+      showToast(isTimeout ? 'Tempo limite excedido ao listar chaves de API.' : 'Falha ao listar chaves de API.', 'error');
     } finally {
       setLoadingKeys(false);
     }
@@ -733,12 +734,19 @@ export const ProfilePage: React.FC = () => {
                     ) : apiKeys.length === 0 ? (
                       <div className="text-center py-12 px-6 bg-[#05070e]/20 border border-indigo-950/30 rounded-2xl flex flex-col items-center justify-center">
                         <div className="w-10 h-10 rounded-full bg-indigo-950/30 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-3">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                           </svg>
                         </div>
-                        <h5 className="text-[11px] font-bold text-slate-300">Sem chaves ativas</h5>
-                        <p className="text-[10px] text-slate-500 mt-1 max-w-[220px] leading-normal">Gere uma chave de API para integrar o CronFlow com seus scripts locais ou outros serviços.</p>
+                        <h5 className="text-[11px] font-bold text-slate-300">Nenhuma chave criada</h5>
+                        <p className="text-[10px] text-slate-500 mt-1 max-w-[280px] leading-normal">Gere uma chave de API para integrar o CronFlow com seus scripts locais ou outros serviços. O segredo completo só será exibido uma vez após a criação.</p>
+                        <button
+                          type="button"
+                          onClick={handleCreateAPIKey}
+                          className="mt-4 px-4 py-2 text-[10px] uppercase font-black tracking-wider text-white bg-indigo-650 hover:bg-indigo-600 rounded-xl transition-all shadow-md cursor-pointer"
+                        >
+                          Criar primeira chave
+                        </button>
                       </div>
                     ) : (
                       apiKeys.map((key) => (
@@ -1104,30 +1112,30 @@ export const ProfilePage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCreateJob}
-                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-indigo-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/50 rounded-xl border border-indigo-500/15 transition-all cursor-pointer"
+                className="py-2.5 text-[9px] font-black tracking-wider text-indigo-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/50 rounded-xl border border-indigo-500/15 transition-all cursor-pointer"
               >
-                Novo Job
+                Novo job
               </button>
               <button
                 type="button"
                 onClick={handleOpenLogs}
-                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-cyan-300 hover:text-white bg-cyan-950/20 hover:bg-cyan-950/50 rounded-xl border border-cyan-500/15 transition-all cursor-pointer"
+                className="py-2.5 text-[9px] font-black tracking-wider text-cyan-300 hover:text-white bg-cyan-950/20 hover:bg-cyan-950/50 rounded-xl border border-cyan-500/15 transition-all cursor-pointer"
               >
                 Logs
               </button>
               <button
                 type="button"
                 onClick={handleOpenDocs}
-                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-violet-300 hover:text-white bg-violet-950/20 hover:bg-violet-950/50 rounded-xl border border-violet-500/15 transition-all cursor-pointer"
+                className="py-2.5 text-[9px] font-black tracking-wider text-violet-300 hover:text-white bg-violet-950/20 hover:bg-violet-950/50 rounded-xl border border-violet-500/15 transition-all cursor-pointer"
               >
                 Docs
               </button>
               <button
                 type="button"
                 onClick={handleOpenSupport}
-                className="py-2.5 text-[9px] font-black uppercase tracking-wider text-emerald-300 hover:text-white bg-emerald-950/20 hover:bg-emerald-950/50 rounded-xl border border-emerald-500/15 transition-all cursor-pointer col-span-1 sm:col-span-3"
+                className="py-2.5 text-[9px] font-black tracking-wider text-emerald-300 hover:text-white bg-emerald-950/20 hover:bg-emerald-950/50 rounded-xl border border-emerald-500/15 transition-all cursor-pointer col-span-1 sm:col-span-3"
               >
-                Solicitar Suporte (Fale Conosco) ✉
+                Solicitar suporte (Fale Conosco) ✉
               </button>
             </div>
           </div>
@@ -1376,11 +1384,11 @@ export const ProfilePage: React.FC = () => {
                         </svg>
                         <span>Suporte prioritário por e-mail</span>
                       </li>
-                      <li className="flex items-start gap-2.5 text-slate-500">
-                        <svg className="w-4 h-4 text-slate-600 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <li className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Exportação de logs CSV/JSON <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-400/10 text-amber-400/70 border border-amber-400/20 rounded ml-1">em breve</span></span>
+                        <span>Exportação de logs CSV/JSON</span>
                       </li>
                     </ul>
                   </div>

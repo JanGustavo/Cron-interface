@@ -48,7 +48,11 @@ export const OnboardingSteps: React.FC<OnboardingStepsProps> = ({
         {onboardingSteps.map((step, index) => (
           <div
             key={step.id}
-            className="flex items-center justify-between p-3.5 rounded-2xl border border-indigo-950/45 bg-slate-950/30 transition-all hover:bg-slate-900/40 hover:border-indigo-500/25"
+            className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
+              step.done
+                ? 'border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10'
+                : 'border-indigo-950/45 bg-slate-950/30 hover:bg-slate-900/40 hover:border-indigo-500/25'
+            }`}
           >
             <div className="flex items-start gap-3.5 min-w-0">
               <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-black border ${
@@ -59,13 +63,20 @@ export const OnboardingSteps: React.FC<OnboardingStepsProps> = ({
                 {step.done ? '✓' : index + 1}
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-200 truncate">{step.title}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-bold text-slate-200 truncate">{step.title}</p>
+                  {step.done ? (
+                    <span className="px-1.5 py-0.5 rounded text-[7px] font-extrabold uppercase bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 tracking-wider">Concluído</span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 rounded text-[7px] font-extrabold uppercase bg-amber-500/10 border border-amber-500/25 text-amber-400 tracking-wider">Pendente</span>
+                  )}
+                </div>
                 <p className="text-[10px] text-slate-500 truncate mt-0.5">{step.detail}</p>
               </div>
             </div>
 
             {step.done ? (
-              <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 shrink-0 select-none">OK</span>
+              <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 shrink-0 select-none">✓ OK</span>
             ) : step.action ? (
               <button
                 type="button"

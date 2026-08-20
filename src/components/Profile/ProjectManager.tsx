@@ -92,9 +92,9 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
           {isProPlan ? (
             <button
               onClick={() => setCreateProjectOpen(!createProjectOpen)}
-              className="text-[9px] font-extrabold uppercase tracking-wider text-indigo-400 hover:text-indigo-200 transition-colors cursor-pointer"
+              className="text-[9px] font-extrabold tracking-wider text-indigo-400 hover:text-indigo-200 transition-colors cursor-pointer"
             >
-              {createProjectOpen ? 'Cancelar' : '+ Novo Projeto'}
+              {createProjectOpen ? 'Cancelar' : '+ Novo projeto'}
             </button>
           ) : (
             <span className="text-[8px] font-extrabold uppercase tracking-wider text-rose-500/80 bg-rose-950/20 px-2 py-0.5 rounded border border-rose-900/30 flex items-center gap-1 select-none">

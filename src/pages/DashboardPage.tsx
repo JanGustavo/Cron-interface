@@ -309,12 +309,26 @@ export const DashboardPage: React.FC = () => {
     });
 
     const intervals = Array.from({ length: config.count }).map((_, idx) => {
+      // Cria a data correspondente
       const d = new Date(now.getTime() - (config.count - 1 - idx) * config.intervalMs);
+      
+      // Normaliza a data para evitar acumulo por frações de segundos ou minutos
+      if (chartFilter === '30d' || chartFilter === '7d') {
+        d.setHours(0, 0, 0, 0); // Alinha no começo do dia correspondente
+      } else if (chartFilter === '3d' || chartFilter === '24h') {
+        d.setMinutes(0, 0, 0); // Alinha no começo da hora correspondente
+      }
+      
       const label = config.labelFormat(d);
+      
+      // Define a janela de tempo de forma contígua
+      const end = d.getTime();
+      const start = end - config.intervalMs;
+      
       return {
         label,
-        start: d.getTime() - config.intervalMs,
-        end: d.getTime(),
+        start,
+        end,
         volume: 0,
         successCount: 0,
         failedJobs: [] as string[],
@@ -324,7 +338,8 @@ export const DashboardPage: React.FC = () => {
 
     filteredLogs.forEach((log) => {
       const logTime = new Date(log.triggeredAt).getTime();
-      const target = intervals.find((int) => logTime >= int.start && logTime <= int.end);
+      // Mapeia no intervalo correto com limite inclusivo
+      const target = intervals.find((int) => logTime > int.start && logTime <= int.end);
       if (target) {
         target.volume += 1;
         if (log.status === 'success') {

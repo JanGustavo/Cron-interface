@@ -20,11 +20,18 @@ export const Logs: React.FC = () => {
   const [dbLogs, setDbLogs] = useState<LogEntry[]>([]);
   const [totalLogs, setTotalLogs] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [correlationId, setCorrelationId] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let active = true;
     const fetchAllLogs = async () => {
       setLoading(true);
+      setError(null);
+      setCorrelationId(null);
+      const corrId = `ERR-LOG-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
       try {
         const params = new URLSearchParams();
         params.append('page', filter.page.toString());
@@ -42,23 +49,32 @@ export const Logs: React.FC = () => {
           params.append('end_date', filter.endDate);
         }
 
-        const res = await api.get(`/v1/executions?${params.toString()}`);
+        const res = await api.get(`/v1/executions?${params.toString()}`, { timeout: 10000 });
         const payload = (res.data?.data || []) as LogEntry[];
         const total = res.data?.total || 0;
         
         if (active) {
           setDbLogs(payload);
           setTotalLogs(total);
+          setError(null);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Erro ao carregar auditoria global de logs", err);
+        if (active) {
+          setCorrelationId(corrId);
+          if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+            setError("O servidor demorou muito para responder (Tempo limite excedido).");
+          } else {
+            setError(err.response?.data?.message || err.message || "Erro de rede ou comunicação com o servidor.");
+          }
+        }
       } finally {
         if (active) setLoading(false);
       }
     };
     fetchAllLogs();
     return () => { active = false; };
-  }, [filter, jobs]);
+  }, [filter, jobs, retryCount]);
 
   const handleReset = () => {
     setFilter(INITIAL_FILTER);
@@ -117,9 +133,32 @@ export const Logs: React.FC = () => {
       />
 
       {/* Glassmorphism Log List Table */}
-      {loading && dbLogs.length === 0 ? (
-        <div className="p-8 rounded-2xl glass-panel border border-indigo-950/40 text-center text-slate-400 animate-pulse">
-          Carregando histórico de auditoria em tempo real...
+      {loading ? (
+        <div className="p-8 rounded-2xl glass-panel border border-indigo-950/40 text-center text-slate-400 animate-pulse flex flex-col items-center justify-center space-y-4">
+          <svg className="animate-spin h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <span className="text-sm font-medium">Carregando histórico de auditoria em tempo real...</span>
+        </div>
+      ) : error ? (
+        <div className="p-8 rounded-2xl glass-panel border border-rose-950/40 bg-rose-950/5 text-center text-slate-200 flex flex-col items-center justify-center space-y-4">
+          <svg className="h-10 w-10 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-rose-400">Falha na telemetria</h3>
+            <p className="text-sm text-slate-400">{error}</p>
+            {correlationId && (
+              <p className="text-xs text-slate-500 font-mono">Código de correlação: {correlationId}</p>
+            )}
+          </div>
+          <button
+            onClick={() => setRetryCount(prev => prev + 1)}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs uppercase font-bold transition-all duration-200"
+          >
+            Tentar novamente
+          </button>
         </div>
       ) : (
         <LogList

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { LogEntry, LogFilter } from '../../types/logs';
 import { useUiStore } from '../../store/uiStore';
+import { useEntitlements } from '../../hooks/useEntitlements';
 import api from '../../services/api';
 
 interface LogExportProps {
@@ -62,9 +63,19 @@ function escapeCSV(value: unknown): string {
 }
 
 export const LogExport: React.FC<LogExportProps> = ({ filter }) => {
-  const { showToast } = useUiStore();
+  const { showToast, setPlansModalOpen } = useUiStore();
+  const { isPro } = useEntitlements();
   const [exporting, setExporting] = useState(false);
   const [exportSummary, setExportSummary] = useState('Todos os registros do filtro atual');
+
+  const checkProAndExecute = (action: () => void) => {
+    if (!isPro) {
+      showToast('A exportação de logs é um recurso exclusivo do Plano PRO. Faça o upgrade!', 'error');
+      setPlansModalOpen(true);
+      return;
+    }
+    action();
+  };
 
   const handleExportCSV = async () => {
     if (exporting) return;
@@ -221,7 +232,7 @@ export const LogExport: React.FC<LogExportProps> = ({ filter }) => {
 
         <div className="flex bg-[#0a0d1d]/80 border border-indigo-950/60 rounded-xl overflow-hidden p-1 gap-1">
           <button
-            onClick={handleCopyToClipboard}
+            onClick={() => checkProAndExecute(handleCopyToClipboard)}
             disabled={exporting}
             title="Copiar todos os registros para Área de Transferência"
             className={`${btnBase} text-slate-400 hover:text-indigo-400 hover:bg-indigo-950/30`}
@@ -248,7 +259,7 @@ export const LogExport: React.FC<LogExportProps> = ({ filter }) => {
           </button>
 
           <button
-            onClick={handleExportJSON}
+            onClick={() => checkProAndExecute(handleExportJSON)}
             disabled={exporting}
             title="Exportar todos os registros como JSON"
             className={`${btnBase} text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/20`}
@@ -265,7 +276,7 @@ export const LogExport: React.FC<LogExportProps> = ({ filter }) => {
           </button>
 
           <button
-            onClick={handleExportCSV}
+            onClick={() => checkProAndExecute(handleExportCSV)}
             disabled={exporting}
             title="Exportar todos os registros como CSV"
             className={`${btnBase} text-slate-400 hover:text-amber-400 hover:bg-amber-950/20`}

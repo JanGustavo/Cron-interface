@@ -291,20 +291,15 @@ export const useJobsStore = create<JobsState>((set, get) => ({
 
     try {
       if (newKanbanStatus === 'executing') {
-        set((state) => ({
-          jobs: state.jobs.map((job) =>
-            job.id === jobId ? { ...job, status: 'active', kanbanStatus: 'executing' } : job
-          ),
-          activeJob:
-            state.activeJob?.id === jobId
-              ? { ...state.activeJob, status: 'active', kanbanStatus: 'executing' }
-              : state.activeJob,
-        }));
-
+        // Optimistic update for executing is fine as it triggers immediately,
+        // but let's run patch and trigger first
         await api.patch(`/v1/jobs/${jobId}`, { status: 'active' });
         await get().triggerJob(jobId);
         return;
       }
+
+      // Sync with API first (before changing state)
+      await api.patch(`/v1/jobs/${jobId}`, { status: backendStatus });
 
       const resetFields = newKanbanStatus === 'scheduled'
         ? { consecutiveFailures: 0, lastRunAt: null, lastRunStatus: null }
@@ -337,10 +332,9 @@ export const useJobsStore = create<JobsState>((set, get) => ({
         delete executingJobs[jobId];
       }
       set({ executingJobs });
-
-      await api.patch(`/v1/jobs/${jobId}`, { status: backendStatus });
     } catch (err) {
       console.error(err);
+      // Force rollback explicitly to be absolutely sure
       set({
         jobs: previousJobs,
         activeJob: previousActiveJob,
@@ -348,6 +342,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       const errResponse = err as ErrorWithResponse;
       const errMsg = errResponse.response?.data?.error || errResponse.response?.data?.reason || 'Erro ao mover tarefa no backend';
       set({ error: errMsg });
+      throw new Error(errMsg);
     }
   },
 }));

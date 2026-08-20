@@ -104,7 +104,13 @@ export const KanbanBoard: React.FC = () => {
 
     if (!confirmed.isConfirmed) return;
 
-    await moveJobKanbanStatus(draggableId, nextStatus);
+    try {
+      showToast('Sincronizando alteração com o servidor...', 'info');
+      await moveJobKanbanStatus(draggableId, nextStatus);
+      showToast(isActivating ? 'Tarefa ativada e agendada! 🚀' : 'Tarefa pausada com sucesso.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Falha ao atualizar o estado da tarefa no servidor.', 'error');
+    }
   };
 
   // Filter jobs based on search term and advanced parameters
