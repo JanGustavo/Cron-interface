@@ -1102,6 +1102,21 @@ export const ProfilePage: React.FC = () => {
             </div>
           )}
 
+          {!isInstallable && !isInstalled && (
+            <div className="rounded-3xl border border-indigo-950/45 bg-slate-950/20 p-6 space-y-3 text-left">
+              <div>
+                <h4 className="text-sm font-bold text-slate-350 flex items-center gap-2">
+                  <span>Instalar CronFlow App</span>
+                  <span className="text-[8px] font-mono px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full font-bold uppercase tracking-wider">Manual</span>
+                </h4>
+                <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                  O atalho automático de instalação PWA não está ativo neste navegador. 
+                  Para instalar manualmente, use o menu do navegador (três pontos no Chrome/Edge ou botão Compartilhar no Safari) e selecione <strong>"Instalar Aplicativo"</strong> ou <strong>"Adicionar à Tela de Início"</strong>.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* QUICK LINKS GRID */}
           <div className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-4 text-left">
             <div>

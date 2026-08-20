@@ -16,37 +16,41 @@ const EXPORT_WARNING_THRESHOLD = 1000;
 async function fetchAllForExport(
   filter: LogFilter
 ): Promise<{ logs: LogEntry[]; total: number }> {
-  const allLogs: LogEntry[] = [];
-  let page = 1;
-  let total = 0;
+  const params = new URLSearchParams();
+  params.append('page', '1');
+  params.append('limit', String(EXPORT_PAGE_SIZE));
 
-  while (true) {
-    const params = new URLSearchParams();
-    params.append('page', String(page));
-    params.append('limit', String(EXPORT_PAGE_SIZE));
+  if (filter.searchQuery) params.append('search', filter.searchQuery);
+  if (filter.status && filter.status.length > 0) {
+    params.append('status', filter.status[0]);
+  }
+  if (filter.startDate) params.append('start_date', filter.startDate);
+  if (filter.endDate) params.append('end_date', filter.endDate);
 
-    if (filter.searchQuery) params.append('search', filter.searchQuery);
-    if (filter.status && filter.status.length > 0) {
-      params.append('status', filter.status[0]);
-    }
-    if (filter.startDate) params.append('start_date', filter.startDate);
-    if (filter.endDate) params.append('end_date', filter.endDate);
+  const firstRes = await api.get(`/v1/executions?${params.toString()}`, { timeout: 15000 });
+  const firstRows = (firstRes.data?.data || []) as LogEntry[];
+  const total = Number(firstRes.data?.total ?? 0);
 
-    const res = await api.get(`/v1/executions?${params.toString()}`);
-    const rows = (res.data?.data || []) as LogEntry[];
-    total = Number(res.data?.total ?? 0);
+  if (total <= firstRows.length || !firstRows.length) {
+    return { logs: firstRows, total };
+  }
 
-    if (!rows.length) {
-      break;
-    }
+  const allLogs: LogEntry[] = [...firstRows];
+  const totalPages = Math.ceil(total / EXPORT_PAGE_SIZE);
 
+  const promises = [];
+  for (let p = 2; p <= totalPages; p++) {
+    const pageParams = new URLSearchParams(params);
+    pageParams.set('page', String(p));
+    promises.push(
+      api.get(`/v1/executions?${pageParams.toString()}`, { timeout: 15000 })
+        .then(res => (res.data?.data || []) as LogEntry[])
+    );
+  }
+
+  const results = await Promise.all(promises);
+  for (const rows of results) {
     allLogs.push(...rows);
-
-    if (allLogs.length >= total || rows.length < EXPORT_PAGE_SIZE) {
-      break;
-    }
-
-    page += 1;
   }
 
   return { logs: allLogs, total };
