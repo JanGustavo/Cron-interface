@@ -9,6 +9,10 @@ interface OnboardingStepItem {
     label: string;
     onClick: () => void;
   };
+  skipAction?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 interface OnboardingStepsProps {
@@ -77,15 +81,28 @@ export const OnboardingSteps: React.FC<OnboardingStepsProps> = ({
 
             {step.done ? (
               <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 shrink-0 select-none">✓ OK</span>
-            ) : step.action ? (
-              <button
-                type="button"
-                onClick={step.action.onClick}
-                className="px-2.5 py-1 text-[9px] uppercase font-black tracking-wider text-indigo-400 hover:text-white bg-indigo-950/40 hover:bg-indigo-950/70 rounded-lg border border-indigo-900/30 transition-all cursor-pointer shrink-0"
-              >
-                {step.action.label}
-              </button>
-            ) : null}
+            ) : (
+              <div className="flex gap-1.5 shrink-0">
+                {step.skipAction && (
+                  <button
+                    type="button"
+                    onClick={step.skipAction.onClick}
+                    className="px-2.5 py-1 text-[9px] uppercase font-black tracking-wider text-slate-500 hover:text-white bg-slate-900/40 hover:bg-slate-900/70 rounded-lg border border-slate-800 transition-all cursor-pointer shrink-0 animate-in fade-in duration-200"
+                  >
+                    {step.skipAction.label}
+                  </button>
+                )}
+                {step.action && (
+                  <button
+                    type="button"
+                    onClick={step.action.onClick}
+                    className="px-2.5 py-1 text-[9px] uppercase font-black tracking-wider text-indigo-400 hover:text-white bg-indigo-950/40 hover:bg-indigo-950/70 rounded-lg border border-indigo-900/30 transition-all cursor-pointer shrink-0"
+                  >
+                    {step.action.label}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>

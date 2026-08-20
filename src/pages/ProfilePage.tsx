@@ -107,6 +107,7 @@ export const ProfilePage: React.FC = () => {
   const [globalWebhook, setGlobalWebhook] = useState(() => localStorage.getItem('cf_global_webhook') || '');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const webhookConfigured = globalWebhook.trim().length > 0;
+  const [webhookSkipped, setWebhookSkipped] = useState(() => localStorage.getItem('cf_webhook_skipped') === 'true');
 
   // Email Preferences States
   const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(false);
@@ -269,6 +270,8 @@ export const ProfilePage: React.FC = () => {
   const handleUpdateWebhook = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('cf_global_webhook', globalWebhook.trim());
+    localStorage.removeItem('cf_webhook_skipped');
+    setWebhookSkipped(false);
     setUpdateSuccess(true);
     showToast('Webhook atualizado com sucesso.', 'success');
     setTimeout(() => setUpdateSuccess(false), 2000);
@@ -553,12 +556,24 @@ export const ProfilePage: React.FC = () => {
     {
       id: 'webhook',
       title: 'Configurar webhook',
-      done: webhookConfigured,
-      detail: webhookConfigured ? 'Notificações de falhas ativas!' : 'Receba alertas instantâneos no Discord/Slack se algum job falhar.',
+      done: webhookConfigured || webhookSkipped,
+      detail: webhookConfigured 
+        ? 'Notificações de falhas ativas!' 
+        : webhookSkipped 
+        ? 'Configuração pulada (Opcional)'
+        : '(Recomendado) Receba alertas no Discord/Slack. Opcional.',
       action: {
         label: 'Configurar',
         onClick: handleOpenWebhooks,
       },
+      skipAction: !webhookConfigured && !webhookSkipped ? {
+        label: 'Pular',
+        onClick: () => {
+          localStorage.setItem('cf_webhook_skipped', 'true');
+          setWebhookSkipped(true);
+          showToast('Webhook global ignorado (Opcional). Você pode configurá-lo depois!', 'info');
+        }
+      } : undefined
     },
     {
       id: 'manual-trigger',
