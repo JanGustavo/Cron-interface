@@ -291,7 +291,10 @@ export const CreateJobModal: React.FC = () => {
                     type="text"
                     placeholder="Ex: Sincronizar Vendas"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (errorMsg) setErrorMsg(null);
+                    }}
                     className="w-full px-3.5 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 placeholder-slate-650 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
                     disabled={loading}
                   />
@@ -315,7 +318,10 @@ export const CreateJobModal: React.FC = () => {
                     type="text"
                     placeholder="Ex: every:5m ou * * * * *"
                     value={schedule}
-                    onChange={(e) => setSchedule(e.target.value)}
+                    onChange={(e) => {
+                      setSchedule(e.target.value);
+                      if (errorMsg) setErrorMsg(null);
+                    }}
                     className="w-full px-3.5 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 placeholder-slate-650 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
                     disabled={loading}
                   />
@@ -412,7 +418,10 @@ export const CreateJobModal: React.FC = () => {
                     type="url"
                     placeholder="https://sua-api.com/v1/webhook"
                     value={url}
-                    onChange={(e) => setUrl(e.target.value)}
+                    onChange={(e) => {
+                      setUrl(e.target.value);
+                      if (errorMsg) setErrorMsg(null);
+                    }}
                     className="w-full px-3.5 py-2.5 bg-[#070913]/95 border border-indigo-950/60 rounded-xl text-slate-200 placeholder-slate-650 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all font-mono"
                     disabled={loading}
                   />
