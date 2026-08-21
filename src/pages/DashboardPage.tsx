@@ -317,7 +317,10 @@ export const DashboardPage: React.FC = () => {
       const label = config.labelFormat(d);
       
       // Define a janela de tempo de forma contígua
-      const end = d.getTime();
+      let end = d.getTime();
+      if (idx === config.count - 1) {
+        end = Math.max(end, now.getTime());
+      }
       const start = end - config.intervalMs;
       
       return {
