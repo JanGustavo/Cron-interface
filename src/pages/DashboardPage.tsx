@@ -159,30 +159,25 @@ export const DashboardPage: React.FC = () => {
       if (jobs.length === 0) return;
       setLoading(true);
       try {
-        const fetchPromises = jobs.map(async (job) => {
-          try {
-            // Fetch a larger window so 24h/7d/30d charts remain populated even for 1-minute jobs.
-            const res = await api.get(`/v1/jobs/${job.id}/executions?limit=50000`);
-            const data = (res.data || []) as LogEntry[];
-            return data.map((log) => ({
-              ...log,
-              jobName: job.name,
-              jobUrl: job.url,
-            }));
-          } catch (e) {
-            console.error(`Erro ao carregar execuções do job ${job.id}`, e);
-            return [];
-          }
+        // Fetch executions globally in a single query
+        const res = await api.get('/v1/executions?limit=50000', { timeout: 15000 });
+        const rawLogs = (res.data?.data || []) as LogEntry[];
+        
+        // Map jobName and jobUrl using the local jobs list
+        const mappedLogs = rawLogs.map((log) => {
+          const job = jobs.find((j) => j.id === log.jobId);
+          return {
+            ...log,
+            jobName: job ? job.name : 'Job Removido',
+            jobUrl: job ? job.url : '',
+          };
         });
-        const results = await Promise.all(fetchPromises);
-        const allLogs = results.flat().sort((a, b) => 
-          new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime()
-        );
+
         if (active) {
-          setAllRecentLogs(allLogs);
+          setAllRecentLogs(mappedLogs);
         }
       } catch (err) {
-        console.error(err);
+        console.error('Failed to fetch global executions for dashboard', err);
       } finally {
         if (active) setLoading(false);
       }
