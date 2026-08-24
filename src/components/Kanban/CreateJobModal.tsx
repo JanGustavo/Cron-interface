@@ -4,11 +4,12 @@ import { useUiStore } from '../../store/uiStore';
 import { translateSchedule } from '../Shared/cronTranslator';
 import { useEntitlements } from '../../hooks/useEntitlements';
 import { validateDestinationUrl } from '../../utils/urlValidator';
+import { JobPreviewModal } from './JobPreviewModal';
 
 export const CreateJobModal: React.FC = () => {
 	const { addJob, jobs } = useJobsStore();
-	const { isCreateModalOpen, setCreateModalOpen, setPlansModalOpen } = useUiStore();
-	const { alertsWebhooksEnabled, workflowsEnabled } = useEntitlements();
+	const { isCreateModalOpen, setCreateModalOpen, setPlansModalOpen, showToast } = useUiStore();
+	const { alertsWebhooksEnabled, workflowsEnabled, isPro } = useEntitlements();
 
 	const [name, setName] = useState('');
 	const [schedule, setSchedule] = useState('every:5m');
@@ -23,6 +24,7 @@ export const CreateJobModal: React.FC = () => {
 
 	const [loading, setLoading] = useState(false);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
+	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const [step, setStep] = useState(1);
 	const [showHelp, setShowHelp] = useState(false);
 	const [scheduleError, setScheduleError] = useState<string | null>(null);
@@ -587,28 +589,105 @@ export const CreateJobModal: React.FC = () => {
                 Próximo →
               </button>
             ) : (
-              <button
-                type="submit"
-                className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md neon-glow-primary flex items-center gap-2 cursor-pointer"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Criando...
-                  </>
-                ) : (
-                  'Salvar Job 🚀'
-                )}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isPro) {
+                      showToast('Revisão e Teste de Prévia em Tempo Real é um recurso exclusivo do Plano PRO. Faça upgrade!', 'info');
+                      setPlansModalOpen(true);
+                      return;
+                    }
+                    if (!name.trim()) {
+                      setErrorMsg('Preencha o Nome da tarefa para testar a prévia.');
+                      setStep(1);
+                      return;
+                    }
+                    const urlValidation = validateDestinationUrl(url);
+                    if (!urlValidation.isValid) {
+                      setErrorMsg(urlValidation.error || 'A URL de destino é inválida.');
+                      setStep(2);
+                      return;
+                    }
+                    setIsPreviewOpen(true);
+                  }}
+                  className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                    !isPro
+                      ? 'bg-slate-900/80 border border-slate-700/60 text-slate-500 opacity-60 cursor-not-allowed hover:bg-slate-900'
+                      : 'bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 text-purple-200 shadow-md cursor-pointer'
+                  }`}
+                  title={!isPro ? 'Prévia e Teste em Tempo Real é exclusivo do Plano PRO. Clique para fazer upgrade!' : 'Abrir Modal de Revisão e Teste em Tempo Real'}
+                >
+                  {!isPro ? (
+                    <>
+                      <span>🔒</span>
+                      <span>Revisar Prévia (PRO)</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>⚡</span>
+                      <span>Revisar Prévia</span>
+                      <span
+                        className="text-[7.5px] font-black uppercase tracking-widest bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+                        style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
+                      >
+                        PRO ✨
+                      </span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md neon-glow-primary flex items-center gap-2 cursor-pointer"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Criando...
+                    </>
+                  ) : (
+                    'Salvar Job 🚀'
+                  )}
+                </button>
+              </>
             )}
           </div>
         </div>
       </form>
     </div>
+
+    {/* PRO Job Preview & Test Execution Modal */}
+    <JobPreviewModal
+      isOpen={isPreviewOpen}
+      onClose={() => setIsPreviewOpen(false)}
+      jobData={{
+        name: name.trim(),
+        schedule: schedule.trim(),
+        timezone: timezone.trim(),
+        url: url.trim(),
+        httpMethod,
+        headers: (() => {
+          try { return headersText.trim() ? JSON.parse(headersText) : undefined; } catch { return undefined; }
+        })(),
+        payload: (() => {
+          try { return payloadText.trim() ? JSON.parse(payloadText) : payloadText; } catch { return payloadText; }
+        })(),
+        webhookAlertUrl: webhookAlertUrl.trim() || undefined,
+        nextJobId: nextJobId.trim() || undefined,
+        tags: tagsInput.trim() ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : undefined,
+      }}
+      onConfirmCreate={async () => {
+        setIsPreviewOpen(false);
+        const form = document.querySelector('form');
+        if (form) form.requestSubmit();
+      }}
+      isCreating={loading}
+    />
   </div>
   );
 };
