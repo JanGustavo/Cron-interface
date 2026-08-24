@@ -214,10 +214,31 @@ const parseJwt = (token: string) => {
 };
 
 const App: React.FC = () => {
-  const { activeTab, setActiveTab, isDocsOpen, setDocsOpen, setJobModalOpen } = useUiStore();
+  const { activeTab, setActiveTab, isDocsOpen, setDocsOpen, setJobModalOpen, highContrast, reducedMotion, fontSize } = useUiStore();
   const { isAuthenticated, login, logout, activeProject } = useAuthStore();
   const { fetchJobs, jobs, setActiveJob } = useJobsStore();
   const [authChecking, setAuthChecking] = useState(true);
+
+  // Sync Accessibility CSS classes on <html>
+  useEffect(() => {
+    if (highContrast) {
+      document.documentElement.classList.add('high-contrast');
+    } else {
+      document.documentElement.classList.remove('high-contrast');
+    }
+
+    if (reducedMotion) {
+      document.documentElement.classList.add('reduced-motion');
+    } else {
+      document.documentElement.classList.remove('reduced-motion');
+    }
+
+    if (fontSize === 'large') {
+      document.documentElement.classList.add('text-lg-accessibility');
+    } else {
+      document.documentElement.classList.remove('text-lg-accessibility');
+    }
+  }, [highContrast, reducedMotion, fontSize]);
 
   useEffect(() => {
     try {

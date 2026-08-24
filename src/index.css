@@ -244,3 +244,51 @@ button, a, select, input, textarea {
   mask-composite: exclude;
   pointer-events: none;
 }
+
+/* ==========================================================================
+   Accessibility Controls Styles (High Contrast, Reduced Motion, Font Scaling)
+   ========================================================================== */
+
+/* 1. High Contrast Mode */
+html.high-contrast {
+  filter: contrast(125%);
+}
+
+html.high-contrast body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+html.high-contrast .glass-panel {
+  background: rgba(0, 0, 0, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 0 0 1px #ffffff !important;
+}
+
+html.high-contrast button,
+html.high-contrast input,
+html.high-contrast select,
+html.high-contrast textarea {
+  border-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+html.high-contrast .text-slate-400,
+html.high-contrast .text-slate-500,
+html.high-contrast .text-slate-600,
+html.high-contrast .text-slate-450 {
+  color: #cbd5e1 !important;
+}
+
+/* 2. Reduced Motion (Desativa animações e transições) */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* 3. Expand Font Size A+ */
+html.text-lg-accessibility {
+  font-size: 118% !important;
+}
+
