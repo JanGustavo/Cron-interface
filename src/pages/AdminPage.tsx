@@ -98,6 +98,22 @@ export const AdminPage: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = async (user: AdminUser) => {
+    if (!window.confirm(`⚠️ Tem certeza absoluta que deseja excluir a conta de "${user.email}"?\n\nEsta ação é irreversível e excluirá permanentemente todos os jobs e dados vinculados.`)) {
+      return;
+    }
+    setUpdatingUserId(user.id);
+    try {
+      await api.delete(`/v1/admin/users/${user.id}`);
+      showToast(`Conta de ${user.email} excluída com sucesso! 🗑️`, 'success');
+      fetchAdminData();
+    } catch (err: any) {
+      showToast(`Erro ao excluir conta: ${err.response?.data?.error || 'falha na requisição'}`, 'error');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
   if (isAdmin === false) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
@@ -281,6 +297,16 @@ export const AdminPage: React.FC = () => {
                             title="Resetar cota de IA do usuário para 0"
                           >
                             🔄 Reset IA
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={updatingUserId === u.id || isAdminRole}
+                            onClick={() => handleDeleteUser(u)}
+                            className="px-2.5 py-1 rounded text-[9.5px] font-bold bg-red-950/40 border border-red-500/30 text-red-300 hover:bg-red-900/60 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={isAdminRole ? "Não é possível excluir contas ADM" : "Excluir conta permanentemente"}
+                          >
+                            🗑️ Excluir
                           </button>
                         </div>
                       </td>
