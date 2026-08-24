@@ -16,6 +16,14 @@ interface UiState {
   selectedLogId: string | null;
   toast: { message: string; variant: ToastVariant } | null;
 
+  // Accessibility Settings
+  highContrast: boolean;
+  reducedMotion: boolean;
+  fontSize: 'normal' | 'large';
+  toggleHighContrast: () => void;
+  toggleReducedMotion: () => void;
+  setFontSize: (size: 'normal' | 'large') => void;
+
   // Actions
   toggleTheme: () => void;
   setTheme: (theme: 'dark' | 'light') => void;
@@ -35,6 +43,9 @@ interface UiState {
 
 export const useUiStore = create<UiState>((set) => ({
   theme: 'dark', // Defaulting to dark theme (premium glassmorphism/cyberpunk style)
+  highContrast: typeof window !== 'undefined' ? localStorage.getItem('cf_high_contrast') === 'true' : false,
+  reducedMotion: typeof window !== 'undefined' ? localStorage.getItem('cf_reduced_motion') === 'true' : false,
+  fontSize: (typeof window !== 'undefined' && localStorage.getItem('cf_font_size') as 'normal' | 'large') || 'normal',
   sidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
   activeTab: 'dashboard',
   isJobModalOpen: false,
@@ -46,6 +57,40 @@ export const useUiStore = create<UiState>((set) => ({
   isPlansModalOpen: false,
   selectedLogId: null,
   toast: null,
+
+  toggleHighContrast: () =>
+    set((state) => {
+      const next = !state.highContrast;
+      localStorage.setItem('cf_high_contrast', String(next));
+      if (next) {
+        document.documentElement.classList.add('high-contrast');
+      } else {
+        document.documentElement.classList.remove('high-contrast');
+      }
+      return { highContrast: next };
+    }),
+
+  toggleReducedMotion: () =>
+    set((state) => {
+      const next = !state.reducedMotion;
+      localStorage.setItem('cf_reduced_motion', String(next));
+      if (next) {
+        document.documentElement.classList.add('reduced-motion');
+      } else {
+        document.documentElement.classList.remove('reduced-motion');
+      }
+      return { reducedMotion: next };
+    }),
+
+  setFontSize: (fontSize) => {
+    localStorage.setItem('cf_font_size', fontSize);
+    if (fontSize === 'large') {
+      document.documentElement.classList.add('text-lg-accessibility');
+    } else {
+      document.documentElement.classList.remove('text-lg-accessibility');
+    }
+    set({ fontSize });
+  },
 
   toggleTheme: () =>
     set((state) => {

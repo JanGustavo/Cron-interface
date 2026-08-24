@@ -6,10 +6,11 @@ import api from '../../services/api';
 import type { Project } from '../../types/auth';
 
 export const TopNav: React.FC = () => {
-  const { theme, toggleTheme, activeTab, toggleSidebar, setOnboardingOpen } = useUiStore();
+  const { activeTab, toggleSidebar, setOnboardingOpen } = useUiStore();
   const { activeProject, projects, setActiveProject, user } = useAuthStore();
-  const { fetchJobs } = useJobsStore();
+  const { jobs, fetchJobs } = useJobsStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleSwitchProject = async (project: Project) => {
     try {
@@ -43,13 +44,15 @@ export const TopNav: React.FC = () => {
     }
   };
 
-  // Mock workspace if none exists for setup
   const currentProjectName = activeProject?.name || 'Projeto Pessoal';
   const availableProjects = projects.length > 0 ? projects : [
     { id: '1', userId: 'user', name: 'Projeto Pessoal', createdAt: '' },
     { id: '2', userId: 'user', name: 'Produção SaaS', createdAt: '' },
     { id: '3', userId: 'user', name: 'Dev Environment', createdAt: '' },
   ];
+
+  const failedJobsCount = jobs.filter((j) => (j.status as string) === 'failing' || (j.status as string) === 'failed').length;
+  const activeJobsCount = jobs.filter((j) => j.status === 'active' || (j.status as string) === 'running').length;
 
   return (
     <header className="h-16 border-b border-indigo-950/40 glass-panel sticky top-0 z-30 px-4 md:px-6 flex items-center justify-between">
@@ -69,7 +72,7 @@ export const TopNav: React.FC = () => {
         </h2>
       </div>
 
-      {/* Right Side Options (Theme Toggle, Workspace Selector, Profile) */}
+      {/* Right Side Options (Tutorial, Notifications, Workspace Selector, Profile) */}
       <div className="flex items-center gap-4">
         
         {/* Onboarding Tour Button */}
@@ -84,26 +87,79 @@ export const TopNav: React.FC = () => {
           <span className="hidden sm:inline">Como Funciona</span>
         </button>
 
-        {/* Theme Toggle Button */}
-        <button
-          onClick={toggleTheme}
-          className={`p-2 rounded-xl transition-colors border ${
-            isPro
-              ? 'pro-border-shimmer border-transparent text-yellow-400 hover:text-amber-300 hover:bg-indigo-950/30'
-              : 'text-slate-400 hover:text-white hover:bg-indigo-950/30 border-indigo-950/40'
-          }`}
-          title={theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
-        >
-          {theme === 'dark' ? (
+        {/* System Notifications & Health Center Button */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setNotificationsOpen(!notificationsOpen);
+              setDropdownOpen(false);
+            }}
+            className={`p-2 rounded-xl transition-colors border relative cursor-pointer ${
+              failedJobsCount > 0
+                ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-indigo-950/30 border-indigo-950/40'
+            }`}
+            title="Central de Alertas e Status do Sistema"
+          >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M16.24 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
-          ) : (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
+            {failedJobsCount > 0 ? (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center animate-pulse">
+                {failedJobsCount}
+              </span>
+            ) : (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-400 rounded-full" />
+            )}
+          </button>
+
+          {notificationsOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setNotificationsOpen(false)} />
+              <div className="absolute right-0 mt-2.5 w-80 rounded-2xl border border-indigo-950/60 glass-panel shadow-2xl z-20 p-4 text-left space-y-3 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between border-b border-indigo-950/30 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-xs uppercase font-extrabold tracking-wider text-slate-200">
+                      Status do CronFlow
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    Sistemas Operacionais
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 flex items-center justify-between">
+                    <span className="text-slate-400">Tarefas Ativas em Monitoramento</span>
+                    <span className="font-mono font-bold text-indigo-400">{activeJobsCount}</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 flex items-center justify-between">
+                    <span className="text-slate-400">Alertas de Falha</span>
+                    {failedJobsCount > 0 ? (
+                      <span className="font-mono font-bold text-rose-400">{failedJobsCount} em atenção</span>
+                    ) : (
+                      <span className="text-slate-500">Nenhuma falha recente</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-1 border-t border-indigo-950/30 text-center">
+                  <button
+                    onClick={() => {
+                      setNotificationsOpen(false);
+                      useUiStore.getState().setActiveTab('logs');
+                    }}
+                    className="w-full py-1.5 text-[11px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+                  >
+                    Ver Histórico Completo de Execuções →
+                  </button>
+                </div>
+              </div>
+            </>
           )}
-        </button>
+        </div>
 
         {/* Workspace Selector Dropdown */}
         <div className="relative">

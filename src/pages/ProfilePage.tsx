@@ -72,8 +72,8 @@ const InfoTip: React.FC<{ text: string }> = ({ text }) => (
 export const ProfilePage: React.FC = () => {
   const { user, activeProject, projects, setActiveProject, setProjects } = useAuthStore();
   const { jobs, fetchJobs } = useJobsStore();
-  const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen, isPlansModalOpen, setPlansModalOpen } = useUiStore();
-  const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor'>('keys');
+  const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen, isPlansModalOpen, setPlansModalOpen, highContrast, toggleHighContrast, reducedMotion, toggleReducedMotion, fontSize, setFontSize } = useUiStore();
+  const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor' | 'accessibility'>('keys');
   const [isSwitchingProject, setIsSwitchingProject] = useState(false);
 
   // Load custom profile details saved during onboarding
@@ -667,11 +667,12 @@ export const ProfilePage: React.FC = () => {
                   { id: 'webhooks', label: 'Alertas / Webhooks' },
                   { id: 'sessions', label: 'Sessões' },
                   { id: 'twoFactor', label: 'MFA' },
+                  { id: 'accessibility', label: 'Acessibilidade ♿' },
                 ].map((t) => (
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setSecurityTab(t.id as 'keys' | 'webhooks' | 'sessions' | 'twoFactor')}
+                    onClick={() => setSecurityTab(t.id as 'keys' | 'webhooks' | 'sessions' | 'twoFactor' | 'accessibility')}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                       securityTab === t.id
                         ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 shadow-md'
@@ -1072,6 +1073,80 @@ export const ProfilePage: React.FC = () => {
                     >
                       Em Breve (Enterprise)
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ACCESSIBILITY TAB */}
+              {securityTab === 'accessibility' && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div>
+                    <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Acessibilidade e Preferências Visuais</h5>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Ajuste o contraste, legibilidade e animações para uma melhor experiência de uso.</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* High Contrast Toggle */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/40">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-bold text-slate-200 block">Modo Alto Contraste</span>
+                        <p className="text-[10px] text-slate-400">Aumenta o contraste dos textos e realça as bordas da interface para facilitar a leitura de logs.</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={highContrast}
+                          onChange={toggleHighContrast}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-[#0a0f1d] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-650 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+                      </label>
+                    </div>
+
+                    {/* Reduced Motion Toggle */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/40">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-bold text-slate-200 block">Reduzir Animações (Movimento Reduzido)</span>
+                        <p className="text-[10px] text-slate-400">Desativa efeitos visuais intensos, gradientes animados e transições de tela.</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={reducedMotion}
+                          onChange={toggleReducedMotion}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-[#0a0f1d] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-650 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+                      </label>
+                    </div>
+
+                    {/* Font Size Selector */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/40">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-bold text-slate-200 block">Tamanho da Fonte</span>
+                        <p className="text-[10px] text-slate-400">Aumenta o tamanho base da tipografia do painel.</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-[#05070e] p-1 rounded-xl border border-indigo-950/60">
+                        <button
+                          type="button"
+                          onClick={() => setFontSize('normal')}
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
+                            fontSize === 'normal' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          Padrão
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFontSize('large')}
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
+                            fontSize === 'large' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          Expandida A+
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
