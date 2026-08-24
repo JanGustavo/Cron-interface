@@ -53,6 +53,7 @@ export const TopNav: React.FC = () => {
 
   const failedJobsCount = jobs.filter((j) => (j.status as string) === 'failing' || (j.status as string) === 'failed').length;
   const activeJobsCount = jobs.filter((j) => j.status === 'active' || (j.status as string) === 'running').length;
+  const pausedJobsCount = jobs.filter((j) => j.status === 'paused' || (j.status as string) === 'suspended').length;
 
   return (
     <header className="h-16 border-b border-indigo-950/40 glass-panel sticky top-0 z-30 px-4 md:px-6 flex items-center justify-between">
@@ -131,14 +132,21 @@ export const TopNav: React.FC = () => {
 
                 <div className="space-y-2 text-xs">
                   <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 flex items-center justify-between">
-                    <span className="text-slate-400">Tarefas Ativas em Monitoramento</span>
+                    <span className="text-slate-400">Tarefas Ativas</span>
                     <span className="font-mono font-bold text-indigo-400">{activeJobsCount}</span>
                   </div>
+
+                  {pausedJobsCount > 0 && (
+                    <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 flex items-center justify-between">
+                      <span className="text-slate-400">Tarefas Pausadas / Suspensas</span>
+                      <span className="font-mono font-bold text-amber-400">{pausedJobsCount}</span>
+                    </div>
+                  )}
 
                   <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 flex items-center justify-between">
                     <span className="text-slate-400">Alertas de Falha</span>
                     {failedJobsCount > 0 ? (
-                      <span className="font-mono font-bold text-rose-400">{failedJobsCount} em atenção</span>
+                      <span className="font-mono font-bold text-rose-400">{failedJobsCount} com erro</span>
                     ) : (
                       <span className="text-slate-500">Nenhuma falha recente</span>
                     )}
