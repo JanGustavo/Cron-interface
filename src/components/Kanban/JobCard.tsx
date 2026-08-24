@@ -143,8 +143,12 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
             </h4>
             <div className="flex gap-1.5 items-center">
               {job.nextJobId && (
-                <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 text-[8px] font-black uppercase tracking-wider" title="Dispara próxima tarefa">
-                  🔗 fluxo
+                <span
+                  className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-[length:300%_auto] bg-clip-text text-transparent border border-purple-500/35 animate-[shimmer_3s_linear_infinite]"
+                  style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
+                  title="Workflow Encadeado PRO ✨"
+                >
+                  ⚡ fluxo pro
                 </span>
               )}
               <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${getMethodColor(job.httpMethod)}`}>

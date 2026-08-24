@@ -556,7 +556,16 @@ export const JobModal: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Próximo Job (Workflow Chaining) */}
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Próximo Job (Workflow)</label>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center justify-between">
+                <span>Próximo Job (Workflow)</span>
+                <span
+                  className="text-[8px] font-black uppercase tracking-widest bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+                  style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
+                  title="Encadeamento de Workflows PRO ✨"
+                >
+                  PRO ✨
+                </span>
+              </label>
               {isEditing ? (
                 <>
                   <select

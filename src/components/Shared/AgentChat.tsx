@@ -179,7 +179,16 @@ export const AgentChat: React.FC = () => {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-100 tracking-wide">CronFlow AI Agent</h3>
+                  <h3 className="text-xs font-bold text-slate-100 tracking-wide flex items-center gap-1.5">
+                    <span>CronFlow AI Agent</span>
+                    <span
+                      className="text-[8px] font-black uppercase tracking-widest bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+                      style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
+                      title="Recurso Exclusivo PRO ✨"
+                    >
+                      PRO ✨
+                    </span>
+                  </h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-amber-400 animate-ping' : 'bg-emerald-500 animate-pulse'}`} />
                     <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono">
@@ -315,9 +324,11 @@ export const AgentChat: React.FC = () => {
             <svg className="w-5.5 h-5.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
-            <span className="absolute -top-1 -right-1 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-450 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+            <span
+              className="absolute -top-2.5 -right-2.5 px-1 py-0.5 rounded-full text-[7.5px] font-black uppercase tracking-widest text-slate-950 bg-[length:300%_auto] animate-[shimmer_3s_linear_infinite] border border-amber-300/40 shadow-sm"
+              style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
+            >
+              PRO
             </span>
           </div>
         )}
