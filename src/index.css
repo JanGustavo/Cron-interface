@@ -292,3 +292,19 @@ html.text-lg-accessibility {
   font-size: 118% !important;
 }
 
+/* High Contrast Zebra Striping (Diferenciação no modo de alto contraste no fundo preto) */
+html.high-contrast table tbody tr:nth-child(even) {
+  background-color: #0d1226 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+html.high-contrast table tbody tr:nth-child(odd) {
+  background-color: #1b2342 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+html.high-contrast table tbody tr:hover {
+  background-color: #28335c !important;
+}
+
+

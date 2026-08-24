@@ -72,11 +72,15 @@ export const LogList: React.FC<LogListProps> = ({
                 </td>
               </tr>
             ) : (
-              logs.map((log) => (
+              logs.map((log, index) => (
                 <tr
                   key={log.id}
                   onClick={() => onSelectLog(log.id)}
-                  className="hover:bg-indigo-950/15 cursor-pointer transition-colors group"
+                  className={`cursor-pointer transition-colors group ${
+                    index % 2 === 0
+                      ? 'bg-[#070a1a]/40 hover:bg-indigo-900/30'
+                      : 'bg-[#0e132e]/55 hover:bg-indigo-900/40'
+                  }`}
                 >
                   {/* Status Badge */}
                   <td className="p-4">
@@ -151,11 +155,15 @@ export const LogList: React.FC<LogListProps> = ({
             Nenhum registro de execução encontrado com os filtros atuais.
           </div>
         ) : (
-          logs.map((log) => (
+          logs.map((log, index) => (
             <div
               key={log.id}
               onClick={() => onSelectLog(log.id)}
-              className="p-4 space-y-3 hover:bg-indigo-950/10 active:bg-indigo-950/20 transition-all cursor-pointer flex flex-col"
+              className={`p-4 space-y-3 active:bg-indigo-950/30 transition-all cursor-pointer flex flex-col ${
+                index % 2 === 0
+                  ? 'bg-[#070a1a]/40 hover:bg-indigo-900/30'
+                  : 'bg-[#0e132e]/55 hover:bg-indigo-900/40'
+              }`}
             >
               <div className="flex items-center justify-between">
                 <StatusBadge status={log.status} attemptNumber={log.attemptNumber} />
