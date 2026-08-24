@@ -32,9 +32,12 @@ export const AgentChat: React.FC = () => {
   const { isPro } = useEntitlements();
   const { setPlansModalOpen, showToast } = useUiStore();
   const [isOpen, setIsOpen] = useState(false);
-  const [freeQueriesUsed, setFreeQueriesUsed] = useState<number>(() => {
-    return Number(localStorage.getItem('cf_ai_free_used') || '0');
-  });
+  const [freeQueriesUsed, setFreeQueriesUsed] = useState<number>(0);
+
+  useEffect(() => {
+    // Limpa chave legada de testes para garantir que contas ativas comecem com os 3 usos zerados
+    localStorage.removeItem('cf_ai_free_used');
+  }, []);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'model',
