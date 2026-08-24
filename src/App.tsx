@@ -41,6 +41,7 @@ function lazyWithRetry<T extends React.ComponentType<any>>(
 
 const DashboardPage = lazyWithRetry(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AdminPage = lazyWithRetry(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
 
 const PageLoader: React.FC = () => (
   <div className="flex flex-col justify-center items-center py-20 min-h-[50vh] select-none font-mono">
@@ -425,6 +426,8 @@ const App: React.FC = () => {
         return <ProfilePage />;
       case 'settings':
         return <ProfilePage />;
+      case 'admin':
+        return <AdminPage />;
       default:
         return <DashboardPage />;
     }
