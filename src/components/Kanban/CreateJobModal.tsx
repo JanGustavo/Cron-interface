@@ -3,6 +3,7 @@ import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { translateSchedule } from '../Shared/cronTranslator';
 import { useEntitlements } from '../../hooks/useEntitlements';
+import { validateDestinationUrl } from '../../utils/urlValidator';
 
 export const CreateJobModal: React.FC = () => {
 	const { addJob, jobs } = useJobsStore();
@@ -120,8 +121,9 @@ export const CreateJobModal: React.FC = () => {
       setErrorMsg(schedErr);
       return;
     }
-    if (!url.trim()) {
-      setErrorMsg('A URL de destino é obrigatória.');
+    const urlValidation = validateDestinationUrl(url);
+    if (!urlValidation.isValid) {
+      setErrorMsg(urlValidation.error || 'URL de destino inválida.');
       return;
     }
 

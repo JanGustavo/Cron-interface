@@ -8,6 +8,7 @@ import type { Job, JobLog } from '../../types/jobs';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import { useEntitlements } from '../../hooks/useEntitlements';
+import { validateDestinationUrl } from '../../utils/urlValidator';
 
 const formatNextRun = (nextRunAt: string): string => {
   if (!nextRunAt) return '—';
@@ -292,8 +293,9 @@ export const JobModal: React.FC = () => {
       showToast('O nome do job não pode estar vazio', 'error');
       return;
     }
-    if (!editUrl.trim()) {
-      showToast('A URL do job não pode estar vazia', 'error');
+    const urlValidation = validateDestinationUrl(editUrl);
+    if (!urlValidation.isValid) {
+      showToast(urlValidation.error || 'A URL de destino é inválida', 'error');
       return;
     }
     if (!editSchedule.trim()) {
