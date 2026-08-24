@@ -112,7 +112,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
             }
           }}
           tabIndex={0}
-          className={`p-4 rounded-xl bg-[#0a0e27]/85 border cursor-grab active:cursor-grabbing select-none transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/80 ${
+          className={`p-4 rounded-xl bg-[#0a0e27]/85 border cursor-grab active:cursor-grabbing select-none transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.015] hover:border-indigo-400/60 hover:shadow-[0_12px_30px_rgba(99,102,241,0.25)] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/80 ${
             snapshot.isDragging ? 'scale-105' : ''
           }`}
           style={{

@@ -519,8 +519,15 @@ export const DashboardPage: React.FC = () => {
             
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between border-b border-indigo-950/20 pb-4 gap-4">
               <div>
-                <h3 className="text-base font-bold text-slate-200">Métricas & Telemetria</h3>
-                <p className="text-xs text-slate-400">Analise a saúde e o desempenho das entregas no seu workspace.</p>
+                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                  <span>Métricas & Telemetria</span>
+                  <span className="text-[10px] text-cyan-400 font-mono bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20 font-bold uppercase">
+                    Gráfico Interativo
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Acompanhe a quantidade de requisições enviadas, o tempo de resposta do seu servidor e a taxa de sucesso.
+                </p>
               </div>
 
               {/* Segmented Metric Selector */}
@@ -530,7 +537,7 @@ export const DashboardPage: React.FC = () => {
                   onClick={() => setActiveMetric('overview')}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     activeMetric === 'overview'
-                      ? 'bg-indigo-600 text-white shadow-md'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -541,7 +548,7 @@ export const DashboardPage: React.FC = () => {
                   onClick={() => setActiveMetric('latency')}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     activeMetric === 'latency'
-                      ? 'bg-purple-600 text-white shadow-md'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -552,7 +559,7 @@ export const DashboardPage: React.FC = () => {
                   onClick={() => setActiveMetric('errors')}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     activeMetric === 'errors'
-                      ? 'bg-rose-600 text-white shadow-md'
+                      ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -563,13 +570,29 @@ export const DashboardPage: React.FC = () => {
                   onClick={() => setActiveMetric('queue')}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     activeMetric === 'queue'
-                      ? 'bg-amber-650 text-white shadow-md'
+                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   Fila Redis
                 </button>
               </div>
+            </div>
+
+            {/* Quick Metrics Guide Banner */}
+            <div className="p-3 rounded-xl bg-indigo-950/20 border border-indigo-500/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs select-none">
+              <div className="flex items-center gap-2 text-slate-300">
+                <span className="text-indigo-400 font-bold">💡 Entendendo as Métricas:</span>
+                <span className="text-[11px] text-slate-400">
+                  {activeMetric === 'overview' && 'As barras roxas/azuis mostram o total de requisições. A linha verde indica a % de sucesso dos disparos.'}
+                  {activeMetric === 'latency' && 'A área roxa indica a latência média de resposta da sua API. A linha ciano pontilhada indica os picos máximos.'}
+                  {activeMetric === 'errors' && 'As barras vermelhas registram disparos que retornaram erro (HTTP 4xx/5xx ou falha de rede).'}
+                  {activeMetric === 'queue' && 'Status das filas Redis de processamento assíncrono de tarefas em tempo real.'}
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                Total: <strong className="text-indigo-300 font-mono">{totalExecutions} reqs</strong>
+              </span>
             </div>
 
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -798,17 +821,17 @@ export const DashboardPage: React.FC = () => {
                         <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
                           <defs>
                             <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6}/>
-                              <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.1}/>
+                              <stop offset="5%" stopColor="#818cf8" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.25}/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
-                          <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                          <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} req`} />
-                          <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                          <CartesianGrid strokeDasharray="4 4" stroke="#334155" opacity={0.4} />
+                          <XAxis dataKey="time" stroke="#94a3b8" fontSize={11} fontWeight={600} tickLine={false} axisLine={{ stroke: '#334155' }} />
+                          <YAxis yAxisId="left" stroke="#94a3b8" fontSize={11} fontWeight={600} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} req`} />
+                          <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" fontSize={11} fontWeight={600} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                           <Tooltip content={<CustomTooltip />} />
                           <Bar yAxisId="left" dataKey="volume" barSize={32} radius={[6, 6, 0, 0]} fill="url(#volumeGlow)" />
-                          <Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#10b981" strokeWidth={3} dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }} activeDot={{ r: 6, stroke: '#34d399', strokeWidth: 2, fill: '#070913' }} />
+                          <Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#10b981" strokeWidth={3} dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }} activeDot={{ r: 7, stroke: '#34d399', strokeWidth: 3, fill: '#070913' }} />
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>

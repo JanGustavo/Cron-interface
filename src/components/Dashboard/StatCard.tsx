@@ -90,7 +90,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       id={id}
-      className={`p-4 sm:p-5 rounded-2xl glass-panel ${styles.border} ${styles.hover} transition-all duration-300 group select-none`}
+      className={`p-4 sm:p-5 rounded-2xl glass-panel ${styles.border} ${styles.hover} transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] group select-none cursor-pointer border`}
     >
       <div className="flex items-center justify-between">
         {/* Title */}
