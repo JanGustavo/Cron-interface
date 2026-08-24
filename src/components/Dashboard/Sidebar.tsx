@@ -94,10 +94,11 @@ export const Sidebar: React.FC = () => {
                 </span>
                 {isPro && (
                   <span
-                    className="self-start text-[8px] font-black uppercase tracking-widest bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 bg-[length:200%_auto] bg-clip-text text-transparent animate-[shimmer_2.5s_linear_infinite]"
+                    className="self-start text-[8.5px] font-black uppercase tracking-widest bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+                    style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
                     title="Plano PRO Ativo ✨"
                   >
-                    PRO Version 💎
+                    PRO Version ✨
                   </span>
                 )}
               </div>
