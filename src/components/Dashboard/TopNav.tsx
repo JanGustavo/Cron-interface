@@ -64,9 +64,9 @@ export const TopNav: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-100 tracking-wide select-none">
+        <h2 className="text-sm sm:text-base md:text-lg font-bold text-slate-100 tracking-wide select-none">
           {getPageTitle()}
-        </h1>
+        </h2>
       </div>
 
       {/* Right Side Options (Theme Toggle, Workspace Selector, Profile) */}

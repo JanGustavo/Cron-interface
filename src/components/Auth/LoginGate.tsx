@@ -181,7 +181,7 @@ export const LoginGate: React.FC = () => {
 
   const handleCopyPlaygroundCode = () => {
     const code = activeSandboxTab === 'curl'
-      ? `curl -X POST https://cron.jangustavo.me/v1/jobs \\\n  -H "Authorization: Bearer cf_live_suaAPIKey" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name": "Sync Vendas", "schedule": "0 8 * * *", "url": "https://api.vendas.com/sync"}'`
+      ? `curl -X POST https://cronflow.jangustavo.me/v1/jobs \\\n  -H "Authorization: Bearer cf_live_suaAPIKey" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name": "Sync Vendas", "schedule": "0 8 * * *", "url": "https://api.vendas.com/sync"}'`
       : activeSandboxTab === 'json'
       ? `{\n  "name": "Sincronizador Diário",\n  "schedule": "every:24h",\n  "url": "https://meu-endpoint.com/webhook",\n  "http_method": "POST",\n  "timezone": "America/Sao_Paulo",\n  "tags": ["vendas", "faturamento"]\n}`
       : `👤 Você: crie um job chamado Monitor de Dolar para rodar toda segunda-feira às 12h batendo na URL https://economia.com/api usando o método GET\n🤖 Agente: Executando Tool createJob... Job criado com ID 4a82-f38b com sucesso! 🚀`;
@@ -225,7 +225,7 @@ export const LoginGate: React.FC = () => {
           setShowResendOption(true);
         }
       } else {
-        setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
+        setErrorMsg('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
       }
     } finally {
       setLoading(false);
@@ -328,7 +328,7 @@ export const LoginGate: React.FC = () => {
         const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
         setErrorMsg(backendError || `Erro no cadastro: HTTP ${axiosError.response.status}`);
       } else {
-        setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
+        setErrorMsg('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
       }
     } finally {
       setLoading(false);
@@ -372,7 +372,7 @@ export const LoginGate: React.FC = () => {
         const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
         setErrorMsg(backendError || `Erro: HTTP ${axiosError.response.status}`);
       } else {
-        setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
+        setErrorMsg('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
       }
     } finally {
       setLoading(false);
@@ -422,7 +422,7 @@ export const LoginGate: React.FC = () => {
         const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
         setErrorMsg(backendError || `Erro: HTTP ${axiosError.response.status}`);
       } else {
-        setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
+        setErrorMsg('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
       }
     } finally {
       setLoading(false);
@@ -463,7 +463,7 @@ export const LoginGate: React.FC = () => {
           const backendError = axiosError.response.data?.error || axiosError.response.data?.reason;
           setErrorMsg(backendError || `Erro na ativação: HTTP ${axiosError.response.status}`);
         } else {
-          setErrorMsg('Erro de conexão. Verifique se o backend em Go está rodando na porta 8080.');
+          setErrorMsg('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
         }
       } finally {
         setVerificationLoading(false);
@@ -1152,6 +1152,47 @@ export const LoginGate: React.FC = () => {
         </div>
       </section>
 
+      {/* ❓ FAQ SECTION (SEO & USER GUIDE) */}
+      <section id="faq" className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-left scroll-mt-10">
+        <div className="space-y-4 mb-12 text-center">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-400 font-mono">Dúvidas Frequentes</span>
+          <h2 className="text-3xl font-black tracking-wide font-mono text-slate-100">Perguntas Frequentes sobre Agendamento e Cron Jobs</h2>
+          <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+            Entenda como o CronFlow funciona como um Cron Job & Webhook Scheduler as a Service confiável.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2">
+            <h3 className="text-sm font-bold text-slate-200 font-mono">O que é um Cron Job as a Service?</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              É um serviço em nuvem que substitui a necessidade de manter crontabs locais em servidores. O CronFlow dispara requisições HTTP/HTTPS agendadas diretamente para a sua API com retentativas e monitoramento.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2">
+            <h3 className="text-sm font-bold text-slate-200 font-mono">Como funcionam as retentativas automáticas (retries)?</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Caso seu servidor responda com erro HTTP (5xx) ou sofrer um timeout, o Worker do CronFlow re-executa a requisição até 3 vezes utilizando backoff exponencial para suavizar picos de instabilidade.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2">
+            <h3 className="text-sm font-bold text-slate-200 font-mono">Como é feita a proteção anti-SSRF?</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              O CronFlow valida IPs de destino e redirecionamentos para impedir requisições maliciosas a faixas de rede privada interna (como localhost, 127.0.0.1 ou redes RFC 1918).
+            </p>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2">
+            <h3 className="text-sm font-bold text-slate-200 font-mono">Posso usar expressões cron tradicionais?</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Sim! Aceitamos expressões cron padrão de 5 campos (ex: <code className="text-cyan-400 font-mono">0 * * * *</code>), além de atalhos simplificados como <code className="text-cyan-400 font-mono">every:10m</code> ou <code className="text-cyan-400 font-mono">every:1h</code>.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* 💻 INTERACTIVE PLAYGROUND (CODE SNIPPETS) */}
       <section id="playground" className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center scroll-mt-10">
         <div className="space-y-4 mb-10">
@@ -1233,7 +1274,7 @@ export const LoginGate: React.FC = () => {
                 <code>
 <span className="text-slate-500"># Dispara uma rota de sync todo dia às 8h da manhã</span>
 <br />
-curl -X POST https://cron.jangustavo.me/v1/jobs \
+curl -X POST https://cronflow.jangustavo.me/v1/jobs \
   -H <span className="text-emerald-400">"Authorization: Bearer cf_live_suaAPIKey"</span> \
   -H <span className="text-emerald-400">"Content-Type: application/json"</span> \
   -d <span className="text-cyan-400">'{'{'}"name": "Sync Vendas", "schedule": "0 8 * * *", "url": "https://api.vendas.com/sync"{'}'}'</span>

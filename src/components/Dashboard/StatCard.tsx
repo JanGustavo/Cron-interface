@@ -14,6 +14,7 @@ interface StatCardProps {
   };
   description?: string;
   tooltip?: string;
+  isLoading?: boolean;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -25,6 +26,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   trend,
   description,
   tooltip,
+  isLoading,
 }) => {
   const colorStyles = () => {
     switch (color) {
@@ -68,6 +70,22 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   const styles = colorStyles();
+
+  if (isLoading) {
+    return (
+      <div
+        id={id}
+        className={`p-4 sm:p-5 rounded-2xl glass-panel ${styles.border} animate-pulse select-none`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="h-4 bg-slate-800/80 rounded w-1/2" />
+          <div className="w-8 h-8 bg-slate-800/80 rounded-xl" />
+        </div>
+        <div className="h-8 bg-slate-800/80 rounded w-1/3 mt-3" />
+        <div className="h-3.5 bg-slate-800/80 rounded w-2/3 mt-3" />
+      </div>
+    );
+  }
 
   return (
     <div

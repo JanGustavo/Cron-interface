@@ -5,9 +5,10 @@ import { useUiStore } from '../../store/uiStore';
 
 interface RecentActivityProps {
   activities?: LogEntry[];
+  isLoading?: boolean;
 }
 
-export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] }) => {
+export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [], isLoading }) => {
   const { setLogModalOpen } = useUiStore();
 
   const items = activities;
@@ -81,7 +82,28 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
             </tr>
           </thead>
           <tbody className="divide-y divide-indigo-950/15">
-            {items.length === 0 ? (
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, idx) => (
+                <tr key={idx} className="border-b border-indigo-950/10">
+                  <td className="px-5 py-4">
+                    <div className="h-4 bg-slate-800/80 rounded w-2/3 animate-pulse" />
+                    <div className="h-3 bg-slate-800/80 rounded w-1/2 mt-1.5 animate-pulse" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="h-5 bg-slate-800/80 rounded-md w-16 animate-pulse" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="h-4 bg-slate-800/80 rounded w-3/4 animate-pulse" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="h-4 bg-slate-800/80 rounded w-12 animate-pulse" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="h-4 bg-slate-800/80 rounded w-8 animate-pulse" />
+                  </td>
+                </tr>
+              ))
+            ) : items.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-5 py-12 text-center select-none">
                   <div className="flex flex-col items-center justify-center">

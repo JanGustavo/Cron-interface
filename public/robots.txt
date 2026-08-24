@@ -1,0 +1,10 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /v1/
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /logs
+Disallow: /profile
+
+Sitemap: https://cronflow.jangustavo.me/sitemap.xml

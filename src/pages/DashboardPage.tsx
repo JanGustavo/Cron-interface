@@ -102,9 +102,10 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 
 export const DashboardPage: React.FC = () => {
   const { setCreateModalOpen, setDocsOpen, showToast, setLogModalOpen } = useUiStore();
-  const { jobs } = useJobsStore();
+  const { jobs, isLoading: isLoadingJobs } = useJobsStore();
   const [allRecentLogs, setAllRecentLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const isPageLoading = isLoadingJobs || (jobs.length > 0 && loading && allRecentLogs.length === 0);
   const [chartFilter, setChartFilter] = useState<'1h' | '24h' | '3d' | '7d' | '30d'>('24h');
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [isJobFilterOpen, setIsJobFilterOpen] = useState(false);
@@ -159,8 +160,9 @@ export const DashboardPage: React.FC = () => {
       if (jobs.length === 0) return;
       setLoading(true);
       try {
-        // Fetch executions globally in a single query
-        const res = await api.get('/v1/executions?limit=50000', { timeout: 15000 });
+        // Calculate start date for last 30 days to optimize database scan and minimize payload size
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const res = await api.get(`/v1/executions?limit=10000&start_date=${startDate}`, { timeout: 15000 });
         const rawLogs = (res.data?.data || []) as LogEntry[];
         
         // Map jobName and jobUrl using the local jobs list
@@ -436,7 +438,7 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {jobs.length === 0 ? (
+      {!isLoadingJobs && jobs.length === 0 ? (
         <div className="p-8 md:p-12 rounded-2xl glass-panel border border-dashed border-indigo-500/20 text-center relative overflow-hidden flex flex-col items-center justify-center space-y-6 py-16 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none pulse-slow" />
@@ -474,6 +476,7 @@ export const DashboardPage: React.FC = () => {
               title="Tarefas Cadastradas"
               value={`${createdJobsCount} / ${globalMaxLimit}`}
               color="indigo"
+              isLoading={isPageLoading}
               description={isProPlan ? 'Plano Pro (50 tarefas máx por workspace)' : 'Plano Gratuito (5 tarefas máx por workspace)'}
               tooltip="O número de tarefas criadas em relação ao limite total do seu plano de workspace."
               icon={
@@ -486,6 +489,7 @@ export const DashboardPage: React.FC = () => {
               title="Taxa de Sucesso"
               value={successRate === '-' ? '-' : `${successRate}%`}
               color="emerald"
+              isLoading={isPageLoading}
               description={successRate === '-' ? 'Sem execuções registradas' : 'Últimas 24 horas'}
               tooltip="O percentual de requisições HTTP disparadas com sucesso (código menor que 500)."
               icon={
@@ -498,6 +502,7 @@ export const DashboardPage: React.FC = () => {
               title="Tempo de Resposta Médio"
               value={avgResponseTime}
               color="purple"
+              isLoading={isPageLoading}
               description={avgResponseTime === '-' ? 'Sem execuções registradas' : 'Média geral de webhooks'}
               tooltip="A latência média de resposta dos seus servidores de webhook ao receber o agendamento."
               icon={
@@ -759,6 +764,18 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+              ) : isPageLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-indigo-500/10 bg-[#04060f]/30 min-h-[260px] text-center space-y-4 select-none animate-pulse">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-950/20 border border-indigo-500/20 text-indigo-400">
+                    <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+                  </div>
+                  <div className="space-y-1.5 max-w-sm">
+                    <h4 className="text-xs font-bold text-slate-350 font-mono">Processando telemetria...</h4>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
+                      Carregando logs de execução e preparando gráficos de telemetria.
+                    </p>
+                  </div>
+                </div>
               ) : isChartEmpty ? (
                 <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-indigo-500/10 bg-[#04060f]/30 min-h-[260px] text-center space-y-4 select-none">
                   <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-950/20 border border-indigo-500/20 text-indigo-400">
@@ -922,13 +939,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Recent Activity list */}
-          {loading && allRecentLogs.length === 0 ? (
-            <div className="p-6 rounded-2xl glass-panel border border-indigo-950/40 text-slate-400 text-center text-xs animate-pulse">
-              Carregando atividade recente...
-            </div>
-          ) : (
-            <RecentActivity activities={recentActivities} />
-          )}
+          <RecentActivity activities={recentActivities} isLoading={isPageLoading} />
         </>
       )}
       <PixModal isOpen={isPixModalOpen} onClose={() => setIsPixModalOpen(false)} />
