@@ -118,11 +118,15 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [],
                 </td>
               </tr>
             ) : (
-              items.map((log) => (
+              items.map((log, index) => (
                 <tr
                   key={log.id}
                   onClick={() => setLogModalOpen(true, log.id)}
-                  className="hover:bg-indigo-950/15 transition-all duration-200 cursor-pointer group"
+                  className={`cursor-pointer transition-colors group ${
+                    index % 2 === 0
+                      ? 'bg-[#070a1a]/40 hover:bg-indigo-900/30'
+                      : 'bg-[#0e132e]/55 hover:bg-indigo-900/40'
+                  }`}
                 >
                   {/* Job metadata info */}
                   <td className="px-5 py-3.5 min-w-[240px]">
@@ -181,6 +185,19 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [],
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Footer Action Button to View Full Logs */}
+      <div className="p-3 border-t border-indigo-950/30 bg-indigo-950/10 text-center">
+        <button
+          onClick={() => useUiStore.getState().setActiveTab('logs')}
+          className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-600/30 border border-indigo-500/20 hover:border-indigo-500/40 transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+        >
+          <span>Ver histórico completo de auditoria e logs</span>
+          <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
       </div>
     </div>
   );
