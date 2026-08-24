@@ -29,9 +29,12 @@ interface Message {
 }
 
 export const AgentChat: React.FC = () => {
-  const { workflowsEnabled } = useEntitlements();
-  const { setPlansModalOpen } = useUiStore();
+  const { isPro } = useEntitlements();
+  const { setPlansModalOpen, showToast } = useUiStore();
   const [isOpen, setIsOpen] = useState(false);
+  const [freeQueriesUsed, setFreeQueriesUsed] = useState<number>(() => {
+    return Number(localStorage.getItem('cf_ai_free_used') || '0');
+  });
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'model',
@@ -58,6 +61,12 @@ export const AgentChat: React.FC = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    if (!isPro && freeQueriesUsed >= 3) {
+      showToast('Você atingiu o limite de 3 mensagens gratuitas da IA no Plano Free. Faça upgrade para o Plano PRO!', 'info');
+      setPlansModalOpen(true);
+      return;
+    }
+
     const userText = input.trim();
     setInput('');
     setIsLoading(true);
@@ -78,6 +87,12 @@ export const AgentChat: React.FC = () => {
       });
 
       const data = response.data; // { reply: string, history: [] }
+
+      if (!isPro) {
+        const nextCount = Math.min(3, freeQueriesUsed + 1);
+        setFreeQueriesUsed(nextCount);
+        localStorage.setItem('cf_ai_free_used', String(nextCount));
+      }
       
       // Atualiza as mensagens com o histórico atualizado vindo do backend
       if (data.history) {
@@ -110,17 +125,25 @@ export const AgentChat: React.FC = () => {
         fetchJobs();
       }
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      const errorObj = err as { response?: { data?: { error?: string; reason?: string } } };
-      const backendError = errorObj.response?.data?.error || errorObj.response?.data?.reason;
-      const errorMessage = backendError 
-        ? `❌ Erro: ${backendError}` 
-        : '❌ Ops, ocorreu um erro ao processar sua solicitação. Certifique-se de que o backend está ativo.';
-      setMessages(prev => [...prev, { 
-        role: 'model', 
-        text: errorMessage
-      }]);
+      const isLimitError = err.response?.data?.code === 'FREE_AI_LIMIT_REACHED' || err.response?.data?.code === 'LIMIT_EXCEEDED' || err.response?.status === 402;
+      const backendError = err.response?.data?.error;
+      if (isLimitError) {
+        const errorMsg = backendError || 'Você atingiu o limite de 3 mensagens gratuitas da IA no Plano Free. Faça o upgrade para o Plano PRO para uso ilimitado! 🚀';
+        showToast(errorMsg, 'info');
+        setFreeQueriesUsed(3);
+        localStorage.setItem('cf_ai_free_used', '3');
+        setPlansModalOpen(true);
+        setMessages(prev => [...prev, {
+          role: 'model',
+          text: '🔒 **Limite de Teste Gratuito da IA Atingido (3/3)**\n\nVocê utilizou as suas 3 mensagens gratuitas no Plano Free. Faça o upgrade para o **Plano PRO ✨** para continuar conversando com a IA sem limites!'
+        }]);
+      } else {
+        const errorMessage = backendError ? `❌ Erro: ${backendError}` : '❌ Ops, ocorreu um erro ao processar sua solicitação.';
+        showToast('Falha ao se comunicar com o assistente de IA.', 'error');
+        setMessages(prev => [...prev, { role: 'model', text: errorMessage }]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -181,13 +204,19 @@ export const AgentChat: React.FC = () => {
                 <div>
                   <h3 className="text-xs font-bold text-slate-100 tracking-wide flex items-center gap-1.5">
                     <span>CronFlow AI Agent</span>
-                    <span
-                      className="text-[8px] font-black uppercase tracking-widest bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
-                      style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
-                      title="Recurso Exclusivo PRO ✨"
-                    >
-                      PRO ✨
-                    </span>
+                    {!isPro ? (
+                      <span className="text-[8px] font-black uppercase font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20" title="Cota de degustação no plano Free">
+                        🎁 {Math.max(0, 3 - freeQueriesUsed)}/3 Grátis
+                      </span>
+                    ) : (
+                      <span
+                        className="text-[8px] font-black uppercase tracking-widest bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+                        style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
+                        title="Recurso Exclusivo PRO ✨"
+                      >
+                        PRO ✨
+                      </span>
+                    )}
                   </h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-amber-400 animate-ping' : 'bg-emerald-500 animate-pulse'}`} />
@@ -261,12 +290,13 @@ export const AgentChat: React.FC = () => {
 
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="p-2.5 border-t border-indigo-950/40 bg-[#0c1026]/90 flex gap-2">
-              {!workflowsEnabled ? (
-                <div className="flex-1 flex items-center justify-between px-3 py-1.5 bg-indigo-950/20 border border-amber-500/20 rounded-xl cursor-pointer hover:bg-amber-500/10 transition-colors"
+              {!isPro && freeQueriesUsed >= 3 ? (
+                <div
+                  className="flex-1 flex items-center justify-between px-3.5 py-2 bg-indigo-950/30 border border-purple-500/30 rounded-xl cursor-pointer hover:bg-purple-950/40 transition-colors"
                   onClick={() => setPlansModalOpen(true)}
                 >
-                  <span className="text-[10px] text-amber-500 font-semibold font-mono">
-                    🔒 AI Copilot exclusivo do Plano PRO
+                  <span className="text-[10px] text-purple-300 font-bold font-mono">
+                    🔒 Cota de 3 testes gratuitos consumida. Upgrade para o PRO ✨
                   </span>
                 </div>
               ) : (
@@ -275,13 +305,13 @@ export const AgentChat: React.FC = () => {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   disabled={isLoading}
-                  placeholder="Pergunte algo ao CronFlow AI..."
+                  placeholder={!isPro ? `Pergunte à IA (${3 - freeQueriesUsed} testes grátis restantes)...` : "Pergunte algo ao CronFlow AI..."}
                   className="flex-1 px-3.5 py-1.5 bg-slate-950/50 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/30 focus:ring-1 focus:ring-indigo-500/35 transition-all disabled:opacity-50"
                 />
               )}
               <button
                 type="submit"
-                disabled={isLoading || !input.trim() || !workflowsEnabled}
+                disabled={isLoading || !input.trim() || (!isPro && freeQueriesUsed >= 3)}
                 className="px-3 py-1.5 rounded-xl bg-indigo-650 text-slate-100 font-bold hover:bg-indigo-550 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs uppercase tracking-wider"
               >
                 Enviar
