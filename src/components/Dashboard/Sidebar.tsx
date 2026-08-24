@@ -121,7 +121,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Navigation Items */}
-        <nav className="p-3 space-y-1.5">
+        <nav className="p-3 space-y-2">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -131,11 +131,11 @@ export const Sidebar: React.FC = () => {
                 onClick={() => handleTabClick(item.id)}
                 className={`w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl transition-all duration-200 select-none ${
                   isActive
-                    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-indigo-950/20 border border-transparent'
+                    ? 'bg-indigo-600/30 text-indigo-200 border-l-4 border-l-indigo-400 border-y border-r border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)] font-bold'
+                    : 'text-slate-350 hover:text-white hover:bg-indigo-950/35 border border-transparent font-medium'
                 }`}
               >
-                <div className={`transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-400'}`}>
+                <div className={`transition-colors ${isActive ? 'text-indigo-300' : 'text-slate-400 group-hover:text-white'}`}>
                   {item.icon}
                 </div>
                 {sidebarOpen && (

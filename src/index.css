@@ -307,4 +307,23 @@ html.high-contrast table tbody tr:hover {
   background-color: #28335c !important;
 }
 
+/* High Contrast Sidebar Buttons */
+html.high-contrast aside nav button {
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background-color: #0b0f20 !important;
+  color: #ffffff !important;
+}
+
+html.high-contrast aside nav button:hover {
+  background-color: #1b2342 !important;
+  border-color: #ffffff !important;
+}
+
+html.high-contrast aside nav button[class*="bg-indigo-600"] {
+  background-color: #3b82f6 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+
 
