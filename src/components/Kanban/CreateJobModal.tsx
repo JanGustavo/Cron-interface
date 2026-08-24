@@ -438,9 +438,19 @@ export const CreateJobModal: React.FC = () => {
             <div className="space-y-5 animate-in fade-in slide-in-from-right-3 duration-250 text-left">
               {/* Webhook Alert URL (Optional) */}
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-mono">
-                  Webhook de Alerta (Opcional)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono flex items-center gap-1.5">
+                    <span>Webhook de Alerta (Opcional)</span>
+                    <button
+                      type="button"
+                      onClick={() => showToast('Endpoint de webhook (Discord, Slack, ntfy) notificado especificamente quando esta tarefa falhar 3 vezes seguidas.', 'info')}
+                      className="px-1 py-0.2 rounded bg-indigo-950/60 border border-indigo-500/25 text-[9px] text-cyan-400 font-bold hover:text-white transition-colors cursor-pointer"
+                      title="O que é o Webhook de Alerta?"
+                    >
+                      ?
+                    </button>
+                  </label>
+                </div>
                 <input
                   type="url"
                   placeholder={alertsWebhooksEnabled ? "https://hooks.slack.com/services/..." : "Bloqueado no seu plano. Faça upgrade para o Plano PRO! 🔒"}
@@ -468,7 +478,17 @@ export const CreateJobModal: React.FC = () => {
                 {/* Próximo Job (Workflow Chaining) */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono flex items-center justify-between">
-                    <span>Próximo Job (Workflow)</span>
+                    <span className="flex items-center gap-1.5">
+                      <span>Próximo Job (Workflow)</span>
+                      <button
+                        type="button"
+                        onClick={() => showToast('Encadeamento automático: Quando este job for concluído com sucesso, o CronFlow engata e dispara o Próximo Job imediatamente.', 'info')}
+                        className="px-1 py-0.2 rounded bg-indigo-950/60 border border-indigo-500/25 text-[9px] text-cyan-400 font-bold hover:text-white transition-colors cursor-pointer"
+                        title="O que é o Próximo Job?"
+                      >
+                        ?
+                      </button>
+                    </span>
                     <span
                       className="text-[8px] font-black uppercase tracking-widest bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
                       style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}

@@ -839,7 +839,17 @@ export const ProfilePage: React.FC = () => {
                 <div className="space-y-6 animate-in fade-in duration-200">
                   <form onSubmit={handleUpdateWebhook} className="space-y-5">
                     <div>
-                      <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações Globais</h5>
+                      <div className="flex items-center gap-2">
+                        <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações Globais</h5>
+                        <button
+                          type="button"
+                          onClick={() => showToast('URL global para onde o CronFlow enviará um POST HTTP com payload JSON caso qualquer tarefa do seu workspace falhar 3 vezes seguidas.', 'info')}
+                          className="px-1.5 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/25 text-[10px] text-cyan-400 font-bold hover:text-white hover:bg-indigo-900/80 transition-colors cursor-pointer"
+                          title="Como funciona a Notificação Global?"
+                        >
+                          ?
+                        </button>
+                      </div>
                       <p className="text-[11px] text-slate-400 mt-0.5">Webhook de alerta centralizado. O CronFlow enviará um POST com os detalhes caso alguma tarefa falhe 3 vezes.</p>
                     </div>
 
@@ -883,7 +893,17 @@ export const ProfilePage: React.FC = () => {
                       {activeProject?.webhookSecret && (
                         <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-4 space-y-2.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Assinatura HMAC (webhook_secret)</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Assinatura HMAC (webhook_secret)</span>
+                              <button
+                                type="button"
+                                onClick={() => showToast('Segredo criptográfico usado para verificar a integridade da assinatura HMAC-SHA256 no header X-CronFlow-Signature.', 'info')}
+                                className="px-1.5 py-0.2 rounded bg-indigo-950/60 border border-indigo-500/25 text-[9px] text-cyan-400 font-bold hover:text-white transition-colors cursor-pointer"
+                                title="O que é a Assinatura HMAC?"
+                              >
+                                ?
+                              </button>
+                            </div>
                             <span className="text-[8px] font-mono font-bold text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/15">HMAC-SHA256</span>
                           </div>
                           <p className="text-[9.5px] text-slate-500 leading-normal">
@@ -921,7 +941,17 @@ export const ProfilePage: React.FC = () => {
                   <div className="pt-6 border-t border-indigo-950/30">
                     <form onSubmit={handleUpdateProfilePreferences} className="space-y-5">
                       <div>
-                        <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações por E-mail</h5>
+                        <div className="flex items-center gap-2">
+                          <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações por E-mail</h5>
+                          <button
+                            type="button"
+                            onClick={() => showToast('Define a frequência das notificações de erro no seu e-mail: Alertas Imediatos no ato da falha (PRO) ou Resumo Diário consolidado.', 'info')}
+                            className="px-1.5 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/25 text-[10px] text-cyan-400 font-bold hover:text-white hover:bg-indigo-900/80 transition-colors cursor-pointer"
+                            title="Como funcionam as Notificações por E-mail?"
+                          >
+                            ?
+                          </button>
+                        </div>
                         <p className="text-[11px] text-slate-400 mt-0.5">Configure como e quando você deseja receber alertas de falha no seu e-mail de cadastro.</p>
                       </div>
 
