@@ -35,8 +35,18 @@ export const AgentChat: React.FC = () => {
   const [freeQueriesUsed, setFreeQueriesUsed] = useState<number>(0);
 
   useEffect(() => {
-    // Limpa chave legada de testes para garantir que contas ativas comecem com os 3 usos zerados
     localStorage.removeItem('cf_ai_free_used');
+    const fetchAIUsage = async () => {
+      try {
+        const res = await api.get('/v1/users/profile');
+        if (typeof res.data?.aiQueriesUsed === 'number') {
+          setFreeQueriesUsed(res.data.aiQueriesUsed);
+        }
+      } catch (err) {
+        console.error('Erro ao sincronizar cota de uso da IA:', err);
+      }
+    };
+    fetchAIUsage();
   }, []);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -92,9 +102,8 @@ export const AgentChat: React.FC = () => {
       const data = response.data; // { reply: string, history: [] }
 
       if (!isPro) {
-        const nextCount = Math.min(3, freeQueriesUsed + 1);
+        const nextCount = typeof data.aiQueriesUsed === 'number' ? data.aiQueriesUsed : Math.min(3, freeQueriesUsed + 1);
         setFreeQueriesUsed(nextCount);
-        localStorage.setItem('cf_ai_free_used', String(nextCount));
       }
       
       // Atualiza as mensagens com o histórico atualizado vindo do backend
