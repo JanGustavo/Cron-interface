@@ -106,21 +106,24 @@ export const AgentChat: React.FC = () => {
         setFreeQueriesUsed(nextCount);
       }
       
-      // Atualiza as mensagens com o histórico atualizado vindo do backend
+      // Atualiza as mensagens apenas com conversas e respostas em texto visíveis
       if (data.history) {
-        const newMsgs = (data.history as GeminiMessage[]).map((h) => {
-          const textPart = h.parts.find((p) => p.text);
-          const textVal = textPart?.text || (() => {
-            const funcCall = h.parts.find((p) => p.functionCall);
-            return funcCall?.functionCall ? `🔧 Executou chamada: ${funcCall.functionCall.name}` : `🔧 Resposta de ferramenta recebida`;
-          })();
-          return {
-            role: h.role,
-            text: textVal,
-            parts: h.parts
-          };
+        const newMsgs: Message[] = [];
+        (data.history as GeminiMessage[]).forEach((h) => {
+          const textPart = h.parts?.find((p) => p.text && p.text.trim() !== '');
+          if (textPart && textPart.text) {
+            newMsgs.push({
+              role: h.role,
+              text: textPart.text,
+              parts: h.parts
+            });
+          }
         });
-        setMessages(newMsgs);
+        if (newMsgs.length > 0) {
+          setMessages(newMsgs);
+        } else if (data.reply) {
+          setMessages(prev => [...prev, { role: 'model', text: data.reply }]);
+        }
       } else {
         setMessages(prev => [...prev, { role: 'model', text: data.reply }]);
       }
