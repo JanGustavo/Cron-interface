@@ -123,7 +123,7 @@ export const JobModal: React.FC = () => {
         break;
       }
     }
-    return Math.max(baseCount, logConsecutive);
+    return Math.min(3, Math.max(baseCount, logConsecutive));
   })();
 
   // Edit Mode states
