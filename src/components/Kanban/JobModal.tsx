@@ -103,12 +103,28 @@ const getNextRunPreview = (schedule: string, timezone: string): string => {
 };
 
 export const JobModal: React.FC = () => {
-  const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob, jobs } = useJobsStore();
+  const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob, jobs, fetchJobs } = useJobsStore();
   const { isJobModalOpen, setJobModalOpen, showToast, setPlansModalOpen } = useUiStore();
   const { alertsWebhooksEnabled, workflowsEnabled } = useEntitlements();
   const [jobLogs, setJobLogs] = useState<JobLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [lastTriggerStatus, setLastTriggerStatus] = useState<{ code: number | null; ok: boolean } | null>(null);
+
+  const currentJob = activeJob ? (jobs.find(j => j.id === activeJob.id) || activeJob) : activeJob;
+
+  const computedFailures = (() => {
+    if (!currentJob) return 0;
+    const baseCount = currentJob.consecutiveFailures || 0;
+    let logConsecutive = 0;
+    for (const log of jobLogs) {
+      if (log.status === 'failed' || log.status === 'timeout' || (log.httpStatus && log.httpStatus >= 400)) {
+        logConsecutive++;
+      } else {
+        break;
+      }
+    }
+    return Math.max(baseCount, logConsecutive);
+  })();
 
   // Edit Mode states
   const [isEditing, setIsEditing] = useState(false);
@@ -279,6 +295,12 @@ export const JobModal: React.FC = () => {
       const result = await triggerJob(activeJob.id);
       setLastTriggerStatus({ code: result.status, ok: result.status >= 200 && result.status < 300 });
       showToast(`Disparo de webhook manual iniciado para ${activeJob.url}`, 'success');
+      setTimeout(() => {
+        api.get(`/v1/jobs/${activeJob.id}/executions?limit=5`)
+          .then((res) => setJobLogs(res.data || []))
+          .catch(() => {});
+        fetchJobs();
+      }, 1000);
     } catch (err) {
       console.error(err);
       const errorObj = err as { status?: number; message?: string };
@@ -503,7 +525,7 @@ export const JobModal: React.FC = () => {
             </div>
             <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl flex flex-col justify-between">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Falhas Seguidas</span>
-              <div className="text-xs font-bold text-rose-400 mt-1">{activeJob.consecutiveFailures} / 3</div>
+              <div className="text-xs font-bold text-rose-400 mt-1">{computedFailures} / 3</div>
             </div>
           </div>
 
