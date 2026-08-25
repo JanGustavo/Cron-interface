@@ -473,9 +473,22 @@ export const ProfilePage: React.FC = () => {
       } else {
         showToast('Erro ao obter link do portal da Stripe.', 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      showToast('Erro ao carregar portal de faturamento. Tente novamente.', 'error');
+      const errorMsg = err.response?.data?.error || 'Erro ao carregar portal de faturamento da Stripe.';
+      showToast(errorMsg, 'error');
+      // Tenta fallback automático para Checkout Stripe se a conta não tiver registro prévio no Portal
+      if (err.response?.status === 400) {
+        try {
+          showToast('Redirecionando para Checkout da Stripe...', 'info');
+          const checkoutRes = await api.post('/v1/billing/checkout', { period: 'monthly' });
+          if (checkoutRes.data && checkoutRes.data.url) {
+            window.location.href = checkoutRes.data.url;
+          }
+        } catch (checkoutErr: any) {
+          console.error(checkoutErr);
+        }
+      }
     }
   };
   

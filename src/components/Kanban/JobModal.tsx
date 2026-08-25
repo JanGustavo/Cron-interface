@@ -158,6 +158,17 @@ export const JobModal: React.FC = () => {
   }, [activeJob, isJobModalOpen]);
 
   useEffect(() => {
+    if (computedFailures >= 3 && currentJob && (currentJob.consecutiveFailures < 3 || currentJob.status !== 'failing')) {
+      updateJob({
+        ...currentJob,
+        consecutiveFailures: 3,
+        status: 'failing',
+        kanbanStatus: 'failed',
+      });
+    }
+  }, [computedFailures, currentJob?.id, currentJob?.consecutiveFailures, currentJob?.status]);
+
+  useEffect(() => {
     if (activeJob && !isEditing) {
       const timer = setTimeout(() => {
         setEditName(activeJob.name || '');
@@ -183,11 +194,12 @@ export const JobModal: React.FC = () => {
     setActiveJob(null);
   };
 
+  const isJobPausedOrFailing = currentJob?.status === 'paused' || currentJob?.status === 'failing' || computedFailures >= 3;
+
   const handleToggleStatus = () => {
     if (!activeJob) return;
-    const isPausing = activeJob.status !== 'paused' && activeJob.status !== 'failing';
     
-    if (isPausing) {
+    if (!isJobPausedOrFailing) {
       Swal.fire({
         title: 'Pausar tarefa?',
         text: `Deseja realmente pausar os agendamentos da tarefa "${activeJob.name}"? Ela não será executada até que você a reative.`,
@@ -218,16 +230,16 @@ export const JobModal: React.FC = () => {
   };
 
   const executeToggleStatus = () => {
-    const nextStatus = (activeJob.status === 'paused' || activeJob.status === 'failing') ? 'active' : 'paused';
+    const nextStatus = isJobPausedOrFailing ? 'active' : 'paused';
     const nextKanban = nextStatus === 'paused' ? 'draft' : 'scheduled';
-    const consecutiveFailures = nextStatus === 'active' ? 0 : activeJob.consecutiveFailures;
+    const consecutiveFailures = 0;
     updateJob({
       ...activeJob,
       status: nextStatus,
       kanbanStatus: nextKanban,
       consecutiveFailures,
     });
-    showToast(nextStatus === 'paused' ? 'Tarefa pausada com sucesso.' : 'Tarefa reativada com sucesso.', 'success');
+    showToast(nextStatus === 'paused' ? 'Tarefa pausada com sucesso.' : 'Tarefa reativada com sucesso. Falhas zeradas (0/3).', 'success');
   };
 
   const handleDelete = () => {
@@ -294,7 +306,8 @@ export const JobModal: React.FC = () => {
     try {
       const result = await triggerJob(activeJob.id);
       setLastTriggerStatus({ code: result.status, ok: result.status >= 200 && result.status < 300 });
-      showToast(`Disparo de webhook manual iniciado para ${activeJob.url}`, 'success');
+      showToast(`Disparo manual iniciado para ${activeJob.url}`, 'success');
+      showToast(`ℹ️ Política de retentativas: 1ª tent (10s) ➔ 2ª tent (20s) ➔ Circuito (3/3)`, 'info');
       setTimeout(() => {
         api.get(`/v1/jobs/${activeJob.id}/executions?limit=5`)
           .then((res) => setJobLogs(res.data || []))
@@ -414,7 +427,7 @@ export const JobModal: React.FC = () => {
                 {activeJob.name}
               </h3>
             )}
-            <StatusBadge status={activeJob.status} attemptNumber={activeJob.consecutiveFailures > 0 ? activeJob.consecutiveFailures : undefined} />
+            <StatusBadge status={computedFailures >= 3 ? 'paused' : (currentJob?.status || activeJob.status)} attemptNumber={computedFailures > 0 ? computedFailures : undefined} />
           </div>
           <button
             onClick={handleClose}
@@ -471,16 +484,30 @@ export const JobModal: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <div className="text-xs font-semibold text-slate-200 mt-1 font-mono">{activeJob.schedule}</div>
-                  <span className="text-[9px] text-cyan-500 font-semibold block pt-0.5 font-mono">
-                    ⏱️ {translateSchedule(activeJob.schedule)}
-                  </span>
-                  {activeJob.nextRunAt && (
-                    <span className="text-[9px] text-indigo-400 font-semibold block pt-1.5 font-mono flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                      Próxima execução: {formatNextRun(activeJob.nextRunAt)}
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <span className="text-xs font-mono font-bold text-slate-100">{activeJob.schedule}</span>
+                    <span className="px-2 py-0.5 rounded-md bg-cyan-950/40 border border-cyan-500/30 text-[9px] font-mono font-bold text-cyan-300">
+                      ⏱️ {translateSchedule(activeJob.schedule)}
                     </span>
-                  )}
+                  </div>
+                  <div className="mt-2.5 pt-2 border-t border-indigo-950/40">
+                    {(currentJob?.status === 'failing' || computedFailures >= 3) ? (
+                      <div className="flex items-center gap-1.5 text-[10px] text-rose-400 font-semibold bg-rose-950/20 border border-rose-500/25 px-2.5 py-1 rounded-lg">
+                        <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span>
+                        <span className="font-mono">Suspenso (3/3) — Reative a tarefa</span>
+                      </div>
+                    ) : (currentJob?.status === 'paused') ? (
+                      <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-semibold bg-amber-950/20 border border-amber-500/25 px-2.5 py-1 rounded-lg">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                        <span className="font-mono">Pausado pelo usuário — Reative para agendar</span>
+                      </div>
+                    ) : (currentJob?.nextRunAt || activeJob.nextRunAt) ? (
+                      <div className="flex items-center gap-1.5 text-[10px] text-cyan-300 font-semibold bg-cyan-950/20 border border-cyan-500/25 px-2.5 py-1 rounded-lg">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
+                        <span className="font-mono truncate">Próxima: {formatNextRun(currentJob?.nextRunAt || activeJob.nextRunAt)}</span>
+                      </div>
+                    ) : null}
+                  </div>
                 </>
               )}
             </div>
@@ -798,13 +825,13 @@ export const JobModal: React.FC = () => {
                 )}
                 <button
                   onClick={handleToggleStatus}
-                  className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-all ${
-                    activeJob.status === 'paused' || activeJob.status === 'failing'
-                      ? 'text-emerald-400 bg-emerald-950/10 border-emerald-950/30 hover:bg-emerald-950/30'
+                  className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                    isJobPausedOrFailing
+                      ? 'text-emerald-300 bg-emerald-950/40 border-emerald-500/40 hover:bg-emerald-500/20 shadow-md shadow-emerald-500/10'
                       : 'text-amber-400 bg-amber-950/10 border-amber-950/30 hover:bg-amber-950/30'
                   }`}
                 >
-                  {activeJob.status === 'paused' || activeJob.status === 'failing' ? 'Reativar' : 'Pausar'}
+                  {isJobPausedOrFailing ? 'Reativar Job 🚀' : 'Pausar'}
                 </button>
                 <button
                   onClick={handleTriggerNow}

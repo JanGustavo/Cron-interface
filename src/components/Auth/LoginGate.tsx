@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { useUiStore } from '../../store/uiStore';
 import api from '../../services/api';
 import { AuthProductPanel } from './AuthProductPanel';
 import { authCopy } from './authCopy';
@@ -192,7 +191,6 @@ export const LoginGate: React.FC = () => {
   };
 
   const { login } = useAuthStore();
-  const { toggleTheme, theme } = useUiStore();
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -556,21 +554,6 @@ export const LoginGate: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-400 border border-indigo-950/30 bg-indigo-950/10 transition-all duration-200 hover:text-white hover:bg-indigo-950/30 hover:border-cyan-500/20 hover:shadow-[0_0_14px_rgba(99,102,241,0.16)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/40"
-              aria-label="Alternar tema"
-            >
-              {theme === 'dark' ? (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M16.24 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              )}
-            </button>
-            <button
               onClick={() => {
                 setActiveTab('login');
                 setIsModalOpen(true);
@@ -607,22 +590,43 @@ export const LoginGate: React.FC = () => {
               O CronFlow é o agendador de tarefas developer-first com retries exponenciais automáticos, alertas instantâneos de falha e logs completos para garantir que suas automações nunca quebrem no silêncio.
             </p>
 
-            <div className="grid gap-4 pt-2 select-none sm:grid-cols-2">
+            <div className="grid gap-3 pt-2 select-none sm:grid-cols-3">
               <button
                 onClick={() => {
                   setActiveTab('signup');
                   setIsModalOpen(true);
                 }}
-                className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                className="inline-flex w-full items-center justify-center whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
               >
                 Começar grátis ⚡
               </button>
               <button
                 onClick={() => setIsSimulationOpen(true)}
-                className="inline-flex w-full items-center justify-center whitespace-nowrap px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                className="inline-flex w-full items-center justify-center whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
               >
                 Ver simulador
               </button>
+              <a
+                href="https://github.com/JanGustavo/Cron"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/20 rounded-xl transition-all cursor-pointer hover:-translate-y-0.5 duration-200"
+              >
+                <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                </svg>
+                <span>GitHub Repo</span>
+              </a>
+            </div>
+
+            {/* Dogfooding Callout */}
+            <div className="p-3 rounded-2xl bg-indigo-950/40 border border-indigo-500/20 text-slate-300 text-xs font-sans space-y-1">
+              <div className="flex items-center gap-2 text-cyan-400 font-bold font-mono text-[11px]">
+                <span>⚡ Testado na prática (Dogfooding)</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Desenvolvido e usado em produção para monitorar tarefas de segundo plano e sincronizações do <strong>PromoPulse</strong>. Nenhuma automação falha no silêncio.
+              </p>
             </div>
 
             <p className="text-[10px] text-slate-500 tracking-wider font-semibold font-mono">
@@ -1350,7 +1354,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
       <footer className="py-12 border-t border-indigo-950/40 text-center text-[10px] text-slate-600 font-mono select-none">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <span className="text-slate-500 uppercase tracking-widest font-black">CronFlow v1.0.0</span>
-          <span>© 2026 CronFlow Inc. • Distribuído sob a licença MIT.</span>
+          <span>© 2026 CronFlow • Todos os direitos reservados. Plataforma de Automação & Resiliência HTTP.</span>
         </div>
       </footer>
 

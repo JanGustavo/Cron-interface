@@ -33,7 +33,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
           bg: 'bg-rose-500/10',
           text: 'text-rose-400',
           border: 'border-rose-500/20',
-          label: (status === 'failing' ? 'Falhando' : status === 'failed' ? 'Falhou' : 'Timeout') + suffix,
+          label: (status === 'failed' ? 'Falhou' : 'Timeout') + suffix,
           dot: 'bg-rose-400',
         };
       }
@@ -49,14 +49,16 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
         };
 
       // Paused / Draft / Neutral states
-      case 'paused':
+      case 'paused': {
+        const isFailureSuspended = attemptNumber && attemptNumber >= 3;
         return {
-          bg: 'bg-amber-500/10',
-          text: 'text-amber-400',
-          border: 'border-amber-500/20',
-          label: 'Pausado',
-          dot: 'bg-amber-400',
+          bg: isFailureSuspended ? 'bg-rose-500/10' : 'bg-amber-500/10',
+          text: isFailureSuspended ? 'text-rose-400' : 'text-amber-400',
+          border: isFailureSuspended ? 'border-rose-500/20' : 'border-amber-500/20',
+          label: isFailureSuspended ? `Suspenso (${attemptNumber}/3)` : 'Pausado',
+          dot: isFailureSuspended ? 'bg-rose-400' : 'bg-amber-400',
         };
+      }
       
       case 'draft':
         return {

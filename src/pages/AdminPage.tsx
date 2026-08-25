@@ -98,6 +98,20 @@ export const AdminPage: React.FC = () => {
     }
   };
 
+  const handleToggleVerify = async (user: AdminUser) => {
+    setUpdatingUserId(user.id);
+    const nextVerifyState = !user.isVerified;
+    try {
+      await api.post(`/v1/admin/users/${user.id}/verify`, { verified: nextVerifyState });
+      showToast(nextVerifyState ? `E-mail de ${user.email} verificado com sucesso! ✉️` : `Verificação de ${user.email} desmarcada.`, 'success');
+      fetchAdminData();
+    } catch (err: any) {
+      showToast(`Erro ao alterar verificação: ${err.response?.data?.error || 'falha na requisição'}`, 'error');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
   const handleDeleteUser = async (user: AdminUser) => {
     if (!window.confirm(`⚠️ Tem certeza absoluta que deseja excluir a conta de "${user.email}"?\n\nEsta ação é irreversível e excluirá permanentemente todos os jobs e dados vinculados.`)) {
       return;
@@ -267,11 +281,19 @@ export const AdminPage: React.FC = () => {
                       </td>
 
                       <td className="p-3">
-                        {u.isVerified ? (
-                          <span className="text-emerald-400 font-bold">✓ Sim</span>
-                        ) : (
-                          <span className="text-amber-500 font-bold">⏳ Pendente</span>
-                        )}
+                        <button
+                          type="button"
+                          disabled={updatingUserId === u.id}
+                          onClick={() => handleToggleVerify(u)}
+                          className={`px-2 py-0.5 text-[9px] font-bold rounded border transition-all cursor-pointer ${
+                            u.isVerified
+                              ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400 hover:bg-rose-950/30 hover:text-rose-300 hover:border-rose-500/30'
+                              : 'bg-amber-950/40 border-amber-500/30 text-amber-300 hover:bg-emerald-950/40 hover:text-emerald-300 font-extrabold'
+                          }`}
+                          title={u.isVerified ? "Clique para desmarcar verificação" : "Clique para verificar e-mail manualmente"}
+                        >
+                          {u.isVerified ? '✓ Sim' : '⚡ Ativar E-mail'}
+                        </button>
                       </td>
 
                       <td className="p-3 text-right">
@@ -279,14 +301,28 @@ export const AdminPage: React.FC = () => {
                           <button
                             type="button"
                             disabled={updatingUserId === u.id}
+                            onClick={() => handleToggleVerify(u)}
+                            className={`px-2.5 py-1 rounded text-[9.5px] font-bold border transition-all cursor-pointer ${
+                              u.isVerified
+                                ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400 hover:bg-emerald-950/40'
+                                : 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60 font-black shadow-md shadow-emerald-500/10'
+                            }`}
+                            title="Ativar verificação de e-mail manualmente"
+                          >
+                            {u.isVerified ? '✉️ Verificado' : '✉️ Ativar E-mail'}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={updatingUserId === u.id}
                             onClick={() => handleTogglePlan(u)}
                             className={`px-2.5 py-1 rounded text-[9.5px] font-bold border transition-all cursor-pointer ${
                               isUserPro
                                 ? 'bg-amber-950/30 border-amber-500/30 text-amber-300 hover:bg-amber-900/40'
-                                : 'bg-purple-950/50 border-purple-500/30 text-purple-300 hover:bg-purple-900/60'
+                                : 'bg-purple-950/50 border-purple-500/30 text-purple-300 hover:bg-purple-900/60 shadow-md shadow-purple-500/10'
                             }`}
                           >
-                            {isUserPro ? 'Reverter FREE' : 'Conceder PRO ✨'}
+                            {isUserPro ? 'Reverter FREE' : '⚡ Ativar Plano PRO'}
                           </button>
 
                           <button

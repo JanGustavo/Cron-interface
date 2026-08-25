@@ -190,19 +190,26 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
           <div className="flex justify-between items-center gap-2">
             <div className="flex flex-col gap-1">
               {/* Schedule Info */}
-              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold">
-                <svg className="w-3.5 h-3.5 text-indigo-500/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {formatSchedule(job.schedule)}
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-300 font-semibold font-mono">
+                <span className="text-indigo-400 font-bold">⏱️ {formatSchedule(job.schedule)}</span>
               </div>
               {/* Next Run Info */}
-              {job.nextRunAt && (
-                <div className="flex items-center gap-1 text-[10px] text-indigo-400 font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                  <span className="font-mono">{formatNextRun(job.nextRunAt)}</span>
+              {(job.status === 'failing' || (job.consecutiveFailures && job.consecutiveFailures >= 3)) ? (
+                <div className="flex items-center gap-1.5 text-[10px] text-rose-400 font-semibold bg-rose-950/20 border border-rose-500/25 px-2 py-0.5 rounded-md mt-0.5" title="Execuções automáticas suspensas">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0"></span>
+                  <span className="font-mono">Suspenso — Sem agendamento</span>
                 </div>
-              )}
+              ) : job.status === 'paused' ? (
+                <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-semibold bg-amber-950/20 border border-amber-500/25 px-2 py-0.5 rounded-md mt-0.5" title="Tarefa pausada pelo usuário">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                  <span className="font-mono">Pausado pelo usuário</span>
+                </div>
+              ) : job.nextRunAt ? (
+                <div className="flex items-center gap-1.5 text-[10px] text-cyan-300 font-semibold bg-cyan-950/20 border border-cyan-500/25 px-2 py-0.5 rounded-md mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
+                  <span className="font-mono">Próxima: {formatNextRun(job.nextRunAt)}</span>
+                </div>
+              ) : null}
               {/* Webhook Alert Status */}
               <div className="flex items-center gap-1 text-[9px] font-semibold mt-0.5">
                 {getWebhookAlertStatus(job)}
