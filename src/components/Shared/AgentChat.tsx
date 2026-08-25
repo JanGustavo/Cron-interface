@@ -106,25 +106,37 @@ export const AgentChat: React.FC = () => {
         setFreeQueriesUsed(nextCount);
       }
       
-      // Atualiza as mensagens apenas com conversas e respostas em texto visíveis
+      // Atualiza as mensagens apenas com conversas e respostas em texto visíveis para o usuário
       if (data.history) {
         const newMsgs: Message[] = [];
         (data.history as GeminiMessage[]).forEach((h) => {
-          const textPart = h.parts?.find((p) => p.text && p.text.trim() !== '');
-          if (textPart && textPart.text) {
-            newMsgs.push({
-              role: h.role,
-              text: textPart.text,
-              parts: h.parts
-            });
+          if (h.role === 'model') {
+            const textPart = h.parts?.find((p) => p.text && p.text.trim() !== '' && !p.functionCall);
+            if (textPart && textPart.text) {
+              newMsgs.push({
+                role: 'model',
+                text: textPart.text,
+                parts: h.parts
+              });
+            }
+          } else if (h.role === 'user') {
+            const textPart = h.parts?.find((p) => p.text && p.text.trim() !== '' && !p.functionResponse);
+            if (textPart && textPart.text) {
+              newMsgs.push({
+                role: 'user',
+                text: textPart.text,
+                parts: h.parts
+              });
+            }
           }
         });
+
         if (newMsgs.length > 0) {
           setMessages(newMsgs);
         } else if (data.reply) {
           setMessages(prev => [...prev, { role: 'model', text: data.reply }]);
         }
-      } else {
+      } else if (data.reply) {
         setMessages(prev => [...prev, { role: 'model', text: data.reply }]);
       }
 
