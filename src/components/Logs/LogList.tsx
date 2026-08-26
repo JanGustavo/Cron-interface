@@ -111,9 +111,15 @@ export const LogList: React.FC<LogListProps> = ({
 
                   {/* Attempt Number */}
                   <td className="p-4 text-center">
-                    <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-indigo-950/30 border border-indigo-950/40 text-[10px] font-semibold text-slate-400 whitespace-nowrap leading-none">
-                      {log.attemptNumber}ª tent.
-                    </span>
+                    {log.attemptNumber === 1 ? (
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-slate-950/40 border border-slate-800/80 text-[9px] font-semibold text-slate-500 whitespace-nowrap leading-none">
+                        Inicial
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[9px] font-bold text-amber-400 whitespace-nowrap leading-none">
+                        🔄 Retentativa {log.attemptNumber - 1}
+                      </span>
+                    )}
                   </td>
 
                   {/* Duration */}

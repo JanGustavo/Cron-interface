@@ -551,8 +551,10 @@ export const JobModal: React.FC = () => {
               )}
             </div>
             <div className="p-3 bg-indigo-950/10 border border-indigo-950/30 rounded-xl flex flex-col justify-between">
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Falhas Seguidas</span>
-              <div className="text-xs font-bold text-rose-400 mt-1">{computedFailures} / 3</div>
+              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Retentativas com falha</span>
+              <div className="text-xs font-bold text-rose-400 mt-1">
+                {Math.max(0, computedFailures - 1)} / 3
+              </div>
             </div>
           </div>
 
