@@ -679,7 +679,7 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {/* Sleek Switcher Tabs */}
-              <div className="flex gap-1.5 bg-[#05070e] p-1.5 rounded-xl border border-indigo-950/60 self-start sm:self-auto select-none overflow-x-auto max-w-full scrollbar-none whitespace-nowrap">
+              <div className="flex gap-1.5 bg-[#05070e] p-1.5 rounded-xl border border-indigo-950/60 w-full sm:w-auto select-none overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-indigo-950/60 whitespace-nowrap min-w-0">
                 {[
                   { id: 'keys', label: 'Chaves API' },
                   { id: 'webhooks', label: 'Alertas / Webhooks' },

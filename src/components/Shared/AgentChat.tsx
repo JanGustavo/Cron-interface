@@ -97,7 +97,7 @@ export const AgentChat: React.FC = () => {
       const response = await api.post('/v1/agent/chat', {
         message: userText,
         history: geminiHistory
-      });
+      }, { timeout: 25000 });
 
       const data = response.data; // { reply: string, history: [] }
 
@@ -106,8 +106,10 @@ export const AgentChat: React.FC = () => {
         setFreeQueriesUsed(nextCount);
       }
       
-      // Atualiza as mensagens apenas com conversas e respostas em texto visíveis para o usuário
-      if (data.history) {
+      // Atualiza as mensagens garantindo SEMPRE a exibição da resposta final da IA
+      if (data.reply) {
+        setMessages(prev => [...prev, { role: 'model', text: data.reply }]);
+      } else if (data.history) {
         const newMsgs: Message[] = [];
         (data.history as GeminiMessage[]).forEach((h) => {
           if (h.role === 'model') {
@@ -133,11 +135,7 @@ export const AgentChat: React.FC = () => {
 
         if (newMsgs.length > 0) {
           setMessages(newMsgs);
-        } else if (data.reply) {
-          setMessages(prev => [...prev, { role: 'model', text: data.reply }]);
         }
-      } else if (data.reply) {
-        setMessages(prev => [...prev, { role: 'model', text: data.reply }]);
       }
 
       // Verifica se houve modificação ou disparo de jobs no histórico retornado pelo backend
@@ -167,8 +165,11 @@ export const AgentChat: React.FC = () => {
           text: '🔒 **Limite de Teste Gratuito da IA Atingido (3/3)**\n\nVocê utilizou as suas 3 mensagens gratuitas no Plano Free. Faça o upgrade para o **Plano PRO ✨** para continuar conversando com a IA sem limites!'
         }]);
       } else {
-        const errorMessage = backendError ? `❌ Erro: ${backendError}` : '❌ Ops, ocorreu um erro ao processar sua solicitação.';
-        showToast('Falha ao se comunicar com o assistente de IA.', 'error');
+        const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
+        const errorMessage = isTimeout
+          ? '⏱️ Tempo limite excedido ao comunicar com o modelo de IA. Por favor, tente novamente.'
+          : (backendError ? `❌ Erro: ${backendError}` : '❌ Ops, ocorreu um erro ao processar sua solicitação.');
+        showToast(isTimeout ? 'Tempo limite na resposta da IA.' : 'Falha ao se comunicar com o assistente de IA.', 'error');
         setMessages(prev => [...prev, { role: 'model', text: errorMessage }]);
       }
     } finally {
@@ -176,36 +177,124 @@ export const AgentChat: React.FC = () => {
     }
   };
 
-  // Auxiliar para formatação básica de markdown (textos em negrito e blocos de código)
+  // Renderizador rico de markdown: tabelas, código inline, blocos de código e negrito
   const renderMessageContent = (text: string) => {
     if (!text) return null;
 
-    // Divide texto em blocos de código
-    const parts = text.split(/(```[\s\S]*?```)/g);
+    // Detecta tabelas Markdown: linhas consecutivas contendo |
+    const lines = text.split('\n');
+    const elements: React.ReactNode[] = [];
+    let i = 0;
 
-    return parts.map((part, index) => {
-      if (part.startsWith('```') && part.endsWith('```')) {
-        const code = part.slice(3, -3).trim();
-        return (
-          <pre key={index} className="my-2 p-3 bg-slate-950/80 border border-cyan-500/10 rounded-lg font-mono text-[11px] text-cyan-400 overflow-x-auto whitespace-pre-wrap select-all shadow-inner leading-relaxed">
-            <code>{code}</code>
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Bloco de código ```
+      if (line.trim().startsWith('```')) {
+        let codeContent = '';
+        i++;
+        while (i < lines.length && !lines[i].trim().startsWith('```')) {
+          codeContent += lines[i] + '\n';
+          i++;
+        }
+        i++; // consome o fechamento ```
+        elements.push(
+          <pre key={`code-${i}`} className="my-2 p-3 bg-slate-950/90 border border-cyan-500/20 rounded-xl font-mono text-[10px] text-cyan-300 overflow-x-auto whitespace-pre-wrap select-all shadow-inner leading-relaxed">
+            <code>{codeContent.trim()}</code>
           </pre>
         );
+        continue;
       }
 
-      // Destaca textos em negrito: **texto**
-      const boldParts = part.split(/(\*\*.*?\*\*)/g);
-      return (
-        <span key={index} className="whitespace-pre-line">
-          {boldParts.map((bp, bIndex) => {
-            if (bp.startsWith('**') && bp.endsWith('**')) {
-              return <strong key={bIndex} className="font-extrabold text-slate-100">{bp.slice(2, -2)}</strong>;
-            }
-            return bp;
-          })}
-        </span>
+      // Tabela Markdown
+      if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+        const tableLines: string[] = [];
+        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+          tableLines.push(lines[i].trim());
+          i++;
+        }
+
+        if (tableLines.length >= 2) {
+          const headerCells = tableLines[0].split('|').slice(1, -1).map(c => c.trim());
+          const dataLines = tableLines.filter((_, idx) => idx !== 0 && !tableLines[idx].includes('---'));
+
+          elements.push(
+            <div key={`tbl-${i}`} className="my-2.5 overflow-x-auto rounded-xl border border-indigo-950/60 bg-[#060814]">
+              <table className="w-full text-left text-[10px] border-collapse font-sans">
+                <thead>
+                  <tr className="bg-indigo-950/30 border-b border-indigo-950/60 text-slate-300">
+                    {headerCells.map((h, hIdx) => (
+                      <th key={hIdx} className="px-2.5 py-1.5 font-bold uppercase tracking-wider text-[9px] text-cyan-400">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-indigo-950/30">
+                  {dataLines.map((row, rIdx) => {
+                    const cells = row.split('|').slice(1, -1).map(c => c.trim());
+                    return (
+                      <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-slate-950/40' : 'bg-indigo-950/10'}>
+                        {cells.map((cell, cIdx) => (
+                          <td key={cIdx} className="px-2.5 py-1.5 text-slate-300">
+                            {renderInlineMarkdown(cell)}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+          continue;
+        }
+      }
+
+      // Linha de texto normal com suporte a negrito e código inline
+      elements.push(
+        <div key={`line-${i}`} className="leading-relaxed min-h-[1.25rem]">
+          {renderInlineMarkdown(line)}
+        </div>
       );
-    });
+      i++;
+    }
+
+    return <div className="space-y-1">{elements}</div>;
+  };
+
+  const renderInlineMarkdown = (line: string) => {
+    if (!line) return <span>&nbsp;</span>;
+
+    // Divide por código inline `código`
+    const inlineParts = line.split(/(`[^`]+`)/g);
+
+    return (
+      <span>
+        {inlineParts.map((ip, ipIdx) => {
+          if (ip.startsWith('`') && ip.endsWith('`') && ip.length > 1) {
+            return (
+              <code key={ipIdx} className="mx-0.5 px-1.5 py-0.5 rounded bg-slate-950/80 border border-cyan-500/20 font-mono text-[10px] text-cyan-300 shadow-sm">
+                {ip.slice(1, -1)}
+              </code>
+            );
+          }
+
+          // Divide por negrito **texto**
+          const boldParts = ip.split(/(\*\*[^*]+\*\*)/g);
+          return (
+            <span key={ipIdx}>
+              {boldParts.map((bp, bpIdx) => {
+                if (bp.startsWith('**') && bp.endsWith('**') && bp.length > 3) {
+                  return <strong key={bpIdx} className="font-bold text-slate-100">{bp.slice(2, -2)}</strong>;
+                }
+                return bp;
+              })}
+            </span>
+          );
+        })}
+      </span>
+    );
   };
 
   return (
