@@ -12,17 +12,17 @@ const isLocalhost = Boolean(
   self.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
 );
 
-// Instalação do Service Worker e caching de recursos essenciais
+// Instalacao do Service Worker e caching de recursos essenciais
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Pré-carregando assets estáticos essenciais');
+      console.log('[Service Worker] Pre-carregando assets estaticos essenciais');
       return cache.addAll(ASSETS_TO_CACHE);
     }).then(() => self.skipWaiting())
   );
 });
 
-// Ativação do Service Worker e limpeza de caches antigos
+// Ativacao do Service Worker e limpeza de caches antigos
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -38,20 +38,20 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Intercepção de requisições de rede
+// Intercepcao de requisicoes de rede
 self.addEventListener('fetch', (event) => {
-  // Ignorar caching em localhost para não atrapalhar o hot-reload do desenvolvimento
+  // Ignorar caching em localhost para nao atrapalhar o hot-reload do desenvolvimento
   if (isLocalhost) {
     return;
   }
 
-  // Ignorar chamadas de API do Go ou outros domínios externos para não quebrar a sincronização
+  // Ignorar chamadas de API do Go ou outros dominios externos para nao quebrar a sincronizacao
   if (event.request.url.includes('/v1/') || !event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  // Estratégia Network-First para a navegação principal (documentos HTML)
-  // Isso garante que o usuário sempre receba o index.html mais recente contendo os novos hashes de assets.
+  // Estrategia Network-First para a navegacao principal (documentos HTML)
+  // Isso garante que o usuario sempre receba o index.html mais recente contendo os novos hashes de assets.
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -83,7 +83,7 @@ self.addEventListener('fetch', (event) => {
       }
 
       return fetch(event.request).then((response) => {
-        // Não cacheia respostas que não sejam sucesso (status 200)
+        // Nao cacheia respostas que nao sejam sucesso (status 200)
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
@@ -96,7 +96,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       });
     }).catch(() => {
-      // Fallback offline se a rede falhar e o asset não estiver cacheado
+      // Fallback offline se a rede falhar e o asset nao estiver cacheado
       if (event.request.mode === 'navigate') {
         return caches.match('/index.html');
       }
