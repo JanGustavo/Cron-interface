@@ -278,7 +278,7 @@ export const JobModal: React.FC = () => {
 
     Swal.fire({
       title: 'Disparar agora?',
-      text: `Deseja realmente forçar um disparo de webhook imediato para "${activeJob.url}"? Isso gerará um novo registro de execução nos logs.`,
+      text: `Deseja realmente forçar um disparo de webhook imediato para "${activeJob.url}"? Isso gerará um novo registro de execução e pode causar efeitos colaterais caso o endpoint de destino não esteja preparado para receber replays.`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sim, disparar!',

@@ -105,6 +105,7 @@ export const DashboardPage: React.FC = () => {
   const { jobs, isLoading: isLoadingJobs } = useJobsStore();
   const [allRecentLogs, setAllRecentLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const isPageLoading = isLoadingJobs || (jobs.length > 0 && loading && allRecentLogs.length === 0);
   const [chartFilter, setChartFilter] = useState<'1h' | '24h' | '3d' | '7d' | '30d'>('24h');
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
@@ -154,39 +155,47 @@ export const DashboardPage: React.FC = () => {
     }
   }, [activeMetric, fetchQueueMetrics]);
 
+  const fetchRecentLogs = useCallback(async (active = true) => {
+    if (jobs.length === 0) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setHasError(false);
+    try {
+      // Calculate start date for last 30 days to optimize database scan and minimize payload size
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const res = await api.get(`/v1/executions?limit=1000&start_date=${startDate}`, { timeout: 15000 });
+      const rawLogs = (res.data?.data || []) as LogEntry[];
+      
+      // Map jobName and jobUrl using the local jobs list
+      const mappedLogs = rawLogs.map((log) => {
+        const job = jobs.find((j) => j.id === log.jobId);
+        return {
+          ...log,
+          jobName: job ? job.name : 'Job Removido',
+          jobUrl: job ? job.url : '',
+        };
+      });
+
+      if (active) {
+        setAllRecentLogs(mappedLogs);
+      }
+    } catch (err) {
+      console.error('Failed to fetch global executions for dashboard', err);
+      if (active) {
+        setHasError(true);
+      }
+    } finally {
+      if (active) setLoading(false);
+    }
+  }, [jobs]);
+
   useEffect(() => {
     let active = true;
-    const fetchRecentLogs = async () => {
-      if (jobs.length === 0) return;
-      setLoading(true);
-      try {
-        // Calculate start date for last 30 days to optimize database scan and minimize payload size
-        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        const res = await api.get(`/v1/executions?limit=10000&start_date=${startDate}`, { timeout: 15000 });
-        const rawLogs = (res.data?.data || []) as LogEntry[];
-        
-        // Map jobName and jobUrl using the local jobs list
-        const mappedLogs = rawLogs.map((log) => {
-          const job = jobs.find((j) => j.id === log.jobId);
-          return {
-            ...log,
-            jobName: job ? job.name : 'Job Removido',
-            jobUrl: job ? job.url : '',
-          };
-        });
-
-        if (active) {
-          setAllRecentLogs(mappedLogs);
-        }
-      } catch (err) {
-        console.error('Failed to fetch global executions for dashboard', err);
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-    fetchRecentLogs();
+    fetchRecentLogs(active);
     return () => { active = false; };
-  }, [jobs]);
+  }, [fetchRecentLogs]);
 
   const totalExecutions = allRecentLogs.length;
   const successExecutions = allRecentLogs.filter((log) => log.status === 'success').length;
@@ -786,6 +795,26 @@ export const DashboardPage: React.FC = () => {
                       ))}
                     </div>
                   )}
+                </div>
+              ) : hasError ? (
+                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-rose-500/20 bg-rose-950/5 min-h-[260px] text-center space-y-4">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-rose-950/20 border border-rose-500/20 text-rose-400">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className="space-y-1.5 max-w-sm">
+                    <h4 className="text-xs font-bold text-slate-250 font-mono">Erro ao carregar telemetria</h4>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
+                      Não foi possível carregar os dados de telemetria (timeout ou erro de conexão). Reduzimos a amostragem inicial para otimizar o carregamento.
+                    </p>
+                    <button
+                      onClick={() => fetchRecentLogs(true)}
+                      className="mt-3 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-lg hover:bg-cyan-500/20 transition-all cursor-pointer"
+                    >
+                      Tentar Novamente 🔄
+                    </button>
+                  </div>
                 </div>
               ) : isPageLoading ? (
                 <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-indigo-500/10 bg-[#04060f]/30 min-h-[260px] text-center space-y-4 select-none animate-pulse">

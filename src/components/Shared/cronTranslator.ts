@@ -26,7 +26,8 @@ export const translateSchedule = (schedule: string): string => {
   }
   if (min.startsWith('*/') && hour === '*' && dom === '*' && month === '*' && dow === '*') {
     const step = min.split('/')[1];
-    return `A cada ${step} minutos`;
+    const stepNum = parseInt(step, 10);
+    return `A cada ${step} minuto${stepNum > 1 ? 's' : ''}`;
   }
   if (hour.startsWith('*/') && min === '0' && dom === '*' && month === '*' && dow === '*') {
     const step = hour.split('/')[1];

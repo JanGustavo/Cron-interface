@@ -145,6 +145,20 @@ export const LoginGate: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [signupSession, setSignupSession] = useState<{ user: User; token: Token; projects: Project[] } | null>(null);
+  const handleInvalid = (e: React.FormEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    if (target.validity.valueMissing) {
+      target.setCustomValidity('Por favor, preencha este campo.');
+    } else if (target.validity.typeMismatch) {
+      target.setCustomValidity('Por favor, insira um endereço de e-mail válido.');
+    } else {
+      target.setCustomValidity('');
+    }
+  };
+
+  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+    (e.target as HTMLInputElement).setCustomValidity('');
+  };
 
   // Forgot Password & Reset Password State
   const [forgotEmail, setForgotEmail] = useState('');
@@ -1177,7 +1191,7 @@ export const LoginGate: React.FC = () => {
           <div className="p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2">
             <h3 className="text-sm font-bold text-slate-200 font-mono">Como funcionam as retentativas automáticas (retries)?</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Caso seu servidor responda com erro HTTP (5xx) ou sofrer um timeout, o Worker do CronFlow re-executa a requisição até 3 vezes utilizando backoff exponencial para suavizar picos de instabilidade.
+              Caso seu servidor responda com erro HTTP (5xx) ou sofra um timeout, o Worker do CronFlow re-executa a requisição (totalizando até 3 tentativas de execução) utilizando atrasos (backoff) de 10s a 20s para suavizar picos de instabilidade.
             </p>
           </div>
 
@@ -1545,6 +1559,8 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                     className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
                     disabled={loading}
                     required
+                    onInvalid={handleInvalid}
+                    onInput={handleInput}
                   />
                 </div>
 
@@ -1561,6 +1577,8 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                       className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
                       disabled={loading}
                       required
+                      onInvalid={handleInvalid}
+                      onInput={handleInput}
                     />
                     <button
                       type="button"
@@ -1726,6 +1744,8 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                     className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
                     disabled={loading}
                     required
+                    onInvalid={handleInvalid}
+                    onInput={handleInput}
                   />
                 </div>
 
@@ -1742,6 +1762,8 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                       className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
                       disabled={loading}
                       required
+                      onInvalid={handleInvalid}
+                      onInput={handleInput}
                     />
                     <button
                       type="button"
@@ -1802,6 +1824,8 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                       className="w-full px-4 py-3 pr-12 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300 font-mono"
                       disabled={loading}
                       required
+                      onInvalid={handleInvalid}
+                      onInput={handleInput}
                     />
                     <button
                       type="button"
@@ -1837,6 +1861,8 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                     className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
                     disabled={loading}
                     required
+                    onInvalid={handleInvalid}
+                    onInput={handleInput}
                   />
                 </div>
 
@@ -1852,6 +1878,8 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                     className="w-full px-4 py-3 bg-[#070913]/90 border border-indigo-950/60 rounded-xl text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-300"
                     disabled={loading}
                     required
+                    onInvalid={handleInvalid}
+                    onInput={handleInput}
                   />
                 </div>
 
@@ -2200,13 +2228,13 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                 <div className="text-rose-400 font-semibold animate-in fade-in duration-300 space-y-1">
                   <div>⚠️ [08:00:10.055] worker: HTTP TIMEOUT (10s limit exceeded).</div>
                   <div className="pl-6 text-[9px] md:text-[11px] text-rose-500/80">
-                    → Enqueuing job for Retry 2/3 (30s backoff). Status: FAIL_TEMPORARY
+                    → Enqueuing job for Retry 1/2 (10s backoff). Status: FAIL_TEMPORARY
                   </div>
                 </div>
               )}
               {simulationStep >= 5 && (
                 <div className="text-amber-400 animate-in fade-in duration-300 space-y-1">
-                  <div>🔄 [08:00:40.060] worker: Backoff expired. Executing Retry 2/3...</div>
+                  <div>🔄 [08:00:20.060] worker: Backoff expired. Executing Retry 1/2...</div>
                   <div className="pl-6 text-[9px] md:text-[11px] text-amber-500/80">
                     → Sending HTTP POST webhook (signed with project HMAC-SHA256)
                   </div>
@@ -2214,7 +2242,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
               )}
               {simulationStep >= 6 && (
                 <div className="text-emerald-400 font-bold animate-in fade-in duration-300 space-y-1">
-                  <div>✅ [08:00:40.245] worker: HTTP Status 200 OK! Latency: 185ms.</div>
+                  <div>✅ [08:00:20.245] worker: HTTP Status 200 OK! Latency: 185ms.</div>
                   <div className="pl-6 text-[9px] md:text-[11px] text-emerald-500/80">
                     → DB updated (1 retry required). Distributed Redis lock released.
                   </div>

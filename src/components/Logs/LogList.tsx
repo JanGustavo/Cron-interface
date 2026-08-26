@@ -133,6 +133,8 @@ export const LogList: React.FC<LogListProps> = ({
                         e.stopPropagation();
                         onSelectLog(log.id);
                       }}
+                      aria-label="Inspecionar execução"
+                      title="Inspecionar execução"
                       className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-950/40 transition-all duration-300"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

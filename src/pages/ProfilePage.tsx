@@ -114,6 +114,7 @@ export const ProfilePage: React.FC = () => {
   const [dailyDigestEnabled, setDailyDigestEnabled] = useState(false);
   const [profileTimezone, setProfileTimezone] = useState(() => localStorage.getItem('cf_user_timezone') || 'America/Sao_Paulo');
   const [digestHour, setDigestHour] = useState(18);
+  const [clientIp, setClientIp] = useState(() => localStorage.getItem('cf_user_client_ip') || '127.0.0.1');
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -300,6 +301,10 @@ export const ProfilePage: React.FC = () => {
         if (res.data.timezone) {
           setProfileTimezone(res.data.timezone);
           localStorage.setItem('cf_user_timezone', res.data.timezone);
+        }
+        if (res.data.clientIp) {
+          setClientIp(res.data.clientIp);
+          localStorage.setItem('cf_user_client_ip', res.data.clientIp);
         }
         setDigestHour(res.data.digestHour !== undefined ? res.data.digestHour : 18);
 
@@ -1082,7 +1087,7 @@ export const ProfilePage: React.FC = () => {
                           <span className="text-xs font-semibold text-slate-200">Navegador Atual (Chrome/Linux)</span>
                           <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider">Esta Sessão</span>
                         </div>
-                        <p className="text-[10px] text-slate-500">IP: <code className="font-mono text-indigo-400">127.0.0.1 (Localhost)</code> • Última atividade: Agora</p>
+                        <p className="text-[10px] text-slate-500">IP: <code className="font-mono text-indigo-400">{clientIp}</code> • Última atividade: Agora</p>
                       </div>
                     </div>
                     <div className="p-4 flex items-center justify-between bg-indigo-950/5">
