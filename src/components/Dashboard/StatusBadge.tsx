@@ -29,7 +29,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
       case 'failed':
       case 'timeout': {
         let suffix = '';
-        if (attemptNumber) {
+        if (status === 'failing' || (attemptNumber && attemptNumber >= 4)) {
+          suffix = ' (3/3 retentativas falhas)';
+        } else if (attemptNumber) {
           if (attemptNumber === 1) {
             suffix = ' (Inicial)';
           } else if (attemptNumber > 1) {
@@ -41,7 +43,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
           bg: 'bg-rose-500/10',
           text: 'text-rose-400',
           border: 'border-rose-500/20',
-          label: (status === 'failed' ? 'Falhou' : 'Timeout') + suffix,
+          label: (status === 'failing' ? 'Suspenso' : status === 'failed' ? 'Falhou' : 'Timeout') + suffix,
           dot: 'bg-rose-400',
         };
       }

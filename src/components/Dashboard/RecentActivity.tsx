@@ -28,21 +28,15 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [],
       yesterday.setDate(yesterday.getDate() - 1);
       const isYesterday = date.toDateString() === yesterday.toDateString();
       
-      const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      
-      const offset = date.getTimezoneOffset();
-      const absOffset = Math.abs(offset);
-      const hours = Math.floor(absOffset / 60);
-      const sign = offset <= 0 ? '+' : '-';
-      const tzStr = `GMT${sign}${hours}`;
+      const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
       if (isToday) {
-        return `Hoje às ${timeStr} (${tzStr})`;
+        return `Hoje às ${timeStr}`;
       } else if (isYesterday) {
-        return `Ontem às ${timeStr} (${tzStr})`;
+        return `Ontem às ${timeStr}`;
       } else {
         const dateStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        return `${dateStr} às ${timeStr} (${tzStr})`;
+        return `${dateStr} às ${timeStr}`;
       }
     } catch {
       return '-';

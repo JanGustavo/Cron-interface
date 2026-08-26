@@ -789,7 +789,7 @@ export const DashboardPage: React.FC = () => {
                           {/* Total count */}
                           <div className="flex items-center justify-between border-t border-indigo-950/20 pt-2.5 mt-1 text-[9px] text-slate-500">
                             <span>Total de Tarefas</span>
-                            <span className="font-bold text-slate-350 font-mono">{q.size}</span>
+                            <span className="font-bold text-slate-350 font-mono">{q.size}</span> 
                           </div>
                         </div>
                       ))}

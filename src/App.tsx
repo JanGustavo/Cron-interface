@@ -278,6 +278,13 @@ const App: React.FC = () => {
   }, [isDocsOpen, docsMarkdown]);
 
   useEffect(() => {
+    let isMounted = true;
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) {
+        setAuthChecking(false);
+      }
+    }, 3000);
+
     const checkAuth = async () => {
       const savedToken = localStorage.getItem('cf_token');
       if (savedToken) {
@@ -285,8 +292,8 @@ const App: React.FC = () => {
           // Set temporary localstorage for api interceptor
           localStorage.setItem('cf_token', savedToken);
           
-          // Load fresh profile and project list from backend
-          const profileResponse = await api.get('/v1/users/profile');
+          // Load fresh profile and project list from backend with a fast 4s timeout
+          const profileResponse = await api.get('/v1/users/profile', { timeout: 4000 });
           const profile = profileResponse.data;
           
           const decoded = parseJwt(savedToken);
@@ -327,10 +334,16 @@ const App: React.FC = () => {
           logout();
         }
       }
-      setAuthChecking(false);
+      if (isMounted) {
+        setAuthChecking(false);
+      }
     };
 
     checkAuth();
+    return () => {
+      isMounted = false;
+      clearTimeout(fallbackTimer);
+    };
   }, [login, logout]);
 
   useEffect(() => {

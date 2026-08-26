@@ -114,6 +114,9 @@ export const JobModal: React.FC = () => {
 
   const computedFailures = (() => {
     if (!currentJob) return 0;
+    if (currentJob.status === 'failing' || currentJob.kanbanStatus === 'failed') {
+      return 4;
+    }
     const baseCount = currentJob.consecutiveFailures || 0;
     let logConsecutive = 0;
     for (const log of jobLogs) {
