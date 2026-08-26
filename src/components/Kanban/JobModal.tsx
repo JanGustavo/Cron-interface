@@ -750,6 +750,15 @@ export const JobModal: React.FC = () => {
                         }`}>
                           {log.httpStatus || 'ERR'} {log.status === 'success' ? 'SUCCESS' : log.status.toUpperCase()}
                         </span>
+                        {log.attemptNumber === 1 ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-semibold bg-slate-950/60 border border-slate-800 text-slate-400 whitespace-nowrap">
+                            Tentativa Inicial
+                          </span>
+                        ) : log.attemptNumber && log.attemptNumber > 1 ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 border border-amber-500/25 text-amber-400 whitespace-nowrap flex items-center gap-1">
+                            <span>🔄 Retentativa {log.attemptNumber - 1} de 3</span>
+                          </span>
+                        ) : null}
                         <span className="text-slate-400 font-mono text-[10px]">
                           {new Date(log.triggeredAt).toLocaleString('pt-BR')}
                         </span>
