@@ -56,6 +56,7 @@ export const AgentChat: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { fetchJobs } = useJobsStore();
@@ -306,7 +307,11 @@ export const AgentChat: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="w-[calc(100vw-2rem)] sm:w-[380px] h-[480px] mb-4 flex flex-col rounded-2xl border border-indigo-500/25 bg-[#0a0d1d]/95 shadow-[0_12px_40px_rgba(99,102,241,0.25)] overflow-hidden"
+            className={`mb-4 flex flex-col rounded-2xl border border-indigo-500/25 bg-[#0a0d1d]/95 shadow-[0_12px_50px_rgba(99,102,241,0.3)] overflow-hidden transition-all duration-300 ${
+              isExpanded
+                ? 'w-[calc(100vw-2rem)] sm:w-[720px] md:w-[840px] h-[calc(100vh-5rem)] max-h-[750px]'
+                : 'w-[calc(100vw-2rem)] sm:w-[380px] h-[480px]'
+            }`}
           >
             {/* Header */}
             <div className="relative flex items-center justify-between px-4 py-3 bg-[#0c1026]/90 border-b border-indigo-950/40">
@@ -342,14 +347,35 @@ export const AgentChat: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1 rounded-lg text-slate-450 hover:text-white hover:bg-slate-900/60 transition-colors cursor-pointer focus:outline-none"
-              >
-                <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+
+              {/* Window Controls */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-slate-900/60 transition-colors cursor-pointer focus:outline-none"
+                  title={isExpanded ? "Restaurar tamanho normal" : "Expandir janela"}
+                >
+                  {isExpanded ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 14h6m0 0v6m0-6L3 21m17-7h-6m0 0v6m0-6l7 7M14 4h6m0 0v6m0-6l7-7M4 10h6m0 0V4m0 6L3 3" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => { setIsOpen(false); setIsExpanded(false); }}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900/60 transition-colors cursor-pointer focus:outline-none"
+                  title="Fechar assistente"
+                >
+                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Messages Area */}
@@ -363,7 +389,7 @@ export const AgentChat: React.FC = () => {
                 const isUser = msg.role === 'user';
                 return (
                   <div key={index} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`flex items-start gap-2.5 max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`flex items-start gap-2.5 ${isExpanded ? 'max-w-[95%]' : 'max-w-[85%]'} ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
                       {/* Avatar */}
                       {!isUser && (
                         <div className="flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-indigo-950/60 border border-indigo-500/20 text-cyan-400 shrink-0 text-[11px] shadow">
