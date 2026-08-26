@@ -739,8 +739,15 @@ export const JobModal: React.FC = () => {
               {loadingLogs ? (
                 <div className="p-4 text-center text-slate-500 animate-pulse bg-indigo-950/5">Carregando execuções...</div>
               ) : jobLogs.length > 0 ? (
-                jobLogs.map((log) => (
-                  <div key={log.id} className="p-3.5 bg-indigo-950/10 border-b border-indigo-950/20 last:border-0 flex flex-col gap-2">
+                jobLogs.map((log, idx) => (
+                  <div
+                    key={log.id}
+                    className={`p-3.5 border-b border-indigo-950/25 last:border-0 flex flex-col gap-2 transition-colors ${
+                      idx % 2 === 0
+                        ? 'bg-[#070a1a]/60 hover:bg-indigo-950/40'
+                        : 'bg-[#0e132e]/70 hover:bg-indigo-950/50'
+                    }`}
+                  >
                     <div className="flex justify-between items-center w-full">
                       <div className="flex items-center gap-3">
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
