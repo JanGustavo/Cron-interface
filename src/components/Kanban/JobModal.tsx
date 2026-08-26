@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { StatusBadge } from '../Dashboard/StatusBadge';
@@ -142,23 +142,28 @@ export const JobModal: React.FC = () => {
   const [editNextJobId, setEditNextJobId] = useState('');
   const [editTagsInput, setEditTagsInput] = useState('');
 
+  const fetchJobLogs = useCallback(() => {
+    if (!activeJob) return;
+    setLoadingLogs(true);
+    api.get(`/v1/jobs/${activeJob.id}/executions?limit=5`)
+      .then((res) => {
+        setJobLogs(res.data || []);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar execuções do job:", err);
+      })
+      .finally(() => {
+        setLoadingLogs(false);
+      });
+  }, [activeJob]);
+
   useEffect(() => {
     if (!activeJob || !isJobModalOpen) return;
     const timer = setTimeout(() => {
-      setLoadingLogs(true);
-      api.get(`/v1/jobs/${activeJob.id}/executions?limit=5`)
-        .then((res) => {
-          setJobLogs(res.data || []);
-        })
-        .catch((err) => {
-          console.error("Erro ao carregar execuções do job:", err);
-        })
-        .finally(() => {
-          setLoadingLogs(false);
-        });
+      fetchJobLogs();
     }, 0);
     return () => clearTimeout(timer);
-  }, [activeJob, isJobModalOpen]);
+  }, [activeJob, isJobModalOpen, fetchJobLogs]);
 
   useEffect(() => {
     if (computedFailures >= 4 && currentJob && (currentJob.consecutiveFailures < 4 || currentJob.status !== 'failing')) {
@@ -735,10 +740,23 @@ export const JobModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Executions Logs Section */}
+          {/* Execution History Section */}
           <div className="space-y-3">
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Logs de Execução Recentes</label>
-            <div className="border border-indigo-950/30 rounded-xl overflow-hidden text-xs">
+            <div className="flex justify-between items-center">
+              <h4 className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Logs de Execução Recentes</h4>
+              <button
+                onClick={fetchJobLogs}
+                disabled={loadingLogs}
+                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <svg className={`w-3.5 h-3.5 ${loadingLogs ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Atualizar</span>
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-indigo-950/40 overflow-hidden bg-slate-950/20 max-h-56 overflow-y-auto">
               {loadingLogs ? (
                 <div className="p-4 text-center text-slate-500 animate-pulse bg-indigo-950/5">Carregando execuções...</div>
               ) : jobLogs.length > 0 ? (
@@ -778,45 +796,41 @@ export const JobModal: React.FC = () => {
                       </span>
                     </div>
                     {log.status !== 'success' && log.responseBody && (
-                      <div className="text-[10px] text-rose-400/90 font-mono bg-rose-950/10 border border-rose-500/15 rounded-lg p-2 mt-1 break-all text-left select-text">
+                      <div className="mt-1 p-2 rounded bg-rose-950/20 border border-rose-900/30 font-mono text-[10px] text-rose-300 break-all select-all">
                         {log.responseBody}
                       </div>
                     )}
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-slate-500 italic bg-indigo-950/5">Nenhuma execução registrada para este job.</div>
+                <div className="p-4 text-center text-slate-500 text-xs">Nenhuma execução registrada para este job ainda.</div>
               )}
             </div>
           </div>
-
         </div>
 
-        {/* Footer Toolbar Actions */}
-        <div className="p-5 border-t border-indigo-950/30 bg-indigo-950/10 flex flex-wrap gap-2 justify-between items-center">
+        {/* Modal Footer Controls */}
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 p-4 sm:p-6 border-t border-indigo-950/30 bg-indigo-950/5">
           {isEditing ? (
-            <>
-              {/* Cancel Button */}
+            <div className="flex justify-end gap-2 w-full">
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all"
+                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-900/60 border border-slate-800 rounded-xl transition-all cursor-pointer"
               >
                 Cancelar
               </button>
-
-              {/* Save Button */}
               <button
                 onClick={handleSave}
-                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md neon-glow-primary"
+                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md neon-glow-primary cursor-pointer"
               >
                 Salvar Alterações
               </button>
-            </>
+            </div>
           ) : (
             <>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 text-xs font-bold text-rose-400 hover:text-rose-200 bg-[#12070c] hover:bg-[#200a14] border border-rose-950/40 hover:border-rose-500/45 rounded-xl transition-all duration-300 flex items-center gap-1.5 cursor-pointer hover:shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                className="px-4 py-2 text-xs font-bold text-rose-400 hover:text-rose-200 bg-[#12070c] hover:bg-[#200a14] border border-rose-950/40 hover:border-rose-500/45 rounded-xl transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer hover:shadow-[0_0_15px_rgba(244,63,94,0.15)]"
               >
                 <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -825,10 +839,10 @@ export const JobModal: React.FC = () => {
               </button>
 
               {/* Right Action Stack */}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 text-xs font-semibold text-indigo-400 hover:text-white bg-indigo-950/10 hover:bg-indigo-950/40 border border-indigo-950/30 rounded-xl transition-all"
+                  className="flex-1 sm:flex-initial px-3.5 py-2 text-xs font-semibold text-indigo-400 hover:text-white bg-indigo-950/10 hover:bg-indigo-950/40 border border-indigo-950/30 rounded-xl transition-all text-center cursor-pointer"
                 >
                   Editar Tarefa ✏️
                 </button>
@@ -846,7 +860,7 @@ export const JobModal: React.FC = () => {
                 )}
                 <button
                   onClick={handleToggleStatus}
-                  className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                  className={`flex-1 sm:flex-initial px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
                     isJobPausedOrFailing
                       ? 'text-emerald-300 bg-emerald-950/40 border-emerald-500/40 hover:bg-emerald-500/20 shadow-md shadow-emerald-500/10'
                       : 'text-amber-400 bg-amber-950/10 border-amber-950/30 hover:bg-amber-950/30'
@@ -856,7 +870,7 @@ export const JobModal: React.FC = () => {
                 </button>
                 <button
                   onClick={handleTriggerNow}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md neon-glow-primary"
+                  className="flex-1 sm:flex-initial px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md neon-glow-primary text-center cursor-pointer"
                 >
                   Executar Agora ⚡
                 </button>
@@ -864,7 +878,6 @@ export const JobModal: React.FC = () => {
             </>
           )}
         </div>
-
       </div>
     </div>
   );
