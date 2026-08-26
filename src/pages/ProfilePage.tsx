@@ -671,18 +671,18 @@ export const ProfilePage: React.FC = () => {
         <div className="lg:col-span-7 space-y-6 min-w-0">
           
           {/* TABBED SECURITY PANEL */}
-          <div id="security-settings" className="rounded-3xl glass-panel border border-indigo-950/40 p-6 space-y-5 text-left">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-indigo-950/30 pb-4">
+          <div id="security-settings" className="rounded-3xl glass-panel border border-indigo-950/40 p-4 sm:p-6 space-y-5 text-left min-w-0">
+            <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-3.5 border-b border-indigo-950/30 pb-4 min-w-0">
               <div>
-                <h4 className="text-base font-bold text-slate-250">Segurança & Integrações</h4>
+                <h4 className="text-base font-bold text-slate-200">Segurança & Integrações</h4>
                 <p className="text-xs text-slate-400 mt-0.5">Gerencie os acessos, conexões externas e APIs do sistema.</p>
               </div>
 
-              {/* Sleek Switcher Tabs */}
-              <div className="flex gap-1.5 bg-[#05070e] p-1.5 rounded-xl border border-indigo-950/60 w-full sm:w-auto select-none overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-indigo-950/60 whitespace-nowrap min-w-0">
+              {/* Sleek Switcher Tabs with smooth horizontal scroll and clear containment */}
+              <div className="flex items-center gap-1 bg-[#05070e]/90 p-1.5 rounded-xl border border-indigo-950/70 w-full xl:w-auto select-none overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-indigo-900/40 scrollbar-track-transparent whitespace-nowrap min-w-0">
                 {[
                   { id: 'keys', label: 'Chaves API' },
-                  { id: 'webhooks', label: 'Alertas / Webhooks' },
+                  { id: 'webhooks', label: 'Webhooks' },
                   { id: 'sessions', label: 'Sessões' },
                   { id: 'twoFactor', label: 'MFA' },
                   { id: 'accessibility', label: 'Acessibilidade ♿' },
@@ -693,7 +693,7 @@ export const ProfilePage: React.FC = () => {
                     onClick={() => setSecurityTab(t.id as 'keys' | 'webhooks' | 'sessions' | 'twoFactor' | 'accessibility')}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                       securityTab === t.id
-                        ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 shadow-md'
+                        ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 shadow-sm'
                         : 'text-slate-500 hover:text-slate-300 border border-transparent'
                     }`}
                   >
