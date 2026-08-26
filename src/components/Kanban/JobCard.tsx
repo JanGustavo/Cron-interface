@@ -76,7 +76,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
       );
     }
 
-    if (j.status === 'failing' || j.consecutiveFailures >= 3) {
+    if (j.status === 'failing' || j.consecutiveFailures >= 4) {
       return (
         <span className="flex items-center gap-1 text-rose-400 font-bold" title="Alerta disparado devido a falhas no job">
           <svg className="w-3.5 h-3.5 text-rose-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,7 +117,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
           }`}
           style={{
             ...provided.draggableProps.style,
-            borderColor: (columnId === 'draft' || job.status === 'paused' || job.status === 'failing' || job.consecutiveFailures >= 3)
+            borderColor: (columnId === 'draft' || job.status === 'paused' || job.status === 'failing' || job.consecutiveFailures >= 4)
               ? 'rgba(239, 68, 68, 0.65)' // Borda vermelha forte
               : (columnId === 'failed')
                 ? 'rgba(244, 63, 94, 0.45)' // Borda vermelha média
@@ -127,7 +127,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
 
             boxShadow: snapshot.isDragging
               ? '0 8px 32px rgba(99, 102, 241, 0.25), 0 0 20px rgba(99, 102, 241, 0.35)'
-              : (columnId === 'draft' || job.status === 'paused' || job.status === 'failing' || job.consecutiveFailures >= 3)
+              : (columnId === 'draft' || job.status === 'paused' || job.status === 'failing' || job.consecutiveFailures >= 4)
                 ? '0 4px 20px rgba(0, 0, 0, 0.5), 0 0 25px rgba(239, 68, 68, 0.35)'
                 : (columnId === 'failed')
                   ? '0 4px 15px rgba(0, 0, 0, 0.5), 0 0 16px rgba(244, 63, 94, 0.22)'
@@ -163,12 +163,12 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
           </div>
 
           {/* Suspended Alert Indicator */}
-          {(job.consecutiveFailures >= 3 || job.status === 'failing') && (
+          {(job.consecutiveFailures >= 4 || job.status === 'failing') && (
             <div className="mt-2.5 px-2 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center gap-1.5 text-[10px] text-rose-400 font-semibold animate-pulse">
               <svg className="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <span>Serviço Suspenso (3 falhas)</span>
+              <span>Serviço Suspenso (3 retentativas falhas)</span>
             </div>
           )}
 
@@ -194,7 +194,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
                 <span className="text-indigo-400 font-bold">⏱️ {formatSchedule(job.schedule)}</span>
               </div>
               {/* Next Run Info */}
-              {(job.status === 'failing' || (job.consecutiveFailures && job.consecutiveFailures >= 3)) ? (
+              {(job.status === 'failing' || (job.consecutiveFailures && job.consecutiveFailures >= 4)) ? (
                 <div className="flex items-center gap-1.5 text-[10px] text-rose-400 font-semibold bg-rose-950/20 border border-rose-500/25 px-2 py-0.5 rounded-md mt-0.5" title="Execuções automáticas suspensas">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0"></span>
                   <span className="font-mono">Suspenso — Sem agendamento</span>

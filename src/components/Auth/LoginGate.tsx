@@ -722,8 +722,8 @@ export const LoginGate: React.FC = () => {
                     </span>
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className="text-[11px] font-bold text-amber-350 block">Executando Retry 2/3</span>
-                        <span className="text-[9px] text-slate-500 block">Atraso Exponencial com Backoff (30s)</span>
+                        <span className="text-[11px] font-bold text-amber-350 block">Executando Retentativa 1/3</span>
+                        <span className="text-[9px] text-slate-500 block">Backoff Progressivo de Retentativa (15s)</span>
                       </div>
                       <span className="text-[8px] font-black uppercase text-amber-400 border border-amber-500/20 bg-amber-950/20 px-1.5 py-0.5 rounded animate-pulse">RETRY</span>
                     </div>
@@ -737,7 +737,7 @@ export const LoginGate: React.FC = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <span className="text-[11px] font-black text-emerald-400 block">Fluxo Recuperado com Sucesso</span>
-                        <span className="text-[9px] text-emerald-500/80 block">HTTP 200 OK na segunda tentativa</span>
+                        <span className="text-[9px] text-emerald-500/80 block">HTTP 200 OK na primeira retentativa</span>
                       </div>
                       <span className="text-[8px] font-black uppercase text-emerald-400 border border-emerald-500/20 bg-emerald-950/20 px-1.5 py-0.5 rounded">SUCESSO</span>
                     </div>
@@ -2228,13 +2228,13 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                 <div className="text-rose-400 font-semibold animate-in fade-in duration-300 space-y-1">
                   <div>⚠️ [08:00:10.055] worker: HTTP TIMEOUT (10s limit exceeded).</div>
                   <div className="pl-6 text-[9px] md:text-[11px] text-rose-500/80">
-                    → Enqueuing job for Retry 1/2 (10s backoff). Status: FAIL_TEMPORARY
+                    → Enqueuing job for Retry 1/3 (15s backoff). Status: FAIL_TEMPORARY
                   </div>
                 </div>
               )}
               {simulationStep >= 5 && (
                 <div className="text-amber-400 animate-in fade-in duration-300 space-y-1">
-                  <div>🔄 [08:00:20.060] worker: Backoff expired. Executing Retry 1/2...</div>
+                  <div>🔄 [08:00:25.060] worker: Backoff expired. Executing Retry 1/3...</div>
                   <div className="pl-6 text-[9px] md:text-[11px] text-amber-500/80">
                     → Sending HTTP POST webhook (signed with project HMAC-SHA256)
                   </div>
@@ -2242,9 +2242,9 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
               )}
               {simulationStep >= 6 && (
                 <div className="text-emerald-400 font-bold animate-in fade-in duration-300 space-y-1">
-                  <div>✅ [08:00:20.245] worker: HTTP Status 200 OK! Latency: 185ms.</div>
+                  <div>✅ [08:00:25.245] worker: HTTP Status 200 OK! Latency: 185ms.</div>
                   <div className="pl-6 text-[9px] md:text-[11px] text-emerald-500/80">
-                    → DB updated (1 retry required). Distributed Redis lock released.
+                    → DB updated (1 retry attempt required). Distributed Redis lock released.
                   </div>
                   <div className="pl-6 text-[9px] md:text-[11px] text-emerald-500/80">
                     → Telemetry and notifications dispatched successfully. Recovery complete.

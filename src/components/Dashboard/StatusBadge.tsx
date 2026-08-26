@@ -28,7 +28,15 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
       case 'failing':
       case 'failed':
       case 'timeout': {
-        const suffix = attemptNumber ? ` (${attemptNumber}x)` : '';
+        let suffix = '';
+        if (attemptNumber) {
+          if (attemptNumber === 1) {
+            suffix = ' (Inicial)';
+          } else if (attemptNumber > 1) {
+            const retryNum = attemptNumber - 1;
+            suffix = ` (Retentativa ${retryNum}/3)`;
+          }
+        }
         return {
           bg: 'bg-rose-500/10',
           text: 'text-rose-400',
@@ -50,12 +58,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
 
       // Paused / Draft / Neutral states
       case 'paused': {
-        const isFailureSuspended = attemptNumber && attemptNumber >= 3;
+        const isFailureSuspended = attemptNumber && attemptNumber >= 4;
         return {
           bg: isFailureSuspended ? 'bg-rose-500/10' : 'bg-amber-500/10',
           text: isFailureSuspended ? 'text-rose-400' : 'text-amber-400',
           border: isFailureSuspended ? 'border-rose-500/20' : 'border-amber-500/20',
-          label: isFailureSuspended ? `Suspenso (${attemptNumber}/3)` : 'Pausado',
+          label: isFailureSuspended ? 'Suspenso (3/3 retentativas)' : 'Pausado',
           dot: isFailureSuspended ? 'bg-rose-400' : 'bg-amber-400',
         };
       }

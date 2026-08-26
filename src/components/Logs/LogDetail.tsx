@@ -459,10 +459,10 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
                       <span>Não enviado (Tarefa concluída com sucesso)</span>
                     </div>
-                  ) : log.attemptNumber < 3 && (job.consecutiveFailures || 0) < 3 ? (
+                  ) : log.attemptNumber < 4 && (job.consecutiveFailures || 0) < 4 ? (
                     <div className="flex items-center gap-2 text-amber-400">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      <span>Abaixo do limite (Falha temporária: {log.attemptNumber}ª tentativa, o alerta dispara ao atingir 3 falhas consecutivas)</span>
+                      <span>Abaixo do limite (Falha temporária: {log.attemptNumber === 1 ? 'tentativa inicial' : `retentativa ${log.attemptNumber - 1}/3`}, o alerta dispara se falhar após a tentativa inicial + 3 retentativas)</span>
                     </div>
                   ) : (
                     <div className="space-y-2">

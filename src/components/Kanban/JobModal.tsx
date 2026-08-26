@@ -123,7 +123,7 @@ export const JobModal: React.FC = () => {
         break;
       }
     }
-    return Math.min(3, Math.max(baseCount, logConsecutive));
+    return Math.min(4, Math.max(baseCount, logConsecutive));
   })();
 
   // Edit Mode states
@@ -158,10 +158,10 @@ export const JobModal: React.FC = () => {
   }, [activeJob, isJobModalOpen]);
 
   useEffect(() => {
-    if (computedFailures >= 3 && currentJob && (currentJob.consecutiveFailures < 3 || currentJob.status !== 'failing')) {
+    if (computedFailures >= 4 && currentJob && (currentJob.consecutiveFailures < 4 || currentJob.status !== 'failing')) {
       updateJob({
         ...currentJob,
-        consecutiveFailures: 3,
+        consecutiveFailures: 4,
         status: 'failing',
         kanbanStatus: 'failed',
       });
@@ -427,7 +427,7 @@ export const JobModal: React.FC = () => {
                 {activeJob.name}
               </h3>
             )}
-            <StatusBadge status={computedFailures >= 3 ? 'paused' : (currentJob?.status || activeJob.status)} attemptNumber={computedFailures > 0 ? computedFailures : undefined} />
+            <StatusBadge status={computedFailures >= 4 ? 'paused' : (currentJob?.status || activeJob.status)} attemptNumber={computedFailures > 0 ? computedFailures : undefined} />
           </div>
           <button
             onClick={handleClose}
@@ -443,15 +443,15 @@ export const JobModal: React.FC = () => {
         <div className="p-6 overflow-y-auto space-y-6">
 
           {/* Suspended alert banner */}
-          {(activeJob.consecutiveFailures >= 3 || activeJob.status === 'failing') && (
+          {(activeJob.consecutiveFailures >= 4 || activeJob.status === 'failing') && (
             <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex gap-3 text-xs text-rose-300 font-medium">
               <svg className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div className="space-y-1">
-                <p className="font-extrabold text-rose-200">Serviço Suspenso (Limite de Tentativas Atingido)</p>
+                <p className="font-extrabold text-rose-200">Serviço Suspenso (Limite de Retentativas Atingido)</p>
                 <p className="text-slate-400 text-[11px] leading-relaxed">
-                  Este agendamento foi temporariamente suspenso após falhar <strong>3 vezes consecutivas</strong>. Nenhuma nova execução automática será disparada até que o problema seja resolvido e você clique em <strong>"Reativar"</strong> ou dispare ela manualmente com sucesso para redefinir as tentativas.
+                  Este agendamento foi temporariamente suspenso após falhar na <strong>tentativa inicial + 3 retentativas consecutivas</strong>. Nenhuma nova execução automática será disparada até que o problema seja resolvido e você clique em <strong>"Reativar"</strong> ou dispare ela manualmente com sucesso para redefinir as tentativas.
                 </p>
               </div>
             </div>
