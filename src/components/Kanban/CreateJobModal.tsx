@@ -27,7 +27,6 @@ export const CreateJobModal: React.FC = () => {
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const [step, setStep] = useState(1);
 	const [showHelp, setShowHelp] = useState(false);
-	const [scheduleError, setScheduleError] = useState<string | null>(null);
 
 	const getScheduleValidationError = (value: string): string | null => {
 		if (!value.trim()) return 'O agendamento é obrigatório.';
@@ -46,21 +45,14 @@ export const CreateJobModal: React.FC = () => {
 			return 'Expressão cron deve conter exatamente 5 campos (minuto hora dia mês dia_semana).';
 		}
 		for (const part of parts) {
-			if (part !== '*' && !part.match(/^[0-9*,\/\-]+$/)) {
+			if (part !== '*' && !part.match(/^[0-9*,/-]+$/)) {
 				return `Caractere inválido no campo cron: "${part}"`;
 			}
 		}
 		return null;
 	};
 
-	useEffect(() => {
-		if (schedule) {
-			const err = getScheduleValidationError(schedule);
-			setScheduleError(err);
-		} else {
-			setScheduleError(null);
-		}
-	}, [schedule]);
+	const scheduleError = schedule ? getScheduleValidationError(schedule) : null;
 
   useEffect(() => {
     if (isCreateModalOpen) {

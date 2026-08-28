@@ -342,7 +342,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       const errResponse = err as ErrorWithResponse;
       const errMsg = errResponse.response?.data?.error || errResponse.response?.data?.reason || 'Erro ao mover tarefa no backend';
       set({ error: errMsg });
-      throw new Error(errMsg);
+      throw new Error(errMsg, { cause: err });
     }
   },
 }));

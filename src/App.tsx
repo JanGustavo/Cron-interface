@@ -15,7 +15,6 @@ import { AgentChat } from './components/Shared/AgentChat';
 import { OnboardingTour } from './components/Shared/OnboardingTour';
 import api from './services/api';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lazyWithRetry<T extends React.ComponentType<any>>(
   componentImport: () => Promise<{ default: T }>
 ): React.LazyExoticComponent<T> {

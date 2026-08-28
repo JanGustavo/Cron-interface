@@ -193,8 +193,13 @@ export const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    fetchRecentLogs(active);
-    return () => { active = false; };
+    const timer = setTimeout(() => {
+      fetchRecentLogs(active);
+    }, 0);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [fetchRecentLogs]);
 
   const totalExecutions = allRecentLogs.length;

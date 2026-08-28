@@ -174,7 +174,7 @@ export const JobModal: React.FC = () => {
         kanbanStatus: 'failed',
       });
     }
-  }, [computedFailures, currentJob?.id, currentJob?.consecutiveFailures, currentJob?.status]);
+  }, [computedFailures, currentJob, updateJob]);
 
   useEffect(() => {
     if (activeJob && !isEditing) {

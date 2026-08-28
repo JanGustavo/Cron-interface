@@ -58,15 +58,19 @@ export const LogExportModal: React.FC<LogExportModalProps> = ({
 
   // Synchronize formats and initial dates when modal opens
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (isOpen) {
-      setFormat(initialFormat);
-      setStartDate(parseIsoToDateString(filter.startDate));
-      setEndDate(parseIsoToDateString(filter.endDate));
+      timer = setTimeout(() => {
+        setFormat(initialFormat);
+        setStartDate(parseIsoToDateString(filter.startDate));
+        setEndDate(parseIsoToDateString(filter.endDate));
+      }, 0);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => {
+      if (timer) clearTimeout(timer);
       document.body.style.overflow = '';
     };
   }, [isOpen, filter, initialFormat]);
@@ -200,7 +204,7 @@ export const LogExportModal: React.FC<LogExportModalProps> = ({
         const headers = enabledColumns.map((c) => c.label);
         const rows = finalLogs.map((log) =>
           enabledColumns.map((c) => {
-            let val = '';
+            let val: string;
             if (c.key === 'httpStatus') val = String(log.httpStatus ?? 'N/A');
             else if (c.key === 'durationMs') val = String(log.durationMs ?? 0);
             else if (c.key === 'responseBody') val = log.responseBody ?? '';
@@ -260,7 +264,7 @@ export const LogExportModal: React.FC<LogExportModalProps> = ({
           .map((log) =>
             enabledColumns
               .map((c) => {
-                let val = '';
+                let val: string;
                 if (c.key === 'httpStatus') val = String(log.httpStatus ?? 'N/A');
                 else if (c.key === 'durationMs') val = `${log.durationMs ?? 0}ms`;
                 else if (c.key === 'responseBody') val = log.responseBody ?? '';

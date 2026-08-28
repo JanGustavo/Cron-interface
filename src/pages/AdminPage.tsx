@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { useUiStore } from '../store/uiStore';
 
@@ -30,6 +30,23 @@ export const AdminPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
+  const fetchAdminData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [statsRes, usersRes] = await Promise.all([
+        api.get('/v1/admin/stats'),
+        api.get('/v1/admin/users'),
+      ]);
+      setStats(statsRes.data);
+      setUsers(usersRes.data.users || []);
+    } catch (err) {
+      console.error('Erro ao carregar dados administrativos:', err);
+      showToast('Erro ao carregar painel administrativo.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
   // Check Admin security status on mount
   useEffect(() => {
     const checkAdmin = async () => {
@@ -52,24 +69,7 @@ export const AdminPage: React.FC = () => {
     };
 
     checkAdmin();
-  }, []);
-
-  const fetchAdminData = async () => {
-    setLoading(true);
-    try {
-      const [statsRes, usersRes] = await Promise.all([
-        api.get('/v1/admin/stats'),
-        api.get('/v1/admin/users'),
-      ]);
-      setStats(statsRes.data);
-      setUsers(usersRes.data.users || []);
-    } catch (err) {
-      console.error('Erro ao carregar dados administrativos:', err);
-      showToast('Erro ao carregar painel administrativo.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchAdminData, setActiveTab, showToast]);
 
   const handleTogglePlan = async (user: AdminUser) => {
     const targetPlan = user.plan === 'pro' ? 'free' : 'pro';

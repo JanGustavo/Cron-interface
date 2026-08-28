@@ -83,7 +83,7 @@ export const JobPreviewModal: React.FC<JobPreviewModalProps> = ({
           responseBody: formattedBody.slice(0, 1500),
           success: fetchRes.ok,
         });
-      } catch (clientErr) {
+      } catch {
         // Se houver bloqueio CORS no browser, usa o feedback da API
         setTestResult({
           status: 200,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
 import { useJobsStore } from '../../store/jobsStore';
@@ -54,13 +54,20 @@ export const TopNav: React.FC = () => {
   const failedJobsCount = jobs.filter((j) => (j.status as string) === 'failing' || (j.status as string) === 'failed').length;
   const activeJobsCount = jobs.filter((j) => j.status === 'active' || (j.status as string) === 'running').length;
   const pausedJobsCount = jobs.filter((j) => j.status === 'paused' || (j.status as string) === 'suspended').length;
-  const daysRemaining = (() => {
-    if (!user?.currentPeriodEnd) return null;
-    const end = new Date(user.currentPeriodEnd).getTime();
-    const now = Date.now();
-    const diffDays = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  })();
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (user?.currentPeriodEnd) {
+        const end = new Date(user.currentPeriodEnd).getTime();
+        const diffDays = Math.ceil((end - Date.now()) / (1000 * 60 * 60 * 24));
+        setDaysRemaining(diffDays > 0 ? diffDays : 0);
+      } else {
+        setDaysRemaining(null);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [user?.currentPeriodEnd]);
 
   const isSubscriptionExpiringSoon = daysRemaining !== null && daysRemaining <= 3;
 
