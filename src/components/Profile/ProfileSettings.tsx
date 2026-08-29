@@ -69,8 +69,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <div className="mt-3.5 border-t border-indigo-950/30 pt-3 select-none flex flex-col gap-2.5">
                <p className="text-[10px] text-slate-450 leading-relaxed">
                 {isProPlan 
-                  ? `⭐ Plano PRO ativo: Limite de ${maxJobs} tarefas por workspace, múltiplos projetos e ${logsRetentionDays} dias de logs.`
-                  : `⚡ Plano FREE: Limite de ${maxJobs} tarefas por workspace, projeto único e ${logsRetentionDays} dias de logs.`}
+                  ? `⭐ Plano PRO ativo: Limite de até ${maxJobs} tarefas no total da conta, múltiplos workspaces e ${logsRetentionDays} dias de logs.`
+                  : `⚡ Plano FREE: Limite de até ${maxJobs} tarefas no total da conta, workspace único e ${logsRetentionDays} dias de logs.`}
               </p>
               <button
                 type="button"

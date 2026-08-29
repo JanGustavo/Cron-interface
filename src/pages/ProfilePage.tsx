@@ -73,15 +73,23 @@ export const ProfilePage: React.FC = () => {
   const { user, activeProject, projects, setActiveProject, setProjects } = useAuthStore();
   const { jobs, fetchJobs } = useJobsStore();
   const { setActiveTab, setCreateModalOpen, showToast, setDocsOpen, isPlansModalOpen, setPlansModalOpen, highContrast, toggleHighContrast, reducedMotion, toggleReducedMotion, fontSize, setFontSize } = useUiStore();
-  const [securityTab, setSecurityTab] = useState<'keys' | 'webhooks' | 'sessions' | 'twoFactor' | 'accessibility'>('keys');
+  const [securityTab, setSecurityTab] = useState<'account' | 'security' | 'keys' | 'webhooks' | 'accessibility'>('account');
   const [isSwitchingProject, setIsSwitchingProject] = useState(false);
 
   // Load custom profile details saved during onboarding
   const [profileFullName, setProfileFullName] = useState(() => localStorage.getItem('cf_user_name') || user?.fullName || '');
+  const [profileCpf, setProfileCpf] = useState(() => localStorage.getItem('cf_user_cpf') || '');
   const company = localStorage.getItem('cf_user_company') || '';
   const role = localStorage.getItem('cf_user_role') || '';
   const techStack = localStorage.getItem('cf_user_tech_stack') || 'Node.js / TypeScript';
   const timezone = localStorage.getItem('cf_user_timezone') || 'America/Sao_Paulo';
+
+  // Password & Account Security States
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const userEmail = user?.email || 'admin@cronflow.sh';
   const userHandle = userEmail.split('@')[0] || 'cronflow';
@@ -278,7 +286,6 @@ export const ProfilePage: React.FC = () => {
     setTimeout(() => setUpdateSuccess(false), 2000);
   };
 
-  /* eslint-disable-next-line react-hooks/preserve-manual-memoization */
   const fetchProfile = useCallback(async () => {
     setLoadingProfile(true);
     try {
@@ -289,6 +296,10 @@ export const ProfilePage: React.FC = () => {
         if (res.data.fullName) {
           setProfileFullName(res.data.fullName);
           localStorage.setItem('cf_user_name', res.data.fullName);
+        }
+        if (res.data.cpf) {
+          setProfileCpf(res.data.cpf);
+          localStorage.setItem('cf_user_cpf', res.data.cpf);
         }
         if (res.data.plan) {
           localStorage.setItem('cf_user_plan', res.data.plan);
@@ -334,24 +345,120 @@ export const ProfilePage: React.FC = () => {
     fetchProfile();
   }, [fetchProfile]);
 
-  const handleUpdateProfilePreferences = async (e: React.FormEvent) => {
+  const handleSavePersonalData = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingProfile(true);
     try {
       await api.put('/v1/users/profile', {
-        emailAlertsEnabled,
-        dailyDigestEnabled,
+        full_name: profileFullName.trim(),
+        cpf: profileCpf.trim(),
         timezone: profileTimezone,
-        digestHour,
+        email_alerts_enabled: emailAlertsEnabled,
+        daily_digest_enabled: dailyDigestEnabled,
+        digest_hour: digestHour,
       });
+      localStorage.setItem('cf_user_name', profileFullName.trim());
+      localStorage.setItem('cf_user_cpf', profileCpf.trim());
       localStorage.setItem('cf_user_timezone', profileTimezone);
-      showToast('Preferências de notificação salvas!', 'success');
-    } catch (err) {
-      const axiosError = err as { response?: { data?: { reason?: string; error?: string } } };
-      const errorMsg = axiosError.response?.data?.reason || axiosError.response?.data?.error || 'Erro ao salvar preferências.';
+      showToast('Dados pessoais e preferências atualizados com sucesso! ✓', 'success');
+      fetchProfile();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao atualizar dados.';
       showToast(errorMsg, 'error');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+      showToast('A nova senha deve ter no mínimo 8 caracteres.', 'error');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      showToast('A confirmação de senha não coincide com a nova senha.', 'error');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await api.post('/v1/users/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      showToast('Senha alterada com sucesso! 🔐', 'success');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao alterar senha. Verifique sua senha atual.';
+      showToast(errorMsg, 'error');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const { value: password } = await Swal.fire({
+      title: 'Excluir Conta Permanentemente?',
+      html: `
+        <div style="text-align:left; font-size:11.5px; line-height:1.6; color:#94a3b8;">
+          <p style="margin-bottom:8px; color:#f43f5e; font-weight:bold;">
+            ⚠️ ATENÇÃO: Esta ação é irreversível e irrevogável (Direito ao Esquecimento - LGPD).
+          </p>
+          <p style="margin-bottom:12px;">
+            Todos os seus workspaces, tarefas agendadas, histórico de execuções, chaves de API e integrações serão <strong>permanentemente eliminados</strong> de nossos servidores.
+          </p>
+          <label style="display:block; margin-bottom:4px; font-size:11px; font-weight:bold; color:#cbd5e1;">
+            Digite sua senha para confirmar a exclusão:
+          </label>
+        </div>
+      `,
+      input: 'password',
+      inputPlaceholder: 'Sua senha de acesso',
+      inputAttributes: {
+        autocapitalize: 'off',
+        autocorrect: 'off',
+      },
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, Excluir Definitivamente',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        popup: 'swal2-dark-custom rounded-3xl border border-rose-950/60 bg-[#090c15] text-slate-100 p-6',
+        title: 'text-rose-400 font-extrabold text-base',
+        confirmButton: 'px-4 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-all shadow-md cursor-pointer',
+        cancelButton: 'px-4 py-2 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all ml-2 cursor-pointer',
+        input: 'px-4 py-2.5 bg-[#05070e] border border-indigo-950 rounded-xl text-xs text-slate-200 w-full mb-2 font-mono',
+      },
+      buttonsStyling: false,
+    });
+
+    if (password !== undefined) {
+      setDeletingAccount(true);
+      try {
+        await api.delete('/v1/users/account', { data: { password } });
+        await Swal.fire({
+          title: 'Conta Excluída com Sucesso',
+          text: 'Sua conta e todos os dados associados foram completamente removidos de nossa base de dados.',
+          icon: 'success',
+          customClass: {
+            popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
+            title: 'text-slate-100 font-extrabold text-base',
+            confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-indigo-600 rounded-xl cursor-pointer',
+          },
+          buttonsStyling: false,
+        });
+        localStorage.clear();
+        sessionStorage.clear();
+        useAuthStore.getState().logout();
+        window.location.href = '/';
+      } catch (err: any) {
+        const errorMsg = err.response?.data?.reason || err.response?.data?.error || 'Erro ao excluir conta. Verifique sua senha.';
+        showToast(errorMsg, 'error');
+      } finally {
+        setDeletingAccount(false);
+      }
     }
   };
 
@@ -454,12 +561,12 @@ export const ProfilePage: React.FC = () => {
     if (upgrading) return;
     setUpgrading(true);
     try {
-      showToast('Redirecionando para o checkout seguro da Stripe...', 'info');
+      showToast('Redirecionando para o checkout seguro...', 'info');
       const res = await api.post('/v1/billing/checkout', { period: billingPeriod });
       if (res.data && res.data.url) {
         window.location.href = res.data.url;
       } else {
-        showToast('Erro ao obter link de checkout da Stripe.', 'error');
+        showToast('Erro ao obter link de checkout.', 'error');
       }
     } catch (err) {
       console.error(err);
@@ -471,21 +578,20 @@ export const ProfilePage: React.FC = () => {
 
   const handleManageSubscription = async () => {
     try {
-      showToast('Redirecionando para o portal de faturamento da Stripe...', 'info');
+      showToast('Redirecionando para o portal de faturamento...', 'info');
       const res = await api.post('/v1/billing/portal', {});
       if (res.data && res.data.url) {
         window.location.href = res.data.url;
       } else {
-        showToast('Erro ao obter link do portal da Stripe.', 'error');
+        showToast('Erro ao obter link do portal de faturamento.', 'error');
       }
     } catch (err: any) {
       console.error(err);
-      const errorMsg = err.response?.data?.error || 'Erro ao carregar portal de faturamento da Stripe.';
+      const errorMsg = err.response?.data?.error || 'Erro ao carregar portal de faturamento.';
       showToast(errorMsg, 'error');
-      // Tenta fallback automático para Checkout Stripe se a conta não tiver registro prévio no Portal
       if (err.response?.status === 400) {
         try {
-          showToast('Redirecionando para Checkout da Stripe...', 'info');
+          showToast('Redirecionando para Checkout...', 'info');
           const checkoutRes = await api.post('/v1/billing/checkout', { period: 'monthly' });
           if (checkoutRes.data && checkoutRes.data.url) {
             window.location.href = checkoutRes.data.url;
@@ -681,16 +787,16 @@ export const ProfilePage: React.FC = () => {
               {/* Sleek Switcher Tabs with smooth horizontal scroll and clear containment */}
               <div className="flex items-center gap-1 bg-[#05070e]/90 p-1.5 rounded-xl border border-indigo-950/70 w-full xl:w-auto select-none overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-indigo-900/40 scrollbar-track-transparent whitespace-nowrap min-w-0">
                 {[
-                  { id: 'keys', label: 'Chaves API' },
-                  { id: 'webhooks', label: 'Webhooks' },
-                  { id: 'sessions', label: 'Sessões' },
-                  { id: 'twoFactor', label: 'MFA' },
-                  { id: 'accessibility', label: 'Acessibilidade ♿' },
+                  { id: 'account', label: '👤 Dados Pessoais' },
+                  { id: 'security', label: '🔒 Segurança & Senha' },
+                  { id: 'keys', label: '🔑 Chaves API' },
+                  { id: 'webhooks', label: '🔔 Webhooks' },
+                  { id: 'accessibility', label: '♿ Acessibilidade' },
                 ].map((t) => (
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setSecurityTab(t.id as 'keys' | 'webhooks' | 'sessions' | 'twoFactor' | 'accessibility')}
+                    onClick={() => setSecurityTab(t.id as 'account' | 'security' | 'keys' | 'webhooks' | 'accessibility')}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                       securityTab === t.id
                         ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 shadow-sm'
@@ -705,6 +811,258 @@ export const ProfilePage: React.FC = () => {
 
             {/* TAB CONTENTS */}
             <div className="min-h-[300px]">
+              
+              {/* ACCOUNT / PERSONAL DATA TAB */}
+              {securityTab === 'account' && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  {loadingProfile ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-500 text-xs">
+                      <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-2" />
+                      Carregando dados cadastrais...
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSavePersonalData} className="space-y-5">
+                      <div>
+                        <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Dados Cadastrais & Perfil</h5>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Edite suas informações pessoais e preferências de recebimento de relatórios.</p>
+                      </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Nome Completo</label>
+                        <input
+                          type="text"
+                          value={profileFullName}
+                          onChange={(e) => setProfileFullName(e.target.value)}
+                          placeholder="Seu Nome Completo"
+                          className="w-full px-3.5 py-2.5 bg-[#05070e] border border-indigo-950/80 rounded-xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40 font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">CPF ou CNPJ</label>
+                        <input
+                          type="text"
+                          value={profileCpf}
+                          onChange={(e) => setProfileCpf(e.target.value)}
+                          placeholder="000.000.000-00"
+                          className="w-full px-3.5 py-2.5 bg-[#05070e] border border-indigo-950/80 rounded-xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40 font-mono"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">E-mail Cadastrado</label>
+                          <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Verificado ✓</span>
+                        </div>
+                        <input
+                          type="email"
+                          value={userEmail}
+                          disabled
+                          className="w-full px-3.5 py-2.5 bg-slate-950/40 border border-indigo-950/40 rounded-xl text-slate-500 text-xs font-mono cursor-not-allowed select-all"
+                        />
+                        <p className="text-[9.5px] text-slate-500">O e-mail é a chave primária de segurança e autenticação da sua conta.</p>
+                      </div>
+                    </div>
+
+                    {/* Timezone & Notification preferences */}
+                    <div className="pt-4 border-t border-indigo-950/30 space-y-4">
+                      <h6 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações e Resumo de Erros</h6>
+                      
+                      <div className="space-y-3">
+                        {/* Immediate alerts */}
+                        <div className="flex items-start justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/20">
+                          <div className="space-y-1 pr-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-200">Alertas Imediatos</span>
+                              {!isProPlan && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-[#ff006e]/10 border border-[#ff006e]/30 text-[#ff006e] tracking-wider">PRO</span>
+                              )}
+                            </div>
+                            <p className="text-[10.5px] text-slate-500 leading-normal">
+                              Envia um e-mail de aviso imediatamente no instante em que qualquer job falhar 3 vezes seguidas e for forçado a pausar.
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                            <input
+                              type="checkbox"
+                              checked={emailAlertsEnabled}
+                              disabled={!isProPlan}
+                              onChange={(e) => setEmailAlertsEnabled(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-[#0a0f1d] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-650 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white peer-disabled:opacity-45"></div>
+                          </label>
+                        </div>
+
+                        {/* Daily digest */}
+                        <div className="flex items-start justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/20">
+                          <div className="space-y-1 pr-4">
+                            <span className="text-xs font-bold text-slate-200">Resumo Diário (Daily Digest)</span>
+                            <p className="text-[10.5px] text-slate-500 leading-normal">
+                              Receba um consolidado diário com o resumo das falhas das últimas 24 horas.
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                            <input
+                              type="checkbox"
+                              checked={dailyDigestEnabled}
+                              onChange={(e) => setDailyDigestEnabled(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-[#0a0f1d] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-650 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+                          </label>
+                        </div>
+
+                        {/* Timezone & Digest Hour */}
+                        <div className="grid gap-4 sm:grid-cols-2 p-4 rounded-2xl border border-indigo-950/60 bg-[#050811]">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fuso Horário</label>
+                            <select
+                              value={profileTimezone}
+                              onChange={(e) => setProfileTimezone(e.target.value)}
+                              className="w-full px-3.5 py-2.5 bg-[#0b0f19] border border-indigo-950/80 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40 cursor-pointer font-mono"
+                            >
+                              <option value="America/Sao_Paulo">America/Sao_Paulo (GMT-3)</option>
+                              <option value="UTC">UTC (Universal Coordinated Time)</option>
+                              <option value="America/New_York">America/New_York (EST/EDT)</option>
+                              <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                              <option value="Europe/London">Europe/London (GMT/BST)</option>
+                              <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Horário do Disparo Digest</label>
+                            <select
+                              value={digestHour}
+                              onChange={(e) => setDigestHour(Number(e.target.value))}
+                              className="w-full px-3.5 py-2.5 bg-[#0b0f19] border border-indigo-950/80 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40 cursor-pointer font-mono"
+                            >
+                              {Array.from({ length: 24 }).map((_, idx) => (
+                                <option key={idx} value={idx}>
+                                  {idx.toString().padStart(2, '0')}:00 ({idx >= 18 ? 'Noite' : idx >= 12 ? 'Tarde' : 'Manhã'})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-3">
+                      <button
+                        type="submit"
+                        disabled={savingProfile}
+                        className="px-6 py-2.5 text-xs font-bold rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white transition-all shadow-md cursor-pointer neon-glow-primary disabled:opacity-50"
+                      >
+                        {savingProfile ? 'Salvando...' : 'Salvar Dados Pessoais ✓'}
+                      </button>
+                    </div>
+                  </form>
+                  )}
+                </div>
+              )}
+
+              {/* SECURITY & PASSWORD TAB */}
+              {securityTab === 'security' && (
+                <div className="space-y-8 animate-in fade-in duration-200">
+                  {/* Change Password Form */}
+                  <form onSubmit={handleChangePassword} className="space-y-5">
+                    <div>
+                      <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Alterar Senha de Acesso</h5>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Mantenha sua conta segura utilizando uma senha forte com no mínimo 8 caracteres.</p>
+                    </div>
+
+                    <div className="space-y-3.5">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Senha Atual</label>
+                        <input
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Digite sua senha atual"
+                          className="w-full px-3.5 py-2.5 bg-[#05070e] border border-indigo-950/80 rounded-xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40 font-mono"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid gap-3.5 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Nova Senha</label>
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Mínimo de 8 caracteres"
+                            className="w-full px-3.5 py-2.5 bg-[#05070e] border border-indigo-950/80 rounded-xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40 font-mono"
+                            required
+                            minLength={8}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Confirmar Nova Senha</label>
+                          <input
+                            type="password"
+                            value={confirmNewPassword}
+                            onChange={(e) => setConfirmNewPassword(e.target.value)}
+                            placeholder="Repita a nova senha"
+                            className="w-full px-3.5 py-2.5 bg-[#05070e] border border-indigo-950/80 rounded-xl text-slate-200 text-xs focus:outline-none focus:border-indigo-500/40 font-mono"
+                            required
+                            minLength={8}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={changingPassword}
+                        className="px-5 py-2.5 text-xs font-bold rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white transition-all shadow-md cursor-pointer neon-glow-primary disabled:opacity-50"
+                      >
+                        {changingPassword ? 'Alterando...' : 'Atualizar Senha 🔐'}
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Active Session Info */}
+                  <div className="pt-6 border-t border-indigo-950/30 space-y-3">
+                    <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Sessão Atual</h5>
+                    <div className="p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/40 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-200">Sessão Web Autenticada</span>
+                          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider">Ativa</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500">Endereço IP: <code className="font-mono text-indigo-400">{clientIp}</code> • Conexão criptografada (TLS/HTTPS)</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* DANGER ZONE - Account Erasure (LGPD) */}
+                  <div className="pt-6 border-t border-rose-950/40 space-y-4">
+                    <div className="p-5 rounded-2xl border border-rose-900/30 bg-gradient-to-br from-rose-950/25 to-slate-950/40 space-y-3.5">
+                      <div className="flex items-center gap-2 text-rose-400">
+                        <span className="text-base">⚠️</span>
+                        <h5 className="text-xs font-bold uppercase tracking-wider">Zona de Perigo — Exclusão de Conta (LGPD)</h5>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Em conformidade com o <strong>Art. 18 da LGPD (Direito ao Esquecimento e Eliminação de Dados)</strong>, você pode solicitar a exclusão definitiva de sua conta. Todos os seus dados, jobs agendados, histórico de execuções e chaves de acesso serão permanentemente destruídos.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={deletingAccount}
+                        onClick={handleDeleteAccount}
+                        className="px-4 py-2.5 text-xs font-bold text-rose-300 hover:text-white bg-rose-950/40 hover:bg-rose-900/70 border border-rose-800/50 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50"
+                      >
+                        {deletingAccount ? 'Excluindo...' : 'Excluir Minha Conta Permanentemente 🗑️'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* API KEYS TAB */}
               {securityTab === 'keys' && (
@@ -954,174 +1312,6 @@ export const ProfilePage: React.FC = () => {
                       )}
                     </div>
                   </form>
-
-                  {/* EMAIL ALERTS PREFERENCES SECTION */}
-                  <div className="pt-6 border-t border-indigo-950/30">
-                    <form onSubmit={handleUpdateProfilePreferences} className="space-y-5">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Notificações por E-mail</h5>
-                          <button
-                            type="button"
-                            onClick={() => showToast('Define a frequência das notificações de erro no seu e-mail: Alertas Imediatos no ato da falha (PRO) ou Resumo Diário consolidado.', 'info')}
-                            className="px-1.5 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/25 text-[10px] text-cyan-400 font-bold hover:text-white hover:bg-indigo-900/80 transition-colors cursor-pointer"
-                            title="Como funcionam as Notificações por E-mail?"
-                          >
-                            ?
-                          </button>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Configure como e quando você deseja receber alertas de falha no seu e-mail de cadastro.</p>
-                      </div>
-
-                      {loadingProfile ? (
-                        <div className="text-xs text-slate-500 font-mono py-2">Carregando preferências...</div>
-                      ) : (
-                        <div className="space-y-4">
-                          {/* Immediate Alerts Option - Paid Only */}
-                          <div className="flex items-start justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/20">
-                            <div className="space-y-1 pr-4">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-200">Alertas Imediatos</span>
-                                {!isProPlan && (
-                                  <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-[#ff006e]/10 border border-[#ff006e]/30 text-[#ff006e] tracking-wider">PRO</span>
-                                )}
-                              </div>
-                              <p className="text-[10.5px] text-slate-500 leading-normal">
-                                Envia um e-mail de aviso imediatamente no instante em que qualquer job falhar 3 vezes seguidas e for forçado a pausar.
-                              </p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
-                              <input
-                                type="checkbox"
-                                checked={emailAlertsEnabled}
-                                disabled={!isProPlan}
-                                onChange={(e) => setEmailAlertsEnabled(e.target.checked)}
-                                className="sr-only peer"
-                              />
-                              <div className="w-9 h-5 bg-[#0a0f1d] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-650 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white peer-disabled:opacity-45"></div>
-                            </label>
-                          </div>
-
-                          {/* Daily Digest Option - Free Tier Option */}
-                          <div className="flex items-start justify-between p-4 rounded-2xl border border-indigo-950/40 bg-slate-950/20">
-                            <div className="space-y-1 pr-4">
-                              <span className="text-xs font-bold text-slate-200">Resumo Diário (Daily Digest)</span>
-                              <p className="text-[10.5px] text-slate-500 leading-normal">
-                                Receba um único consolidado diário com todos os erros ocorridos em suas tarefas nas últimas 24 horas. Ideal para o plano Free.
-                              </p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
-                              <input
-                                type="checkbox"
-                                checked={dailyDigestEnabled}
-                                onChange={(e) => setDailyDigestEnabled(e.target.checked)}
-                                className="sr-only peer"
-                              />
-                              <div className="w-9 h-5 bg-[#0a0f1d] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-650 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
-                            </label>
-                          </div>
-
-                          {/* Timezone and hour configuration fields */}
-                          {dailyDigestEnabled && (
-                            <div className="grid gap-4 sm:grid-cols-2 p-4 rounded-2xl border border-indigo-950/60 bg-[#050811] animate-in slide-in-from-top-2 duration-200">
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fuso Horário do Perfil</label>
-                                <select
-                                  value={profileTimezone}
-                                  onChange={(e) => setProfileTimezone(e.target.value)}
-                                  className="w-full px-3.5 py-2.5 bg-[#0b0f19] border border-indigo-950/80 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40 cursor-pointer font-mono"
-                                >
-                                  <option value="America/Sao_Paulo">America/Sao_Paulo (GMT-3)</option>
-                                  <option value="UTC">UTC (Universal Coordinated Time)</option>
-                                  <option value="America/New_York">America/New_York (EST/EDT)</option>
-                                  <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
-                                  <option value="Europe/London">Europe/London (GMT/BST)</option>
-                                  <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
-                                </select>
-                              </div>
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Horário do Disparo (Final do Dia)</label>
-                                <select
-                                  value={digestHour}
-                                  onChange={(e) => setDigestHour(Number(e.target.value))}
-                                  className="w-full px-3.5 py-2.5 bg-[#0b0f19] border border-indigo-950/80 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-indigo-500/40 cursor-pointer font-mono"
-                                >
-                                  {Array.from({ length: 24 }).map((_, idx) => (
-                                    <option key={idx} value={idx}>
-                                      {idx.toString().padStart(2, '0')}:00 ({idx >= 18 ? 'Noite' : idx >= 12 ? 'Tarde' : 'Manhã'})
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex justify-end pt-2">
-                            <button
-                              type="submit"
-                              disabled={savingProfile}
-                              className="px-5 py-2.5 text-xs font-bold rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white transition-all shadow-md cursor-pointer neon-glow-primary disabled:opacity-50"
-                            >
-                              {savingProfile ? 'Salvando...' : 'Salvar Preferências'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {/* ACTIVE SESSIONS TAB */}
-              {securityTab === 'sessions' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
-                  <div>
-                    <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Sessões Ativas</h5>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Gerencie os acessos de login autorizados para a sua conta.</p>
-                  </div>
-
-                  <div className="divide-y divide-indigo-950/30 rounded-2xl border border-indigo-950/40 bg-slate-950/40 overflow-hidden">
-                    <div className="p-4 flex items-center justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-slate-200">Navegador Atual (Chrome/Linux)</span>
-                          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider">Esta Sessão</span>
-                        </div>
-                        <p className="text-[10px] text-slate-500">IP: <code className="font-mono text-indigo-400">{clientIp}</code> • Última atividade: Agora</p>
-                      </div>
-                    </div>
-                    <div className="p-4 flex items-center justify-between bg-indigo-950/5">
-                      <div className="space-y-1">
-                        <span className="text-xs font-semibold text-slate-400">Integração API (Token de Acesso)</span>
-                        <p className="text-[10px] text-slate-500">Chave base para requisições no endpoint REST • Status: Ativo</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 2FA MULTIFACTOR TAB */}
-              {securityTab === 'twoFactor' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
-                  <div>
-                    <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Autenticação de Dois Fatores (MFA)</h5>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Adicione uma camada extra de proteção exigindo um código TOTP no login.</p>
-                  </div>
-                  <div className="rounded-2xl border border-indigo-950/40 bg-slate-950/40 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div>
-                      <span className="text-xs font-bold text-slate-250 block">MFA Avançado & TOTP</span>
-                      <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
-                        A proteção via aplicativos autenticadores (Google Authenticator, Microsoft Authenticator) requer o plano Enterprise.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      disabled
-                      className="px-3.5 py-2 text-[9px] uppercase font-black text-slate-500 bg-slate-900 border border-slate-800 rounded-xl cursor-not-allowed shrink-0"
-                    >
-                      Em Breve (Enterprise)
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -1563,6 +1753,35 @@ export const ProfilePage: React.FC = () => {
                       >
                         <span>Fazer Upgrade para PRO 💎</span>
                       </button>
+                    )}
+
+                    {!isProPlan && (
+                      <p className="mt-3 text-[10.5px] text-slate-400 text-center leading-relaxed">
+                        Ao assinar, você concorda com nossos{' '}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPlansModalOpen(false);
+                            window.history.pushState({}, '', '/terms');
+                            window.dispatchEvent(new PopStateEvent('popstate'));
+                          }}
+                          className="text-cyan-400 hover:underline font-semibold cursor-pointer"
+                        >
+                          Termos de Serviço
+                        </button>{' '}
+                        e{' '}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPlansModalOpen(false);
+                            window.history.pushState({}, '', '/privacy');
+                            window.dispatchEvent(new PopStateEvent('popstate'));
+                          }}
+                          className="text-indigo-400 hover:underline font-semibold cursor-pointer"
+                        >
+                          Política de Privacidade (LGPD)
+                        </button>. Renovação recorrente via Asaas, cancele a qualquer momento.
+                      </p>
                     )}
                   </div>
                 </div>

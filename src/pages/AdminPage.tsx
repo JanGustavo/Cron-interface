@@ -11,6 +11,14 @@ interface AdminUser {
   isVerified: boolean;
   totalJobs: number;
   aiQueriesUsed: number;
+  billingCycle?: 'monthly' | 'yearly' | 'none' | string;
+  currentPeriodEnd?: string | null;
+  currentPeriodStart?: string | null;
+  subscriptionStatus?: string;
+  billingProvider?: string;
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
+  asaasUrl?: string;
   createdAt: string;
 }
 
@@ -20,6 +28,24 @@ interface AdminStats {
   proUsers: number;
   totalJobs: number;
 }
+
+const formatExpirationDate = (value?: string | null) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+};
+
+const getDaysRemaining = (value?: string | null) => {
+  if (!value) return null;
+  const target = new Date(value).getTime();
+  const now = new Date().getTime();
+  return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+};
 
 export const AdminPage: React.FC = () => {
   const { showToast, setActiveTab } = useUiStore();
@@ -231,7 +257,10 @@ export const AdminPage: React.FC = () => {
               <thead>
                 <tr className="bg-indigo-950/30 text-slate-400 uppercase text-[9px] tracking-wider border-b border-indigo-950/50">
                   <th className="p-3 font-bold">Usuário / E-mail</th>
-                  <th className="p-3 font-bold">Plano Atual</th>
+                  <th className="p-3 font-bold">Plano</th>
+                  <th className="p-3 font-bold">Ciclo</th>
+                  <th className="p-3 font-bold">Data Limite</th>
+                  <th className="p-3 font-bold">Fatura / Asaas</th>
                   <th className="p-3 font-bold">Role</th>
                   <th className="p-3 font-bold">Jobs</th>
                   <th className="p-3 font-bold">Uso IA</th>
@@ -240,11 +269,23 @@ export const AdminPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-indigo-950/30 text-slate-300">
-                {filteredUsers.map((u) => {
+                {filteredUsers.map((u, idx) => {
                   const isUserPro = u.plan === 'pro';
                   const isAdminRole = u.role === 'admin';
+                  const daysRemaining = getDaysRemaining(u.currentPeriodEnd);
+                  const isYearly = u.billingCycle === 'yearly';
+
+                  // Alternância de tons (zebra striping) + bordas douradas para PRO
+                  const rowBg = isUserPro
+                    ? (idx % 2 === 0 ? 'bg-amber-500/[0.04]' : 'bg-amber-500/[0.02]')
+                    : (idx % 2 === 0 ? 'bg-slate-950/60' : 'bg-slate-900/30');
+
+                  const borderClass = isUserPro
+                    ? 'border-l-4 border-l-amber-400/90 shadow-[inset_0_0_15px_rgba(245,158,11,0.04)] hover:bg-amber-500/[0.08]'
+                    : 'border-l-4 border-l-transparent hover:bg-indigo-950/20';
+
                   return (
-                    <tr key={u.id} className="hover:bg-indigo-950/15 transition-colors">
+                    <tr key={u.id} className={`${rowBg} ${borderClass} transition-colors`}>
                       <td className="p-3">
                         <div className="font-semibold text-slate-100">{u.fullName || 'Sem Nome'}</div>
                         <div className="text-[10.5px] text-slate-400">{u.email}</div>
@@ -252,13 +293,87 @@ export const AdminPage: React.FC = () => {
 
                       <td className="p-3">
                         {isUserPro ? (
-                          <span className="px-2 py-0.5 text-[8.5px] font-black uppercase rounded bg-purple-950/60 text-purple-300 border border-purple-500/30">
-                            PRO ✨
+                          <span className="px-2 py-0.5 text-[8.5px] font-black uppercase rounded bg-purple-950/60 text-purple-300 border border-purple-500/30 flex items-center gap-1 w-fit">
+                            <span>PRO ✨</span>
+                            <span className="text-amber-400 font-bold text-[10px]">∞</span>
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 text-[8.5px] font-bold uppercase rounded bg-slate-900 text-slate-400 border border-slate-800">
                             FREE
                           </span>
+                        )}
+                      </td>
+
+                      <td className="p-3">
+                        {isUserPro ? (
+                          isYearly ? (
+                            <span className="px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wide rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
+                              Anual 🌟
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wide rounded bg-indigo-950/60 text-indigo-300 border border-indigo-500/30">
+                              Mensal 📅
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-[10px] text-slate-600 font-mono">-</span>
+                        )}
+                      </td>
+
+                      <td className="p-3">
+                        {isUserPro ? (
+                          u.currentPeriodEnd ? (
+                            <div className="space-y-0.5">
+                              <div className="text-[11px] font-bold text-slate-200">
+                                {formatExpirationDate(u.currentPeriodEnd)}
+                              </div>
+                              {daysRemaining !== null && (
+                                <div className={`text-[9.5px] font-bold ${daysRemaining > 0 ? (daysRemaining <= 5 ? 'text-amber-400' : 'text-emerald-400') : 'text-rose-400'}`}>
+                                  {daysRemaining > 0 ? `${daysRemaining} dias restantes` : 'Expirado'}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="px-1.5 py-0.5 text-[8.5px] font-black uppercase rounded bg-amber-950/50 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit">
+                              <span className="text-xs">∞</span> Vitalício
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-[10px] text-slate-600">Ilimitado (Free)</span>
+                        )}
+                      </td>
+
+                      <td className="p-3">
+                        {u.asaasUrl ? (
+                          <div className="space-y-1">
+                            <a
+                              href={u.asaasUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/30 rounded-lg transition-all shadow-sm group cursor-pointer"
+                              title="Abrir assinaturas no Asaas (requer estar logado no sandbox.asaas.com)"
+                            >
+                              <span>💳 Painel Asaas</span>
+                              <span className="group-hover:translate-x-0.5 transition-transform text-[8px]">↗</span>
+                            </a>
+                            {u.providerSubscriptionId && (
+                              <div
+                                onClick={() => {
+                                  navigator.clipboard.writeText(u.providerSubscriptionId || '');
+                                  showToast('ID da assinatura copiado! 📋', 'success');
+                                }}
+                                className="text-[8.5px] text-slate-500 font-mono hover:text-cyan-300 cursor-pointer flex items-center gap-0.5 transition-colors"
+                                title="Clique para copiar o ID da assinatura"
+                              >
+                                <span>ID:</span>
+                                <span>{u.providerSubscriptionId.slice(0, 12)}...</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : isUserPro ? (
+                          <span className="text-[9.5px] text-slate-500 font-mono">Manual</span>
+                        ) : (
+                          <span className="text-[10px] text-slate-600 font-mono">-</span>
                         )}
                       </td>
 
@@ -275,9 +390,16 @@ export const AdminPage: React.FC = () => {
                       <td className="p-3 font-bold text-slate-200">{u.totalJobs}</td>
 
                       <td className="p-3">
-                        <span className={`font-bold ${u.aiQueriesUsed >= 3 ? 'text-amber-400' : 'text-slate-300'}`}>
-                          {u.aiQueriesUsed}/3
-                        </span>
+                        {isUserPro ? (
+                          <span className="font-black text-amber-400 flex items-center gap-1 text-xs" title={`Uso ilimitado no Plano PRO (${u.aiQueriesUsed} chamadas realizadas)`}>
+                            <span className="text-base leading-none">∞</span>
+                            <span className="text-[9px] text-slate-400 font-normal font-mono">({u.aiQueriesUsed})</span>
+                          </span>
+                        ) : (
+                          <span className={`font-bold ${u.aiQueriesUsed >= 3 ? 'text-amber-400' : 'text-slate-300'}`}>
+                            {u.aiQueriesUsed}/3
+                          </span>
+                        )}
                       </td>
 
                       <td className="p-3">

@@ -13,6 +13,9 @@ import { ImportJobModal } from './components/Kanban/ImportJobModal';
 import { ToastHost } from './components/Shared/ToastHost';
 import { AgentChat } from './components/Shared/AgentChat';
 import { OnboardingTour } from './components/Shared/OnboardingTour';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { CookieConsentBanner } from './components/Shared/CookieConsentBanner';
 import api from './services/api';
 
 function lazyWithRetry<T extends React.ComponentType<any>>(
@@ -219,6 +222,24 @@ const App: React.FC = () => {
   const { fetchJobs, jobs, setActiveJob } = useJobsStore();
   const [authChecking, setAuthChecking] = useState(true);
 
+  const [legalPage, setLegalPage] = useState<'terms' | 'privacy' | null>(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/terms') return 'terms';
+      if (window.location.pathname === '/privacy') return 'privacy';
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname === '/terms') setLegalPage('terms');
+      else if (window.location.pathname === '/privacy') setLegalPage('privacy');
+      else setLegalPage(null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Sync Accessibility CSS classes on <html>
   useEffect(() => {
     if (highContrast) {
@@ -409,6 +430,30 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated, jobs, setActiveJob, setJobModalOpen, setActiveTab]);
 
+  if (legalPage === 'terms') {
+    return (
+      <>
+        <TermsPage onBack={() => { setLegalPage(null); window.history.pushState({}, '', '/'); }} />
+        <CookieConsentBanner
+          onOpenTerms={() => { setLegalPage('terms'); window.history.pushState({}, '', '/terms'); }}
+          onOpenPrivacy={() => { setLegalPage('privacy'); window.history.pushState({}, '', '/privacy'); }}
+        />
+      </>
+    );
+  }
+
+  if (legalPage === 'privacy') {
+    return (
+      <>
+        <PrivacyPage onBack={() => { setLegalPage(null); window.history.pushState({}, '', '/'); }} />
+        <CookieConsentBanner
+          onOpenTerms={() => { setLegalPage('terms'); window.history.pushState({}, '', '/terms'); }}
+          onOpenPrivacy={() => { setLegalPage('privacy'); window.history.pushState({}, '', '/privacy'); }}
+        />
+      </>
+    );
+  }
+
   if (authChecking) {
     return (
       <div className="min-h-screen bg-[#070913] flex flex-col justify-center items-center select-none font-mono">
@@ -423,7 +468,15 @@ const App: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <LoginGate />;
+    return (
+      <>
+        <LoginGate />
+        <CookieConsentBanner
+          onOpenTerms={() => { setLegalPage('terms'); window.history.pushState({}, '', '/terms'); }}
+          onOpenPrivacy={() => { setLegalPage('privacy'); window.history.pushState({}, '', '/privacy'); }}
+        />
+      </>
+    );
   }
 
   const renderActivePage = () => {
@@ -457,6 +510,10 @@ const App: React.FC = () => {
       <AgentChat />
       <ToastHost />
       <OnboardingTour />
+      <CookieConsentBanner
+        onOpenTerms={() => { setLegalPage('terms'); window.history.pushState({}, '', '/terms'); }}
+        onOpenPrivacy={() => { setLegalPage('privacy'); window.history.pushState({}, '', '/privacy'); }}
+      />
 
       {/* Global Docs Modal */}
       {isDocsOpen && (

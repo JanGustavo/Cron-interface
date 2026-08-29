@@ -1944,11 +1944,29 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                 >
                   {loading ? 'Criando workspace...' : authCopy.signup.submit}
                 </button>
-                <p className="text-[10px] text-slate-500 text-center leading-relaxed pt-2">
+                <p className="text-[10.5px] text-slate-400 text-center leading-relaxed pt-2">
                   Ao criar o workspace, você concorda com os nossos{' '}
-                  <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-cyan-400 underline transition-colors">Termos de Serviço</a>{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.history.pushState({}, '', '/terms');
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }}
+                    className="text-indigo-400 hover:text-cyan-400 underline transition-colors cursor-pointer font-semibold"
+                  >
+                    Termos de Serviço
+                  </button>{' '}
                   e{' '}
-                  <a href="https://github.com/JanGustavo/Cron" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-cyan-400 underline transition-colors">Política de Privacidade</a>.
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.history.pushState({}, '', '/privacy');
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }}
+                    className="text-emerald-400 hover:text-cyan-400 underline transition-colors cursor-pointer font-semibold"
+                  >
+                    Política de Privacidade (LGPD)
+                  </button>.
                 </p>
               </form>
             )
