@@ -633,16 +633,6 @@ export const LoginGate: React.FC = () => {
               </a>
             </div>
 
-            {/* Dogfooding Callout */}
-            <div className="p-3 rounded-2xl bg-indigo-950/40 border border-indigo-500/20 text-slate-300 text-xs font-sans space-y-1">
-              <div className="flex items-center gap-2 text-cyan-400 font-bold font-mono text-[11px]">
-                <span>⚡ Testado na prática (Dogfooding)</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Desenvolvido e usado em produção para monitorar tarefas de segundo plano e sincronizações do <strong>PromoPulse</strong>. Nenhuma automação falha no silêncio.
-              </p>
-            </div>
-
             <p className="text-[10px] text-slate-500 tracking-wider font-semibold font-mono">
               Sem cartão de crédito · Workspace pronto em minutos · API e painel visual
             </p>
