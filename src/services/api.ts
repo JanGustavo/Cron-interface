@@ -155,8 +155,36 @@ api.interceptors.response.use(
     return response;
   },
   (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response && error.response.data) {
-      error.response.data = keysToCamel(error.response.data);
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        const requestUrl = error.config?.url || '';
+        const isAuthEndpoint =
+          requestUrl.includes('/v1/auth/login') ||
+          requestUrl.includes('/v1/auth/register') ||
+          requestUrl.includes('/v1/auth/forgot-password') ||
+          requestUrl.includes('/v1/auth/reset-password');
+
+        if (!isAuthEndpoint) {
+          const hadToken = !!localStorage.getItem('cf_token');
+          if (hadToken) {
+            console.warn('[Auth Interceptor] 401 Unauthorized recebido. Limpando sessão expirada.');
+            useAuthStore.getState().logout();
+            localStorage.removeItem('cf_token');
+            localStorage.removeItem('cf_refresh_token');
+            localStorage.removeItem('cf_user_plan');
+            localStorage.removeItem('cf_current_user_id');
+            try {
+              sessionStorage.setItem('cf_session_expired', '1');
+            } catch {
+              // ignore
+            }
+          }
+        }
+      }
+
+      if (error.response && error.response.data) {
+        error.response.data = keysToCamel(error.response.data);
+      }
     }
     return Promise.reject(error);
   }

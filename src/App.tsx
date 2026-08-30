@@ -309,6 +309,15 @@ const App: React.FC = () => {
       const savedToken = localStorage.getItem('cf_token');
       if (savedToken) {
         try {
+          const decoded = parseJwt(savedToken);
+          // Se o token já expirou pelo tempo de vida (exp) do JWT, desloga imediatamente
+          if (decoded?.exp && decoded.exp * 1000 < Date.now()) {
+            console.warn('[AutoAuth] Token JWT expirado localmente. Redirecionando para login.');
+            logout();
+            if (isMounted) setAuthChecking(false);
+            return;
+          }
+
           // Set temporary localstorage for api interceptor
           localStorage.setItem('cf_token', savedToken);
           
@@ -316,7 +325,6 @@ const App: React.FC = () => {
           const profileResponse = await api.get('/v1/users/profile', { timeout: 4000 });
           const profile = profileResponse.data;
           
-          const decoded = parseJwt(savedToken);
           const email = decoded?.email || profile.email;
           const userId = decoded?.user_id || profile.id;
           const plan = profile.plan || decoded?.plan || 'free';
