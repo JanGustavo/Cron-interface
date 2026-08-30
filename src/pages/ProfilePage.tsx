@@ -825,7 +825,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* TAB CONTENTS */}
-            <div className="min-h-[300px]">
+            <div className="min-h-75">
               
               {/* ACCOUNT / PERSONAL DATA TAB */}
               {securityTab === 'account' && (

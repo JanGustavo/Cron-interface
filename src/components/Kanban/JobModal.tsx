@@ -690,11 +690,11 @@ export const JobModal: React.FC = () => {
                 <textarea
                   value={editHeaders}
                   onChange={(e) => setEditHeaders(e.target.value)}
-                  className="w-full min-h-[140px] px-4 py-3 bg-slate-950 border border-indigo-500/20 rounded-xl font-mono text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 placeholder-slate-600"
+                  className="w-full min-h-35 px-4 py-3 bg-slate-950 border border-indigo-500/20 rounded-xl font-mono text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 placeholder-slate-600"
                   placeholder='{\n  "Authorization": "Bearer ..."\n}'
                 />
               ) : (
-                <div className="flex-1 min-h-[140px] px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl font-mono text-xs text-indigo-400 overflow-auto max-h-[140px]">
+                <div className="flex-1 min-h-35 px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl font-mono text-xs text-indigo-400 overflow-auto max-h-35">
                   {activeJob.headers ? (
                     <pre>{JSON.stringify(activeJob.headers, null, 2)}</pre>
                   ) : (
@@ -712,13 +712,13 @@ export const JobModal: React.FC = () => {
                   value={editPayload}
                   onChange={(e) => setEditPayload(e.target.value)}
                   disabled={editMethod === 'GET' || editMethod === 'HEAD'}
-                  className={`w-full min-h-[140px] px-4 py-3 bg-slate-950 border rounded-xl font-mono text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 placeholder-slate-600 ${
+                  className={`w-full min-h-35 px-4 py-3 bg-slate-950 border rounded-xl font-mono text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 placeholder-slate-600 ${
                     editMethod === 'GET' || editMethod === 'HEAD' ? 'opacity-40 cursor-not-allowed border-indigo-950/20' : 'border-indigo-500/20'
                   }`}
                   placeholder={editMethod === 'GET' || editMethod === 'HEAD' ? `Não disponível para método ${editMethod}` : '{\n  "data": "value"\n}'}
                 />
               ) : (
-                <div className="flex-1 min-h-[140px] px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl font-mono text-xs text-indigo-400 overflow-auto max-h-[140px]">
+                <div className="flex-1 min-h-35 px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl font-mono text-xs text-indigo-400 overflow-auto max-h-35">
                   {activeJob.payload ? (
                     <pre>{JSON.stringify(activeJob.payload, null, 2)}</pre>
                   ) : (

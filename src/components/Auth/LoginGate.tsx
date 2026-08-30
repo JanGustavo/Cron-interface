@@ -1030,7 +1030,7 @@ export const LoginGate: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
           {/* API */}
-          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-[180px] hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-45 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
             <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">API REST</span>
@@ -1045,7 +1045,7 @@ export const LoginGate: React.FC = () => {
           </div>
 
           {/* Scheduler */}
-          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-[180px] hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-45 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
             <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">SCHEDULER</span>
@@ -1060,7 +1060,7 @@ export const LoginGate: React.FC = () => {
           </div>
 
           {/* Worker */}
-          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-[180px] hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-45 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
             <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">WORKER</span>
@@ -1075,7 +1075,7 @@ export const LoginGate: React.FC = () => {
           </div>
 
           {/* Lock/Logs */}
-          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-[180px] hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+          <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-45 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
             <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">TELEMETRIA</span>
@@ -1276,7 +1276,7 @@ export const LoginGate: React.FC = () => {
           </div>
 
           {/* Code output area */}
-          <div className="p-5 md:p-7 bg-[#070913]/60 min-h-[160px] flex items-center justify-between text-indigo-300 overflow-x-auto select-all">
+          <div className="p-5 md:p-7 bg-[#070913]/60 min-h-40 flex items-center justify-between text-indigo-300 overflow-x-auto select-all">
             {activeSandboxTab === 'curl' && (
               <pre className="whitespace-pre-wrap leading-relaxed w-full font-mono">
                 <code>
@@ -2212,7 +2212,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
             </div>
 
             {/* Simulation Area */}
-            <div className="flex-1 bg-[#060812] border border-indigo-950/60 rounded-2xl p-3 md:p-5 min-h-[300px] text-[10px] md:text-xs space-y-2.5 overflow-y-auto select-all text-left">
+            <div className="flex-1 bg-[#060812] border border-indigo-950/60 rounded-2xl p-3 md:p-5 min-h-75 text-[10px] md:text-xs space-y-2.5 overflow-y-auto select-all text-left">
               <div className="text-[10px] text-amber-500/80 mb-3 bg-amber-950/10 border border-amber-500/20 px-3 py-2 rounded-xl flex items-center gap-2 select-none font-mono">
                 <span>⚠️</span>
                 <span><strong>Simulação:</strong> Nenhum webhook real será enviado para o destino nesta demonstração.</span>

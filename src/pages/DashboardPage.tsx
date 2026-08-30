@@ -963,7 +963,7 @@ export const DashboardPage: React.FC = () => {
                                           className="p-1.5 bg-indigo-950/20 border border-indigo-950/50 hover:border-cyan-500/30 rounded-lg cursor-pointer hover:bg-indigo-950/40 transition-all text-left"
                                         >
                                           <div className="flex justify-between items-center text-[9px] font-bold text-slate-200">
-                                            <span className="truncate max-w-30">{log.jobName || 'Tarefa'}</span>
+                                            <span className="truncate max-w-[120px]">{log.jobName || 'Tarefa'}</span>
                                             <span className="text-slate-500 font-mono">
                                               {(() => {
                                                 const d = new Date(log.triggeredAt);

@@ -326,7 +326,7 @@ export const LiveExecutionModal: React.FC = () => {
         </div>
 
         {/* Modal Main Terminal Content */}
-        <div className="flex-1 min-h-[280px] max-h-[50vh] overflow-y-auto p-4 sm:p-6 font-mono text-xs text-left select-text bg-[#04060f]">
+        <div className="flex-1 min-h-70 max-h-[50vh] overflow-y-auto p-4 sm:p-6 font-mono text-xs text-left select-text bg-[#04060f]">
           
           {/* TAB 1: Real-time Execution Stream */}
           {activeTab === 'stream' && (
