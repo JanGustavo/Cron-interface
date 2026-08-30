@@ -184,8 +184,8 @@ export const ProfilePage: React.FC = () => {
         popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
         title: 'text-slate-100 font-extrabold text-base',
         htmlContainer: 'text-slate-400 text-xs leading-relaxed mt-2',
-        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-all shadow-md',
-        cancelButton: 'px-4 py-2 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all ml-2',
+        confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 border border-rose-500 rounded-xl transition-all shadow-[0_0_20px_rgba(244,63,94,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-500/50',
+        cancelButton: 'px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-indigo-950/80 rounded-xl transition-all cursor-pointer focus:outline-none ml-2',
       },
       buttonsStyling: false,
     });
@@ -216,8 +216,8 @@ export const ProfilePage: React.FC = () => {
         popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
         title: 'text-slate-100 font-extrabold text-base',
         htmlContainer: 'text-slate-400 text-xs leading-relaxed mt-2',
-        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded-xl transition-all shadow-md',
-        cancelButton: 'px-4 py-2 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all ml-2',
+        confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 bg-amber-400 hover:bg-amber-300 border border-amber-300 rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400/50',
+        cancelButton: 'px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-indigo-950/80 rounded-xl transition-all cursor-pointer focus:outline-none ml-2',
       },
       buttonsStyling: false,
     });
@@ -427,9 +427,9 @@ export const ProfilePage: React.FC = () => {
       customClass: {
         popup: 'swal2-dark-custom rounded-3xl border border-rose-950/60 bg-[#090c15] text-slate-100 p-6',
         title: 'text-rose-400 font-extrabold text-base',
-        confirmButton: 'px-4 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-all shadow-md cursor-pointer',
-        cancelButton: 'px-4 py-2 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all ml-2 cursor-pointer',
-        input: 'px-4 py-2.5 bg-[#05070e] border border-indigo-950 rounded-xl text-xs text-slate-200 w-full mb-2 font-mono',
+        confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 border border-rose-500 rounded-xl transition-all shadow-[0_0_20px_rgba(244,63,94,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-500/50',
+        cancelButton: 'px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-indigo-950/80 rounded-xl transition-all cursor-pointer focus:outline-none ml-2',
+        input: 'px-4 py-2.5 bg-[#05070e] border border-indigo-950 rounded-xl text-xs text-slate-200 w-full mb-2 font-mono focus:outline-none focus:border-cyan-500',
       },
       buttonsStyling: false,
     });
@@ -517,8 +517,8 @@ export const ProfilePage: React.FC = () => {
         popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
         title: 'text-slate-100 font-extrabold text-base',
         htmlContainer: 'text-slate-400 text-xs leading-relaxed mt-2',
-        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-all shadow-md',
-        cancelButton: 'px-4 py-2 text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all ml-2',
+        confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 border border-rose-500 rounded-xl transition-all shadow-[0_0_20px_rgba(244,63,94,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-500/50',
+        cancelButton: 'px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-indigo-950/80 rounded-xl transition-all cursor-pointer focus:outline-none ml-2',
       },
       buttonsStyling: false,
     });

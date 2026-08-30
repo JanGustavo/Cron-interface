@@ -24,7 +24,7 @@ export const LiveExecutionModal: React.FC = () => {
   const [latestLog, setLatestLog] = useState<JobLog | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const startTimeRef = useRef<number>(Date.now());
+  const startTimeRef = useRef<number>(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRunningRef = useRef<boolean>(false);
@@ -389,7 +389,7 @@ export const LiveExecutionModal: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-500">Tentativa:</span>
-                      <span className="text-amber-400 font-bold">{latestLog.attemptNumber || 1} / 3</span>
+                      <span className="text-amber-400 font-bold">{latestLog.attemptNumber || 1} / 4</span>
                     </div>
                   </div>
 

@@ -223,8 +223,8 @@ export const JobModal: React.FC = () => {
           title: 'text-base font-bold text-slate-100 px-6 pt-6',
           htmlContainer: 'text-xs text-slate-400 font-medium leading-normal px-6 pb-4',
           actions: 'px-6 pb-6 flex justify-end gap-2',
-          confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-amber-650 hover:bg-amber-500 rounded-xl transition-all shadow-md cursor-pointer',
-          cancelButton: 'px-4 py-2 text-xs font-semibold text-slate-450 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer',
+          confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 bg-amber-400 hover:bg-amber-300 border border-amber-300 rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400/50',
+          cancelButton: 'px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-indigo-950/80 rounded-xl transition-all cursor-pointer focus:outline-none',
         },
         buttonsStyling: false,
       }).then((result) => {
@@ -269,8 +269,8 @@ export const JobModal: React.FC = () => {
         title: 'text-base font-bold text-slate-100 px-6 pt-6',
         htmlContainer: 'text-xs text-slate-400 font-medium leading-normal px-6 pb-4',
         actions: 'px-6 pb-6 flex justify-end gap-2',
-        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-all shadow-md cursor-pointer',
-        cancelButton: 'px-4 py-2 text-xs font-semibold text-slate-450 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer',
+        confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 border border-rose-500 rounded-xl transition-all shadow-[0_0_20px_rgba(244,63,94,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-500/50',
+        cancelButton: 'px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-indigo-950/80 rounded-xl transition-all cursor-pointer focus:outline-none',
       },
       buttonsStyling: false,
     }).then((result) => {
@@ -301,8 +301,8 @@ export const JobModal: React.FC = () => {
         title: 'text-base font-bold text-slate-100 px-6 pt-6',
         htmlContainer: 'text-xs text-slate-400 font-medium leading-normal px-6 pb-4',
         actions: 'px-6 pb-6 flex justify-end gap-2',
-        confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-600 rounded-xl transition-all shadow-md cursor-pointer',
-        cancelButton: 'px-4 py-2 text-xs font-semibold text-slate-450 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all cursor-pointer',
+        confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 border border-cyan-300 rounded-xl transition-all shadow-[0_0_20px_rgba(6,182,212,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50',
+        cancelButton: 'px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-indigo-950/80 rounded-xl transition-all cursor-pointer focus:outline-none',
       },
       buttonsStyling: false,
     }).then((result) => {
