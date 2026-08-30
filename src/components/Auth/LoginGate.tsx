@@ -572,7 +572,7 @@ export const LoginGate: React.FC = () => {
                 setActiveTab('login');
                 setIsModalOpen(true);
               }}
-              className="px-4.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-indigo-650/80 hover:bg-indigo-600 rounded-xl border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.25)] transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_0_26px_rgba(99,102,241,0.32)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/40"
+              className="px-5 py-2 text-xs font-black uppercase tracking-wider text-cyan-300 bg-cyan-500/10 hover:bg-cyan-400 hover:text-slate-950 rounded-xl border border-cyan-500/40 shadow-[0_0_20px_rgba(6,182,212,0.18)] hover:shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all duration-200 cursor-pointer hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40"
             >
               Entrar
             </button>
@@ -585,9 +585,9 @@ export const LoginGate: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-6 text-left animate-in fade-in slide-in-from-bottom-8 duration-500">
             
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold tracking-widest font-mono">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px] font-bold tracking-widest font-mono shadow-[0_0_15px_rgba(6,182,212,0.15)]">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-              Automações HTTP para produtos que não podem falhar no silêncio
+              SLA 99.9% • Zero Falhas Silenciosas • Alertas Imediatos
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] font-mono text-slate-100">
@@ -596,12 +596,12 @@ export const LoginGate: React.FC = () => {
               <span className="text-gradient-cyber">não executam.</span>
             </h1>
 
-            <p className="text-base font-bold text-slate-350 tracking-wide">
-              Chega de falhas silenciosas em tarefas cron e webhooks.
+            <p className="text-base font-bold text-slate-200 tracking-wide">
+              Chega de descobrir que uma tarefa crítica parou através de clientes insatisfeitos.
             </p>
 
             <p className="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed">
-              O CronFlow é o agendador de tarefas developer-first com retries exponenciais automáticos, alertas instantâneos de falha e logs completos para garantir que suas automações nunca quebrem no silêncio.
+              O CronFlow é o agendador de tarefas distribuído para desenvolvedores e empresas. Com retries exponenciais de 3x, alertas automáticos em falhas consecutivas, telemetria em tempo real e criação de jobs assistida por Inteligência Artificial.
             </p>
 
             <div className="grid gap-3 pt-2 select-none sm:grid-cols-3">
@@ -610,13 +610,13 @@ export const LoginGate: React.FC = () => {
                   setActiveTab('signup');
                   setIsModalOpen(true);
                 }}
-                className="inline-flex w-full items-center justify-center whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_25px_rgba(0,217,255,0.3)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                className="inline-flex w-full items-center justify-center whitespace-nowrap px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-950 bg-cyan-400 hover:bg-cyan-300 rounded-xl shadow-[0_0_25px_rgba(34,211,238,0.35)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
               >
                 Começar grátis ⚡
               </button>
               <button
                 onClick={() => setIsSimulationOpen(true)}
-                className="inline-flex w-full items-center justify-center whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                className="inline-flex w-full items-center justify-center whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-200 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 hover:border-cyan-500/40 rounded-xl transition-all cursor-pointer hover:-translate-y-0.5 shadow-sm hover:shadow-[0_0_15px_rgba(6,182,212,0.15)] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
               >
                 Ver simulador
               </button>
@@ -624,7 +624,7 @@ export const LoginGate: React.FC = () => {
                 href="https://github.com/JanGustavo/Cron"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/20 rounded-xl transition-all cursor-pointer hover:-translate-y-0.5 duration-200"
+                className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-200 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 hover:border-cyan-500/40 rounded-xl transition-all cursor-pointer hover:-translate-y-0.5 shadow-sm hover:shadow-[0_0_15px_rgba(6,182,212,0.15)] duration-200"
               >
                 <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
                   <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
@@ -1336,27 +1336,27 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
       <section className="py-20 border border-indigo-950/40 bg-gradient-to-b from-[#060813] to-[#0a0d1e] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden rounded-3xl mb-12">
         <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/5 to-indigo-500/5 opacity-50 pointer-events-none" />
         <div className="relative space-y-6 max-w-2xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-100">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight font-mono">
             Pare de descobrir falhas pelos clientes.
           </h2>
-          <p className="text-sm text-slate-450 leading-relaxed font-sans">
-            Crie seu primeiro job, acompanhe a execução e veja como o CronFlow transforma uma rotina silenciosa em um fluxo observável, seguro e totalmente auditável.
+          <p className="text-sm text-slate-400 leading-relaxed font-sans max-w-xl mx-auto">
+            Crie seu primeiro job em 30 segundos, acompanhe a execução com retries automáticos e tenha total observabilidade das suas automações críticas.
           </p>
-          <div className="flex justify-center gap-4 select-none">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 select-none">
             <button
               onClick={() => {
                 setActiveTab('signup');
                 setIsModalOpen(true);
               }}
-              className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-cyan-500 hover:bg-cyan-400 rounded-xl shadow-[0_0_20px_rgba(0,217,255,0.25)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200"
+              className="px-6 py-3.5 text-xs font-black uppercase tracking-widest text-slate-950 bg-cyan-400 hover:bg-cyan-300 rounded-xl shadow-[0_0_25px_rgba(34,211,238,0.35)] transition-all cursor-pointer hover:-translate-y-0.5 duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
             >
-              Criar conta grátis
+              Criar conta grátis ⚡
             </button>
             <a
               href="https://github.com/JanGustavo/Cron"
               target="_blank"
               rel="noreferrer"
-              className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white bg-indigo-950/20 hover:bg-indigo-950/40 border border-indigo-500/10 rounded-xl transition-all flex items-center justify-center hover:-translate-y-0.5 duration-200"
+              className="px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-200 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 hover:border-cyan-500/40 rounded-xl transition-all flex items-center justify-center hover:-translate-y-0.5 shadow-sm hover:shadow-[0_0_15px_rgba(6,182,212,0.15)] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
             >
               Ler a documentação
             </a>
@@ -1526,7 +1526,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
 
                 <button
                   onClick={handleConnectWithGeneratedKey}
-                  className="w-full py-3.5 rounded-xl text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-605 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all shadow-[0_0_25px_rgba(34,211,238,0.35)] flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5"
                 >
                   Acessar Painel Principal ⚡
                 </button>
@@ -1675,7 +1675,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all shadow-[0_0_25px_rgba(34,211,238,0.35)] flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Entrando...' : authCopy.login.submit}
                 </button>
@@ -1940,7 +1940,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all shadow-[0_0_25px_rgba(34,211,238,0.35)] flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Criando workspace...' : authCopy.signup.submit}
                 </button>
@@ -2005,7 +2005,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all shadow-[0_0_25px_rgba(34,211,238,0.35)] flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:opacity-50"
                 >
                   {loading ? 'Enviando...' : authCopy.forgotPassword.submit}
                 </button>
@@ -2138,7 +2138,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all shadow-[0_0_25px_rgba(34,211,238,0.35)] flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:opacity-50"
                 >
                   {loading ? 'Redefinindo...' : authCopy.resetPassword.submit}
                 </button>
@@ -2180,7 +2180,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
                         const newUrl = window.location.pathname;
                         window.history.replaceState({}, document.title, newUrl);
                       }}
-                      className="w-full py-3.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg neon-glow-primary flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+                      className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all shadow-[0_0_25px_rgba(34,211,238,0.35)] flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
                     >
                       Ir para o Login
                     </button>
