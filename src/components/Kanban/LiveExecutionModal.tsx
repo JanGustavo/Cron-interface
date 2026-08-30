@@ -212,10 +212,10 @@ export const LiveExecutionModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-md bg-slate-950/70 animate-in fade-in duration-200 font-sans">
-      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden rounded-3xl border border-cyan-550/30 bg-[#070a1a]/95 shadow-[0_0_50px_rgba(6,182,212,0.25)] animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden rounded-3xl border border-cyan-500/30 bg-[#070a1a]/95 shadow-[0_0_50px_rgba(6,182,212,0.25)] animate-in zoom-in-95 duration-200">
         
         {/* Glowing Top Line */}
-        <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+        <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-linear-to-r from-transparent via-cyan-400 to-transparent" />
 
         {/* Modal Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-5 py-4 border-b border-indigo-950/60 bg-[#050713]/80">
@@ -290,7 +290,7 @@ export const LiveExecutionModal: React.FC = () => {
           >
             <span>📦 Resposta HTTP</span>
             {latestLog && (
-              <span className={`px-1.5 py-0.2 rounded text-[9px] font-black ${isSuccess ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+              <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${isSuccess ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
                 {latestLog.httpStatus || 'ERR'}
               </span>
             )}

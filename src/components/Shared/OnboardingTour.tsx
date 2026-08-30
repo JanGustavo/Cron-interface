@@ -195,7 +195,7 @@ export const OnboardingTour: React.FC = () => {
           className="pointer-events-auto z-[9999] rounded-2xl border border-indigo-500/35 bg-[#0a0d1c] p-5 text-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.2)] overflow-hidden"
         >
           {/* Colorful top border strip decoration */}
-          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500" />
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-linear-to-r from-cyan-400 via-indigo-500 to-purple-500" />
 
           {/* Step progress details */}
           <div className="flex items-start gap-3 mb-3">

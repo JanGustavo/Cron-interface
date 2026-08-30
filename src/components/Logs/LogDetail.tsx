@@ -490,7 +490,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                 {timeline.map((item) => (
                   <div key={item.attempt} className="relative">
                     {/* Bullet indicator */}
-                    <span className={`absolute -left-[30px] top-1 w-2.5 h-2.5 rounded-full border-2 ${
+                    <span className={`absolute -left-7.5 top-1 w-2.5 h-2.5 rounded-full border-2 ${
                       item.status === 'success'
                         ? 'bg-emerald-500 border-emerald-950 animate-pulse'
                         : item.status === 'timeout'

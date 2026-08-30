@@ -454,7 +454,7 @@ export const DashboardPage: React.FC = () => {
 
       {!isLoadingJobs && jobs.length === 0 ? (
         <div className="p-8 md:p-12 rounded-2xl glass-panel border border-dashed border-indigo-500/20 text-center relative overflow-hidden flex flex-col items-center justify-center space-y-6 py-16 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none pulse-slow" />
           
           {/* Animated Glow Icon */}
@@ -644,7 +644,7 @@ export const DashboardPage: React.FC = () => {
                           </button>
                         </div>
 
-                        <div className="max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
+                        <div className="max-h-45 overflow-y-auto space-y-1.5 pr-1">
                           {jobs.map((job) => {
                             const checked = selectedJobIds.includes(job.id);
                             return (
@@ -802,7 +802,7 @@ export const DashboardPage: React.FC = () => {
                   )}
                 </div>
               ) : hasError ? (
-                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-rose-500/20 bg-rose-950/5 min-h-[260px] text-center space-y-4">
+                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-rose-500/20 bg-rose-950/5 min-h-65 text-center space-y-4">
                   <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-rose-950/20 border border-rose-500/20 text-rose-400">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -822,7 +822,7 @@ export const DashboardPage: React.FC = () => {
                   </div>
                 </div>
               ) : isPageLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-indigo-500/10 bg-[#04060f]/30 min-h-[260px] text-center space-y-4 select-none animate-pulse">
+                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-indigo-500/10 bg-[#04060f]/30 min-h-65 text-center space-y-4 select-none animate-pulse">
                   <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-950/20 border border-indigo-500/20 text-indigo-400">
                     <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
                   </div>
@@ -834,7 +834,7 @@ export const DashboardPage: React.FC = () => {
                   </div>
                 </div>
               ) : isChartEmpty ? (
-                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-indigo-500/10 bg-[#04060f]/30 min-h-[260px] text-center space-y-4 select-none">
+                <div className="flex flex-col items-center justify-center py-12 px-6 rounded-2xl border border-dashed border-indigo-500/10 bg-[#04060f]/30 min-h-65 text-center space-y-4 select-none">
                   <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-950/20 border border-indigo-500/20 text-indigo-400">
                     <svg className="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
@@ -912,7 +912,7 @@ export const DashboardPage: React.FC = () => {
                           {selectedErrorCategory && (
                             <button
                               onClick={() => setSelectedErrorCategory(null)}
-                              className="text-[9px] text-slate-500 hover:text-slate-355 font-mono font-semibold cursor-pointer"
+                              className="text-[9px] text-slate-500 hover:text-slate-300 font-mono font-semibold cursor-pointer"
                             >
                               Limpar filtro
                             </button>
@@ -963,7 +963,7 @@ export const DashboardPage: React.FC = () => {
                                           className="p-1.5 bg-indigo-950/20 border border-indigo-950/50 hover:border-cyan-500/30 rounded-lg cursor-pointer hover:bg-indigo-950/40 transition-all text-left"
                                         >
                                           <div className="flex justify-between items-center text-[9px] font-bold text-slate-200">
-                                            <span className="truncate max-w-[120px]">{log.jobName || 'Tarefa'}</span>
+                                            <span className="truncate max-w-30">{log.jobName || 'Tarefa'}</span>
                                             <span className="text-slate-500 font-mono">
                                               {(() => {
                                                 const d = new Date(log.triggeredAt);
@@ -975,7 +975,7 @@ export const DashboardPage: React.FC = () => {
                                               })()}
                                             </span>
                                           </div>
-                                          <p className="text-[8px] text-rose-400 font-mono truncate max-w-[195px] mt-0.5">
+                                          <p className="text-[8px] text-rose-400 font-mono truncate max-w-48 mt-0.5">
                                             {log.responseBody || 'Sem resposta'}
                                           </p>
                                         </div>

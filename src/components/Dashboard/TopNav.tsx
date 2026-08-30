@@ -338,12 +338,12 @@ export const TopNav: React.FC = () => {
               }}
               title={user?.currentPeriodEnd ? `Plano PRO ativo ✨ (Válido até ${new Date(user.currentPeriodEnd).toLocaleDateString('pt-BR')})` : 'Plano PRO Ativo ✨'}
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md [animation:none]">
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md [animation:none]">
                 {avatarLabel}
               </div>
             </div>
           ) : (
-            <div className="w-8.5 h-8.5 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md border border-indigo-400/20">
+            <div className="w-8.5 h-8.5 rounded-full bg-linear-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md border border-indigo-400/20">
               {avatarLabel}
             </div>
           )}

@@ -33,15 +33,15 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const { maxJobs, logsRetentionDays } = useEntitlements();
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/10 via-[#0a0c1a] to-cyan-500/5 p-6 shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 opacity-80" />
+    <div className="relative overflow-hidden rounded-3xl border border-indigo-500/25 bg-linear-to-br from-indigo-500/10 via-[#0a0c1a] to-cyan-500/5 p-6 shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
+      <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-cyan-400 via-indigo-500 to-violet-500 opacity-80" />
       <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-cyan-500/5 blur-3xl" />
       <div className="absolute -left-20 -bottom-20 h-40 w-40 rounded-full bg-indigo-500/5 blur-3xl" />
 
       <div className="relative space-y-6">
         {/* Profile Avatar / Title Section */}
         <div className="flex items-center gap-4.5">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/20 to-cyan-500/10 text-xl font-extrabold text-indigo-200 shadow-[0_0_24px_rgba(99,102,241,0.15)] relative">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/30 bg-linear-to-br from-indigo-500/20 to-cyan-500/10 text-xl font-extrabold text-indigo-200 shadow-[0_0_24px_rgba(99,102,241,0.15)] relative">
             {avatarLabel}
             <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#090b17]" />
           </div>

@@ -41,7 +41,7 @@ export const OnboardingSteps: React.FC<OnboardingStepsProps> = ({
         </div>
         <div className="h-1.5 rounded-full bg-slate-950 overflow-hidden relative">
           <div
-            className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 rounded-full transition-all duration-300"
+            className="h-full bg-linear-to-r from-cyan-400 via-indigo-500 to-violet-500 rounded-full transition-all duration-300"
             style={{ width: `${progressPercent}%` }}
           />
         </div>

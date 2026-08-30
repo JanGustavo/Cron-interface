@@ -76,7 +76,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
         </div>
         <div className="h-2 rounded-full bg-slate-950/70 overflow-hidden relative">
           <div
-            className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500 rounded-full transition-all duration-500"
+            className="h-full bg-linear-to-r from-cyan-400 via-indigo-500 to-violet-500 rounded-full transition-all duration-500"
             style={{ width: `${jobsUsagePercent}%` }}
           />
         </div>

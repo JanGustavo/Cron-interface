@@ -206,7 +206,7 @@ export const CreateJobModal: React.FC = () => {
 
       {/* Modal Container */}
       <div className="w-full max-w-3xl lg:max-w-4xl rounded-3xl border border-cyan-500/30 glass-panel shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden select-none animate-in fade-in zoom-in duration-300 relative">
-        <div className="absolute top-0 inset-x-12 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+        <div className="absolute top-0 inset-x-12 h-px bg-linear-to-r from-transparent via-cyan-400 to-transparent" />
 
         {/* Header Section */}
         <div className="p-5 border-b border-indigo-950/30 flex justify-between items-center bg-indigo-950/10">

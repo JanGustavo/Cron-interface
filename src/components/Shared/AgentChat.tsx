@@ -315,7 +315,7 @@ export const AgentChat: React.FC = () => {
           >
             {/* Header */}
             <div className="relative flex items-center justify-between px-4 py-3 bg-[#0c1026]/90 border-b border-indigo-950/40">
-              <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500" />
+              <div className="absolute inset-x-0 top-0 h-[3px] bg-linear-to-r from-cyan-400 via-indigo-500 to-violet-500" />
               <div className="flex items-center gap-2.5">
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-950/50 border border-indigo-500/20 shadow-md text-cyan-400">
                   <svg className="w-4.5 h-4.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

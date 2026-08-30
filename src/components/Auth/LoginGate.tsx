@@ -640,11 +640,11 @@ export const LoginGate: React.FC = () => {
 
           {/* Premium Preview Mockup */}
           <div className="lg:col-span-6 animate-in fade-in zoom-in-95 duration-700 relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-indigo-500/10 rounded-3xl filter blur-xl opacity-75 pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-tr from-cyan-500/10 to-indigo-500/10 rounded-3xl filter blur-xl opacity-75 pointer-events-none" />
             
             {/* Glass Dashboard Card Mockup - Observabilidade Real */}
             <div className="relative glass-panel rounded-3xl border border-indigo-500/20 overflow-hidden shadow-2xl p-6 select-none font-mono hover:border-cyan-500/30 transition-all duration-300">
-              <div className="absolute top-0 inset-x-12 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+              <div className="absolute top-0 inset-x-12 h-px bg-linear-to-r from-transparent via-cyan-500 to-transparent" />
               
               {/* Header Mockup */}
               <div className="flex justify-between items-center pb-4 border-b border-indigo-950/40 mb-5">
@@ -671,7 +671,7 @@ export const LoginGate: React.FC = () => {
                 <div className="relative pl-6 border-l border-indigo-950/60 space-y-4">
                   {/* Step 1: Agendado */}
                   <div className="relative">
-                    <span className="absolute -left-[31px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#060813] border border-cyan-500/30 text-[9px] text-cyan-400 font-bold shadow-[0_0_8px_rgba(6,182,212,0.1)]">
+                    <span className="absolute -left-7.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#060813] border border-cyan-500/30 text-[9px] text-cyan-400 font-bold shadow-[0_0_8px_rgba(6,182,212,0.1)]">
                       1
                     </span>
                     <div>
@@ -682,7 +682,7 @@ export const LoginGate: React.FC = () => {
 
                   {/* Step 2: Executando */}
                   <div className="relative">
-                    <span className="absolute -left-[31px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#060813] border border-indigo-500/30 text-[9px] text-indigo-400 font-bold">
+                    <span className="absolute -left-7.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#060813] border border-indigo-500/30 text-[9px] text-indigo-400 font-bold">
                       2
                     </span>
                     <div>
@@ -693,7 +693,7 @@ export const LoginGate: React.FC = () => {
 
                   {/* Step 3: Falhou */}
                   <div className="relative">
-                    <span className="absolute -left-[31px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#060813] border border-rose-500/40 text-[9px] text-rose-450 font-bold shadow-[0_0_8px_rgba(239,68,68,0.1)]">
+                    <span className="absolute -left-7.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#060813] border border-rose-500/40 text-[9px] text-rose-450 font-bold shadow-[0_0_8px_rgba(239,68,68,0.1)]">
                       3
                     </span>
                     <div className="flex items-start justify-between">
@@ -707,7 +707,7 @@ export const LoginGate: React.FC = () => {
 
                   {/* Step 4: Retry 2/3 */}
                   <div className="relative">
-                    <span className="absolute -left-[31px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#060813] border border-amber-500/40 text-[9px] text-amber-400 font-bold animate-pulse">
+                    <span className="absolute -left-7.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#060813] border border-amber-500/40 text-[9px] text-amber-400 font-bold animate-pulse">
                       4
                     </span>
                     <div className="flex items-start justify-between">
@@ -721,7 +721,7 @@ export const LoginGate: React.FC = () => {
 
                   {/* Step 5: Recuperado */}
                   <div className="relative">
-                    <span className="absolute -left-[31px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] text-emerald-400 font-black shadow-[0_0_10px_rgba(16,185,129,0.15)]">
+                    <span className="absolute -left-7.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] text-emerald-400 font-black shadow-[0_0_10px_rgba(16,185,129,0.15)]">
                       ✓
                     </span>
                     <div className="flex items-start justify-between">
@@ -800,7 +800,7 @@ export const LoginGate: React.FC = () => {
                 >
                   {/* Multi-colored blurred glow behind the card on hover */}
                   <div
-                    className={`absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r ${step.glowGradient} blur-2xl transition-all duration-500 pointer-events-none ${
+                    className={`absolute inset-0 -z-10 rounded-3xl bg-linear-to-r ${step.glowGradient} blur-2xl transition-all duration-500 pointer-events-none ${
                       isHovered ? 'opacity-100 scale-[1.08]' : isNextHovered ? 'opacity-40 scale-[1.04]' : 'opacity-0'
                     }`}
                   />
@@ -813,7 +813,7 @@ export const LoginGate: React.FC = () => {
                       }}
                       className={`hidden md:block absolute top-[28px] left-[calc(100%+2px)] h-[2px] transition-all duration-300 pointer-events-none ${
                         isHovered
-                          ? `bg-gradient-to-r ${step.lineGradient} opacity-90 shadow-[0_0_8px_${step.glowColor}] h-[3px] z-30`
+                          ? `bg-linear-to-r ${step.lineGradient} opacity-90 shadow-[0_0_8px_${step.glowColor}] h-[3px] z-30`
                           : isNextHovered
                           ? `bg-indigo-950/40 opacity-40`
                           : 'bg-indigo-950/20 opacity-20'
@@ -902,7 +902,7 @@ export const LoginGate: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
           {/* Devs */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <span className="text-xs font-black text-slate-200 block font-mono relative z-10">Desenvolvedores</span>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans relative z-10">
               Substitua de forma limpa os crontabs espalhados por servidores e scripts bash sem logs ou observabilidade.
@@ -911,7 +911,7 @@ export const LoginGate: React.FC = () => {
 
           {/* SaaS */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-rose-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-rose-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <span className="text-xs font-black text-slate-200 block font-mono relative z-10">SaaS Pequenos</span>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans relative z-10">
               Garanta a execução estável de sincronizações recorrentes de dados, relatórios PDF pesados e envios de newsletters.
@@ -920,7 +920,7 @@ export const LoginGate: React.FC = () => {
 
           {/* Integrators */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <span className="text-xs font-black text-slate-200 block font-mono relative z-10">Times de Integração</span>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans relative z-10">
               Centralize webhooks de terceiros, controle retries exponenciais de parceiros e inspecione logs HTTP centralizados.
@@ -929,7 +929,7 @@ export const LoginGate: React.FC = () => {
 
           {/* AI Agents */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-2 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <span className="text-xs font-black text-slate-200 block font-mono relative z-10">Agentes de IA</span>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans relative z-10">
               Permita que rotinas controladas por IA criem fluxos dinamicamente através de chamadas de API simples, sem perder a governança técnica.
@@ -982,7 +982,7 @@ export const LoginGate: React.FC = () => {
               >
                 {/* Multi-colored blurred glow behind the card on hover */}
                 <div
-                  className={`absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r ${step.glowGradient} blur-2xl transition-all duration-500 pointer-events-none ${
+                  className={`absolute inset-0 -z-10 rounded-3xl bg-linear-to-r ${step.glowGradient} blur-2xl transition-all duration-500 pointer-events-none ${
                     isHovered ? 'opacity-100 scale-[1.08]' : isNextHovered ? 'opacity-40 scale-[1.04]' : 'opacity-0'
                   }`}
                 />
@@ -995,7 +995,7 @@ export const LoginGate: React.FC = () => {
                     }}
                     className={`hidden lg:block absolute top-[28px] left-[calc(100%+2px)] h-[2px] transition-all duration-300 pointer-events-none ${
                       isHovered
-                        ? `bg-gradient-to-r ${step.lineGradient} opacity-90 shadow-[0_0_8px_${step.glowColor}] h-[3px] z-30`
+                        ? `bg-linear-to-r ${step.lineGradient} opacity-90 shadow-[0_0_8px_${step.glowColor}] h-[3px] z-30`
                         : isNextHovered
                         ? `bg-indigo-950/40 opacity-40`
                         : 'bg-indigo-950/20 opacity-20'
@@ -1031,7 +1031,7 @@ export const LoginGate: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
           {/* API */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-45 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">API REST</span>
               <div className="text-xs font-black text-slate-200 font-mono leading-tight">1. API (cmd/api)</div>
@@ -1046,7 +1046,7 @@ export const LoginGate: React.FC = () => {
 
           {/* Scheduler */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-45 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">SCHEDULER</span>
               <div className="text-xs font-black text-slate-200 font-mono leading-tight">2. Scheduler (cmd/scheduler)</div>
@@ -1061,7 +1061,7 @@ export const LoginGate: React.FC = () => {
 
           {/* Worker */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-45 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">WORKER</span>
               <div className="text-xs font-black text-slate-200 font-mono leading-tight">3. Worker (cmd/worker)</div>
@@ -1076,7 +1076,7 @@ export const LoginGate: React.FC = () => {
 
           {/* Lock/Logs */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/85 border border-indigo-950/50 flex flex-col justify-between min-h-45 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <div className="space-y-3 relative z-10">
               <span className="inline-flex min-h-6 min-w-[96px] items-center justify-center rounded border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider text-cyan-400 text-center leading-none sm:min-w-[104px] sm:text-[9px]">TELEMETRIA</span>
               <div className="text-xs font-black text-slate-200 font-mono leading-tight">4. Logs de Tentativas</div>
@@ -1096,7 +1096,7 @@ export const LoginGate: React.FC = () => {
         <div className="space-y-4 mb-16">
           <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-400 font-mono font-bold">Segurança e Conformidade</span>
           <h2 className="text-3xl font-black tracking-wide font-mono text-slate-100">Automação sem abrir uma porta para o ambiente interno.</h2>
-          <p className="text-sm text-slate-450 max-w-lg mx-auto leading-relaxed">
+          <p className="text-sm text-slate-455 max-w-lg mx-auto leading-relaxed">
             Tratamos a segurança das suas requisições HTTP e dados sensíveis com padrões corporativos de ponta.
           </p>
         </div>
@@ -1104,7 +1104,7 @@ export const LoginGate: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
           {/* Card 1: Proteção SSRF */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-3 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-cyan-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <span className="text-sm font-bold text-slate-200 block font-mono relative z-10">Proteção Anti-SSRF activa</span>
             <p className="text-xs text-slate-400 leading-relaxed relative z-10">
               O CronFlow valida ativamente todos os endereços IP de destino e redirecionamentos contra faixas de redes privadas internas (como localhost, 127.0.0.1, 10.0.0.0/8). Impedimos escaneamentos maliciosos na sua rede interna.
@@ -1118,7 +1118,7 @@ export const LoginGate: React.FC = () => {
 
           {/* Card 2: Assinaturas HMAC */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-3 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <span className="text-sm font-bold text-slate-200 block font-mono relative z-10">Webhooks com Assinatura HMAC-SHA256</span>
             <p className="text-xs text-slate-400 leading-relaxed relative z-10">
               Todas as notificações contêm uma assinatura criptográfica no cabeçalho baseada em chaves geradas por projeto. Seus servidores receptores podem validar a autenticidade das mensagens, mitigando ataques de spoofing.
@@ -1132,7 +1132,7 @@ export const LoginGate: React.FC = () => {
 
           {/* Card 3: Chaves de API Revogáveis */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-3 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-amber-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <span className="text-sm font-bold text-slate-200 block font-mono relative z-10">Chaves de API Revogáveis & Isoladas</span>
             <p className="text-xs text-slate-400 leading-relaxed relative z-10">
               Gere chaves de API exclusivas com escopo restrito para cada workspace. Em caso de comprometimento, revogue ou rotacione suas chaves instantaneamente pelo painel, sem interromper as outras rotinas da sua organização.
@@ -1146,7 +1146,7 @@ export const LoginGate: React.FC = () => {
 
           {/* Card 4: Validação de Redirecionamentos */}
           <div className="group relative p-6 rounded-3xl bg-[#0a0d1d]/35 border border-indigo-950/40 space-y-3 hover:border-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-            <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
+            <div className="absolute inset-0 -z-10 rounded-3xl bg-linear-to-r from-emerald-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500 pointer-events-none scale-105" />
             <span className="text-sm font-bold text-slate-200 block font-mono relative z-10">Validação de Redirecionamento (Redirects)</span>
             <p className="text-xs text-slate-400 leading-relaxed relative z-10">
               O pipeline do Worker segue as diretrizes HTTP de redirecionamento com validação estrita de segurança. Impedimos redirecionamentos abertos e forçamos o protocolo HTTPS seguro nas transições para proteger chaves e tokens de autenticação.
@@ -1323,8 +1323,8 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
       </section>
 
       {/* 🏁 FINAL CTA SECTION */}
-      <section className="py-20 border border-indigo-950/40 bg-gradient-to-b from-[#060813] to-[#0a0d1e] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden rounded-3xl mb-12">
-        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/5 to-indigo-500/5 opacity-50 pointer-events-none" />
+      <section className="py-20 border border-indigo-950/40 bg-linear-to-b from-[#060813] to-[#0a0d1e] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden rounded-3xl mb-12">
+        <div className="absolute inset-0 bg-linear-to-tr from-cyan-500/5 to-indigo-500/5 opacity-50 pointer-events-none" />
         <div className="relative space-y-6 max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight font-mono">
             Pare de descobrir falhas pelos clientes.
@@ -1367,7 +1367,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 animate-in fade-in duration-200">
           
           <div className="relative grid w-full max-w-md lg:max-w-6xl max-h-[90vh] overflow-hidden rounded-3xl border border-indigo-500/30 bg-[#0a0d1d]/95 shadow-[0_0_50px_rgba(0,217,255,0.2)] animate-in zoom-in-95 duration-200 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,0.75fr)]">
-            <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+            <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-linear-to-r from-transparent via-cyan-500 to-transparent" />
             
             {/* Oculta o banner esquerdo em telas menores que lg para liberar espaço no mobile */}
             <div className="hidden lg:block">
@@ -2192,7 +2192,7 @@ curl -X POST https://cronflow.jangustavo.me/v1/jobs \
       {isSimulationOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 animate-in fade-in duration-200 font-mono">
           <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-indigo-500/30 bg-[#0a0d1d]/95 shadow-[0_0_50px_rgba(0,217,255,0.2)] animate-in zoom-in-95 duration-200 p-6 md:p-8 flex flex-col">
-            <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+            <div className="pointer-events-none absolute top-0 inset-x-12 z-10 h-px bg-linear-to-r from-transparent via-cyan-500 to-transparent" />
             
             {/* Modal Header */}
             <div className="flex justify-between items-center pb-4 border-b border-indigo-950/40 mb-6">

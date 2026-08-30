@@ -164,7 +164,7 @@ export const Sidebar: React.FC = () => {
       {isInstallable && (
         <div className="px-3 pb-3 select-none">
           {sidebarOpen ? (
-            <div className="p-3 rounded-xl bg-gradient-to-r from-cyan-950/40 to-indigo-950/40 border border-cyan-500/20 text-left space-y-2 relative overflow-hidden animate-in fade-in duration-300">
+            <div className="p-3 rounded-xl bg-linear-to-r from-cyan-950/40 to-indigo-950/40 border border-cyan-500/20 text-left space-y-2 relative overflow-hidden animate-in fade-in duration-300">
               <span className="text-[9px] font-mono px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-full font-bold uppercase tracking-wider">
                 PWA INSTALÁVEL
               </span>

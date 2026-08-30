@@ -239,7 +239,7 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 
 					<div className="mb-5">
 						<span className="inline-block text-4xl mb-2 animate-[pulse-heart_1.8s_ease-in-out_infinite] select-none">💜</span>
-						<h2 className="text-xl font-bold tracking-wide bg-gradient-to-r from-purple-400 via-indigo-400 to-indigo-500 bg-clip-text text-transparent">
+						<h2 className="text-xl font-bold tracking-wide bg-linear-to-r from-purple-400 via-indigo-400 to-indigo-500 bg-clip-text text-transparent">
 							Apoie o CronFlow
 						</h2>
 						<p className="text-xs text-slate-400 leading-relaxed mt-2.5">
@@ -412,7 +412,7 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 
 					<div className="relative z-10 flex flex-col items-center">
 						<span className="text-6xl mb-4 animate-[bounce-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)_0.1s_both]">{thanksEmoji}</span>
-						<h2 className="text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+						<h2 className="text-2xl font-black bg-linear-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
 							Muito obrigado!
 						</h2>
 						<p className="text-xs text-slate-400 leading-relaxed my-4 max-w-70">

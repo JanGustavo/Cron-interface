@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl" />
 
           <div className="w-full max-w-xl rounded-2xl border border-rose-500/30 bg-[#0a0d1d]/90 p-6 md:p-8 shadow-[0_0_50px_rgba(244,63,94,0.15)] z-10 space-y-6">
-            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-500 to-amber-500 rounded-t-2xl" />
+            <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-rose-500 to-amber-500 rounded-t-2xl" />
             
             {/* Header */}
             <div className="flex items-center gap-3.5 border-b border-rose-950/20 pb-4">

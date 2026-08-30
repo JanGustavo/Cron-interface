@@ -1058,7 +1058,7 @@ export const ProfilePage: React.FC = () => {
 
                   {/* DANGER ZONE - Account Erasure (LGPD) */}
                   <div className="pt-6 border-t border-rose-950/40 space-y-4">
-                    <div className="p-5 rounded-2xl border border-rose-900/30 bg-gradient-to-br from-rose-950/25 to-slate-950/40 space-y-3.5">
+                    <div className="p-5 rounded-2xl border border-rose-900/30 bg-linear-to-br from-rose-950/25 to-slate-950/40 space-y-3.5">
                       <div className="flex items-center gap-2 text-rose-400">
                         <span className="text-base">⚠️</span>
                         <h5 className="text-xs font-bold uppercase tracking-wider">Zona de Perigo — Exclusão de Conta (LGPD)</h5>
@@ -1414,7 +1414,7 @@ export const ProfilePage: React.FC = () => {
 
           {/* PWA INSTALLATION PROMPT */}
           {isInstallable && (
-            <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-indigo-950/40 to-cyan-950/20 p-6 space-y-3.5 text-left animate-in slide-in-from-top-4 duration-300 relative overflow-hidden">
+            <div className="rounded-3xl border border-cyan-500/30 bg-linear-to-br from-indigo-950/40 to-cyan-950/20 p-6 space-y-3.5 text-left animate-in slide-in-from-top-4 duration-300 relative overflow-hidden">
               <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-cyan-400/10 blur-xl pointer-events-none" />
               <div>
                 <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
@@ -1426,7 +1426,7 @@ export const ProfilePage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleInstallPWA}
-                className="w-full py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-950 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-450 rounded-xl transition-all shadow-md shadow-cyan-500/15 cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-950 bg-linear-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-450 rounded-xl transition-all shadow-md shadow-cyan-500/15 cursor-pointer flex items-center justify-center gap-1.5"
               >
                 Instalar Aplicativo 📲
               </button>
@@ -1504,7 +1504,7 @@ export const ProfilePage: React.FC = () => {
       {isPlansModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/75 animate-in fade-in duration-200">
           <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-3xl border border-indigo-500/20 bg-[#0a0d1d]/95 p-6 md:p-8 shadow-[0_0_60px_rgba(99,102,241,0.25)] overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 opacity-90" />
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-cyan-400 via-indigo-500 to-purple-500 opacity-90" />
             
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-indigo-950/40 select-none">
@@ -1653,14 +1653,14 @@ export const ProfilePage: React.FC = () => {
                 {/* 2. PRO PLAN (Right) - Highly persuasive and premium */}
                 <div className={`p-6 rounded-2xl border-2 transition-all flex flex-col justify-between relative overflow-hidden ${
                   isProPlan 
-                    ? 'bg-gradient-to-br from-indigo-950/40 to-cyan-950/15 border-cyan-500/40 shadow-[0_0_30px_rgba(6,182,212,0.15)]' 
-                    : 'bg-gradient-to-br from-indigo-950/60 to-purple-950/20 border-indigo-500/50 shadow-[0_0_30px_rgba(99,102,241,0.15)]'
+                    ? 'bg-linear-to-br from-indigo-950/40 to-cyan-950/15 border-cyan-500/40 shadow-[0_0_30px_rgba(6,182,212,0.15)]' 
+                    : 'bg-linear-to-br from-indigo-950/60 to-purple-950/20 border-indigo-500/50 shadow-[0_0_30px_rgba(99,102,241,0.15)]'
                 }`}>
                   {/* Decorative Glow */}
                   <div className="absolute -right-12 -top-12 h-28 w-28 rounded-full bg-cyan-400/10 blur-xl pointer-events-none" />
                   
                   {/* Popular Tag */}
-                  <span className="absolute top-4 right-4 bg-gradient-to-r from-cyan-400 to-indigo-500 text-slate-950 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg select-none shadow-md">
+                  <span className="absolute top-4 right-4 bg-linear-to-r from-cyan-400 to-indigo-500 text-slate-950 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg select-none shadow-md">
                     RECOMENDADO ⭐
                   </span>
 
@@ -1764,7 +1764,7 @@ export const ProfilePage: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleUpgrade}
-                        className="w-full py-3.5 rounded-xl text-xs font-black text-center text-slate-950 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-450 transition-all shadow-lg hover:shadow-cyan-500/25 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none"
+                        className="w-full py-3.5 rounded-xl text-xs font-black text-center text-slate-950 bg-linear-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-450 transition-all shadow-lg hover:shadow-cyan-500/25 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none"
                       >
                         <span>Fazer Upgrade para PRO 💎</span>
                       </button>
