@@ -10,6 +10,7 @@ import { Logs } from './pages/Logs';
 import { LoginGate } from './components/Auth/LoginGate';
 import { CreateJobModal } from './components/Kanban/CreateJobModal';
 import { ImportJobModal } from './components/Kanban/ImportJobModal';
+import { LiveExecutionModal } from './components/Kanban/LiveExecutionModal';
 import { ToastHost } from './components/Shared/ToastHost';
 import { AgentChat } from './components/Shared/AgentChat';
 import { OnboardingTour } from './components/Shared/OnboardingTour';
@@ -514,6 +515,7 @@ const App: React.FC = () => {
         </React.Suspense>
         <CreateJobModal />
         <ImportJobModal />
+        <LiveExecutionModal />
       </DashboardLayout>
       <AgentChat />
       <ToastHost />

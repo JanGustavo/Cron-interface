@@ -9,6 +9,7 @@ import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import { useEntitlements } from '../../hooks/useEntitlements';
 import { validateDestinationUrl } from '../../utils/urlValidator';
+import { soundFx } from '../../utils/soundFx';
 
 const formatNextRun = (nextRunAt: string): string => {
   if (!nextRunAt) return '—';
@@ -103,12 +104,11 @@ const getNextRunPreview = (schedule: string, timezone: string): string => {
 };
 
 export const JobModal: React.FC = () => {
-  const { activeJob, setActiveJob, updateJob, deleteJob, triggerJob, jobs, fetchJobs } = useJobsStore();
-  const { isJobModalOpen, setJobModalOpen, showToast, setPlansModalOpen } = useUiStore();
+  const { activeJob, setActiveJob, updateJob, deleteJob, jobs } = useJobsStore();
+  const { isJobModalOpen, setJobModalOpen, showToast, setPlansModalOpen, openLiveExecutionModal } = useUiStore();
   const { alertsWebhooksEnabled, workflowsEnabled } = useEntitlements();
   const [jobLogs, setJobLogs] = useState<JobLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
-  const [lastTriggerStatus, setLastTriggerStatus] = useState<{ code: number | null; ok: boolean } | null>(null);
 
   const currentJob = activeJob ? (jobs.find(j => j.id === activeJob.id) || activeJob) : activeJob;
 
@@ -238,6 +238,7 @@ export const JobModal: React.FC = () => {
   };
 
   const executeToggleStatus = () => {
+    soundFx.playAction();
     const nextStatus = isJobPausedOrFailing ? 'active' : 'paused';
     const nextKanban = nextStatus === 'paused' ? 'draft' : 'scheduled';
     const consecutiveFailures = 0;
@@ -274,6 +275,7 @@ export const JobModal: React.FC = () => {
       buttonsStyling: false,
     }).then((result) => {
       if (result.isConfirmed) {
+        soundFx.playDelete();
         deleteJob(activeJob.id);
         handleClose();
         showToast('Tarefa excluída com sucesso.', 'success');
@@ -310,25 +312,11 @@ export const JobModal: React.FC = () => {
     });
   };
 
-  const executeTriggerNow = async () => {
-    try {
-      const result = await triggerJob(activeJob.id);
-      setLastTriggerStatus({ code: result.status, ok: result.status >= 200 && result.status < 300 });
-      showToast(`Disparo manual iniciado para ${activeJob.url}`, 'success');
-      showToast(`ℹ️ Política de retentativas: 1ª tent (10s) ➔ 2ª tent (20s) ➔ Circuito (3/3)`, 'info');
-      setTimeout(() => {
-        api.get(`/v1/jobs/${activeJob.id}/executions?limit=5`)
-          .then((res) => setJobLogs(res.data || []))
-          .catch(() => {});
-        fetchJobs();
-      }, 1000);
-    } catch (err) {
-      console.error(err);
-      const errorObj = err as { status?: number; message?: string };
-      const status = typeof errorObj?.status === 'number' ? errorObj.status : null;
-      setLastTriggerStatus({ code: status, ok: false });
-      showToast(`Falha ao disparar tarefa: ${errorObj.message || 'erro interno'}`, 'error');
-    }
+  const executeTriggerNow = () => {
+    if (!activeJob) return;
+    const jobId = activeJob.id;
+    handleClose();
+    openLiveExecutionModal(jobId);
   };
 
   const handleSave = async () => {
@@ -399,6 +387,7 @@ export const JobModal: React.FC = () => {
       };
 
       await updateJob(updatedJob);
+      soundFx.playAction();
       setIsEditing(false);
       showToast('Tarefa atualizada com sucesso!', 'success');
     } catch (err) {
@@ -847,17 +836,6 @@ export const JobModal: React.FC = () => {
                   Editar Tarefa ✏️
                 </button>
 
-                {lastTriggerStatus && (
-                  <span
-                    className={`px-2.5 py-2 text-[9px] font-bold rounded-xl border uppercase tracking-wider self-center ${
-                      lastTriggerStatus.ok
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                    }`}
-                  >
-                    HTTP {lastTriggerStatus.code ?? 'ERR'}
-                  </span>
-                )}
                 <button
                   onClick={handleToggleStatus}
                   className={`flex-1 sm:flex-initial px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${

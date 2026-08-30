@@ -10,8 +10,8 @@ interface LogDetailProps {
 }
 
 export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
-  const { jobs, triggerJob } = useJobsStore();
-  const { isLogModalOpen, selectedLogId, setLogModalOpen, showToast } = useUiStore();
+  const { jobs } = useJobsStore();
+  const { isLogModalOpen, selectedLogId, setLogModalOpen, showToast, openLiveExecutionModal } = useUiStore();
 
   const [terminalLines, setTerminalLines] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -193,15 +193,11 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
     });
   };
 
-  const executeReplayJob = async () => {
+  const executeReplayJob = () => {
     if (!job) return;
-    try {
-      await triggerJob(job.id);
-      showToast(`Replay de execução manual iniciado para: ${job.name} 🚀`, 'success');
-    } catch (err) {
-      const errorObj = err as { message?: string };
-      showToast(`Falha ao fazer replay: ${errorObj.message || 'erro interno'}`, 'error');
-    }
+    const jobId = job.id;
+    setLogModalOpen(false);
+    openLiveExecutionModal(jobId);
   };
 
   const handleCopyAsCurl = () => {

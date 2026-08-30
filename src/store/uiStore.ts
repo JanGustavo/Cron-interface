@@ -13,8 +13,14 @@ interface UiState {
   isDocsOpen: boolean;
   isOnboardingOpen: boolean;
   isPlansModalOpen: boolean;
+  isLiveExecutionModalOpen: boolean;
+  liveExecutionJobId: string | null;
   selectedLogId: string | null;
   toast: { message: string; variant: ToastVariant } | null;
+
+  // Sound Settings
+  soundEnabled: boolean;
+  toggleSound: () => void;
 
   // Accessibility Settings
   highContrast: boolean;
@@ -31,6 +37,8 @@ interface UiState {
   setSidebarOpen: (isOpen: boolean) => void;
   setActiveTab: (tab: string) => void;
   setJobModalOpen: (isOpen: boolean) => void;
+  openLiveExecutionModal: (jobId: string) => void;
+  closeLiveExecutionModal: () => void;
   setLogModalOpen: (isLogModalOpen: boolean, logId?: string | null) => void;
   setCreateModalOpen: (isOpen: boolean) => void;
   setImportModalOpen: (isOpen: boolean) => void;
@@ -55,8 +63,18 @@ export const useUiStore = create<UiState>((set) => ({
   isDocsOpen: false,
   isOnboardingOpen: false,
   isPlansModalOpen: false,
+  isLiveExecutionModalOpen: false,
+  liveExecutionJobId: null,
   selectedLogId: null,
   toast: null,
+  soundEnabled: typeof window !== 'undefined' ? localStorage.getItem('cf_sound_enabled') !== 'false' : true,
+
+  toggleSound: () =>
+    set((state) => {
+      const next = !state.soundEnabled;
+      localStorage.setItem('cf_sound_enabled', String(next));
+      return { soundEnabled: next };
+    }),
 
   toggleHighContrast: () =>
     set((state) => {
@@ -120,6 +138,12 @@ export const useUiStore = create<UiState>((set) => ({
   setActiveTab: (activeTab) => set({ activeTab }),
 
   setJobModalOpen: (isJobModalOpen) => set({ isJobModalOpen }),
+
+  openLiveExecutionModal: (jobId) =>
+    set({ isLiveExecutionModalOpen: true, liveExecutionJobId: jobId }),
+
+  closeLiveExecutionModal: () =>
+    set({ isLiveExecutionModalOpen: false, liveExecutionJobId: null }),
 
   setLogModalOpen: (isLogModalOpen, selectedLogId = null) =>
     set({ isLogModalOpen, selectedLogId }),

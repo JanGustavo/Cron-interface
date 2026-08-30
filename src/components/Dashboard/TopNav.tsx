@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
 import { useJobsStore } from '../../store/jobsStore';
+import { soundFx } from '../../utils/soundFx';
 import api from '../../services/api';
 import type { Project } from '../../types/auth';
 
 export const TopNav: React.FC = () => {
-  const { activeTab, toggleSidebar, setOnboardingOpen } = useUiStore();
+  const { activeTab, toggleSidebar, setOnboardingOpen, soundEnabled, toggleSound } = useUiStore();
   const { activeProject, projects, setActiveProject, user } = useAuthStore();
   const { jobs, fetchJobs } = useJobsStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -92,9 +93,38 @@ export const TopNav: React.FC = () => {
       {/* Right Side Options (Tutorial, Notifications, Workspace Selector, Profile) */}
       <div className="flex items-center gap-4">
         
+        {/* Sound FX Toggle Button */}
+        <button
+          onClick={() => {
+            toggleSound();
+            soundFx.playClick();
+          }}
+          className={`p-2 rounded-xl transition-colors border flex items-center justify-center cursor-pointer ${
+            soundEnabled
+              ? 'text-cyan-400 bg-cyan-950/20 border-cyan-500/30 hover:bg-cyan-950/40 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              : 'text-slate-500 bg-slate-900/40 border-indigo-950/40 hover:text-slate-300'
+          }`}
+          title={soundEnabled ? "Efeitos Sonoros Ativados (Clique para silenciar)" : "Efeitos Sonoros Silenciados (Clique para ativar)"}
+          aria-label="Alternar efeitos sonoros"
+        >
+          {soundEnabled ? (
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+          ) : (
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+            </svg>
+          )}
+        </button>
+
         {/* Onboarding Tour Button */}
         <button
-          onClick={() => setOnboardingOpen(true)}
+          onClick={() => {
+            soundFx.playClick();
+            setOnboardingOpen(true);
+          }}
           className="px-3 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-950/30 border border-indigo-950/40 transition-colors flex items-center gap-1.5 cursor-pointer text-xs font-semibold"
           title="Ver Tutorial / Como Funciona"
         >

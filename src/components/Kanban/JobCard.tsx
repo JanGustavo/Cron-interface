@@ -5,6 +5,7 @@ import { translateSchedule } from '../Shared/cronTranslator';
 import { StatusBadge } from '../Dashboard/StatusBadge';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
+import { soundFx } from '../../utils/soundFx';
 
 const formatNextRun = (nextRunAt: string): string => {
   if (!nextRunAt) return '—';
@@ -30,11 +31,21 @@ interface JobCardProps {
 
 export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
   const { setActiveJob } = useJobsStore();
-  const { setJobModalOpen } = useUiStore();
+  const { setJobModalOpen, openLiveExecutionModal } = useUiStore();
 
   const handleCardClick = () => {
-    setActiveJob(job);
-    setJobModalOpen(true);
+    soundFx.playClick();
+    if (columnId === 'executing' || job.kanbanStatus === 'executing') {
+      openLiveExecutionModal(job.id);
+    } else {
+      setActiveJob(job);
+      setJobModalOpen(true);
+    }
+  };
+
+  const handleQuickExecute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    openLiveExecutionModal(job.id);
   };
 
   const getMethodColor = (method: string) => {
@@ -154,6 +165,17 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
               <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${getMethodColor(job.httpMethod)}`}>
                 {job.httpMethod}
               </span>
+              <button
+                type="button"
+                onClick={handleQuickExecute}
+                className="p-1 rounded-md text-cyan-400 hover:text-white bg-cyan-950/30 hover:bg-cyan-500/30 border border-cyan-500/20 transition-all cursor-pointer"
+                title="Executar este job em tempo real"
+                aria-label="Executar agora"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -161,6 +183,23 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
           <div className="text-[10px] text-slate-500 font-mono mt-1.5 truncate">
             {job.url}
           </div>
+
+          {/* Executing Live Indicator */}
+          {(columnId === 'executing' || job.kanbanStatus === 'executing') && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                openLiveExecutionModal(job.id);
+              }}
+              className="mt-2.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/35 flex items-center justify-between gap-1.5 text-[10px] text-cyan-300 font-bold animate-pulse shadow-[0_0_12px_rgba(6,182,212,0.2)] cursor-pointer hover:bg-cyan-500/25 transition-colors"
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                <span>Executando ao vivo...</span>
+              </div>
+              <span className="text-[9px] uppercase tracking-wider text-cyan-200 underline font-mono">Ver Terminal 📡</span>
+            </div>
+          )}
 
           {/* Suspended Alert Indicator */}
           {(job.consecutiveFailures >= 4 || job.status === 'failing') && (

@@ -5,6 +5,7 @@ import { translateSchedule } from '../Shared/cronTranslator';
 import { useEntitlements } from '../../hooks/useEntitlements';
 import { validateDestinationUrl } from '../../utils/urlValidator';
 import { JobPreviewModal } from './JobPreviewModal';
+import { soundFx } from '../../utils/soundFx';
 
 export const CreateJobModal: React.FC = () => {
 	const { addJob, jobs } = useJobsStore();
@@ -174,6 +175,7 @@ export const CreateJobModal: React.FC = () => {
       });
 
       // Clear state and close
+      soundFx.playAction();
       setName('');
       setSchedule('every:5m');
       setTimezone(localStorage.getItem('cf_user_timezone') || 'UTC');
