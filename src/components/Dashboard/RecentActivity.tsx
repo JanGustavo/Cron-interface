@@ -107,7 +107,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [],
                       </svg>
                     </div>
                     <h5 className="text-[11px] font-bold text-slate-400">Sem atividade recente</h5>
-                    <p className="text-[10px] text-slate-500 mt-1 max-w-[240px] leading-normal">Os logs de disparos HTTP e retries aparecerão aqui em tempo real assim que os jobs forem executados.</p>
+                    <p className="text-[10px] text-slate-500 mt-1 max-w-60 leading-normal">Os logs de disparos HTTP e retries aparecerão aqui em tempo real assim que os jobs forem executados.</p>
                   </div>
                 </td>
               </tr>
@@ -123,11 +123,11 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [],
                   }`}
                 >
                   {/* Job metadata info */}
-                  <td className="px-5 py-3.5 min-w-[240px]">
+                  <td className="px-5 py-3.5 min-w-60">
                     <div className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors">
                       {log.jobName || `Job #${log.jobId ? log.jobId.slice(0, 8) : ''}`}
                     </div>
-                    <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate max-w-[260px]">
+                    <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate max-w-65">
                       {log.jobUrl}
                     </div>
                   </td>

@@ -100,7 +100,7 @@ export const LogList: React.FC<LogListProps> = ({
                   </td>
 
                   {/* Webhook Endpoint URL */}
-                  <td className="p-4 text-slate-400 font-mono text-[10px] truncate max-w-[200px]">
+                  <td className="p-4 text-slate-400 font-mono text-[10px] truncate max-w-50">
                     {log.jobUrl || 'N/A'}
                   </td>
 

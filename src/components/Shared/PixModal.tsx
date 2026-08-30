@@ -375,7 +375,7 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 					)}
 
 					{/* Instrução */}
-					<p className="text-[10px] text-slate-450 leading-relaxed max-w-[280px] mx-auto mb-6">
+					<p className="text-[10px] text-slate-450 leading-relaxed max-w-70 mx-auto mb-6">
 						Abra o app do seu banco → <strong>Pix</strong> → <strong>Ler QR Code</strong> ou cole o código acima.
 					</p>
 
@@ -389,7 +389,7 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 				</div>
 			) : (
 				/* TELA DE AGRADECIMENTO */
-				<div className="relative w-full max-w-[360px] rounded-3xl border border-indigo-500/40 bg-[#0a0d1d]/95 p-8 text-center shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-[thanks-pop_0.5s_cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden">
+				<div className="relative w-full max-w-90 rounded-3xl border border-indigo-500/40 bg-[#0a0d1d]/95 p-8 text-center shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-[thanks-pop_0.5s_cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden">
 					{/* Confetes caindo */}
 					<div className="absolute inset-0 pointer-events-none overflow-hidden">
 						{confettis.map((c) => (
@@ -415,7 +415,7 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose }) => {
 						<h2 className="text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
 							Muito obrigado!
 						</h2>
-						<p className="text-xs text-slate-400 leading-relaxed my-4 max-w-[280px]">
+						<p className="text-xs text-slate-400 leading-relaxed my-4 max-w-70">
 							Sua contribuição é combustível para continuarmos melhorando o CronFlow.<br />
 							Você é incrível! 💜
 						</p>

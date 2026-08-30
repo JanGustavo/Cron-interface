@@ -416,11 +416,11 @@ export const JobModal: React.FC = () => {
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full max-w-[360px] px-3 py-1.5 bg-slate-950/80 border border-indigo-500/30 rounded-lg text-sm font-extrabold text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-sans"
+                className="w-full max-w-90 px-3 py-1.5 bg-slate-950/80 border border-indigo-500/30 rounded-lg text-sm font-extrabold text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-sans"
                 placeholder="Nome da tarefa"
               />
             ) : (
-              <h3 className="text-base font-extrabold text-slate-100 tracking-wide truncate max-w-[360px]">
+              <h3 className="text-base font-extrabold text-slate-100 tracking-wide truncate max-w-90">
                 {activeJob.name}
               </h3>
             )}

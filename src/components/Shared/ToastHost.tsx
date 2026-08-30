@@ -73,7 +73,7 @@ export const ToastHost: React.FC = () => {
         aria-live="polite"
       >
         {style.icon}
-        <span className="leading-relaxed max-w-[280px]">{toast.message}</span>
+        <span className="leading-relaxed max-w-70">{toast.message}</span>
       </div>
     </div>
   );

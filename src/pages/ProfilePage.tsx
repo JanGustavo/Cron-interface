@@ -1146,11 +1146,11 @@ export const ProfilePage: React.FC = () => {
                           </svg>
                         </div>
                         <h5 className="text-[11px] font-bold text-slate-300">Nenhuma chave criada</h5>
-                        <p className="text-[10px] text-slate-500 mt-1 max-w-[280px] leading-normal">Gere uma chave de API para integrar o CronFlow com seus scripts locais ou outros serviços. O segredo completo só será exibido uma vez após a criação.</p>
+                        <p className="text-[10px] text-slate-500 mt-1 max-w-70 leading-normal">Gere uma chave de API para integrar o CronFlow com seus scripts locais ou outros serviços. O segredo completo só será exibido uma vez após a criação.</p>
                         <button
                           type="button"
                           onClick={handleCreateAPIKey}
-                          className="mt-4 px-4 py-2 text-[10px] uppercase font-black tracking-wider text-white bg-indigo-650 hover:bg-indigo-600 rounded-xl transition-all shadow-md cursor-pointer"
+                          className="mt-4 px-4 py-2 text-[10px] uppercase font-black tracking-wider text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md cursor-pointer"
                         >
                           Criar primeira chave
                         </button>

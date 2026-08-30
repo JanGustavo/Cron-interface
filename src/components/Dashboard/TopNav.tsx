@@ -254,13 +254,13 @@ export const TopNav: React.FC = () => {
             </svg>
             {isPro ? (
               <span
-                className="max-w-[120px] truncate bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+                className="max-w-30 truncate bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
                 style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
               >
                 {currentProjectName}
               </span>
             ) : (
-              <span className="max-w-[120px] truncate">{currentProjectName}</span>
+              <span className="max-w-30 truncate">{currentProjectName}</span>
             )}
             <svg className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''} ${isPro ? 'text-violet-400' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -317,14 +317,14 @@ export const TopNav: React.FC = () => {
           {/* Username — dourado animado para PRO, slate padrão para Free */}
           {isPro ? (
             <span
-              className="hidden md:inline text-xs font-bold max-w-[120px] truncate bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
+              className="hidden md:inline text-xs font-bold max-w-30 truncate bg-[length:300%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]"
               style={{ backgroundImage: 'linear-gradient(90deg, #facc15, #a855f7, #ec4899, #facc15, #a855f7, #facc15)' }}
               title={user?.currentPeriodEnd ? `Plano PRO ativo ✨ (Válido até ${new Date(user.currentPeriodEnd).toLocaleDateString('pt-BR')})` : 'Plano PRO Ativo ✨'}
             >
               {userHandle}
             </span>
           ) : (
-            <span className="hidden md:inline text-xs font-semibold text-slate-350 max-w-[120px] truncate">
+            <span className="hidden md:inline text-xs font-semibold text-slate-350 max-w-30 truncate">
               {userHandle}
             </span>
           )}

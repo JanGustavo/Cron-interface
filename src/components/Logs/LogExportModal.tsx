@@ -291,7 +291,7 @@ export const LogExportModal: React.FC<LogExportModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 animate-in fade-in duration-200">
       <div
-        className={`relative w-full max-w-[480px] rounded-3xl border ${theme.borderAccent} bg-[#0a0d1d]/95 p-5 sm:p-6 md:p-7 shadow-2xl transition-all duration-300 text-left ${theme.glowShadow}`}
+        className={`relative w-full max-w-120 rounded-3xl border ${theme.borderAccent} bg-[#0a0d1d]/95 p-5 sm:p-6 md:p-7 shadow-2xl transition-all duration-300 text-left ${theme.glowShadow}`}
       >
         {/* Close Button */}
         <button
