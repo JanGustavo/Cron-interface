@@ -180,6 +180,9 @@ export const ProfilePage: React.FC = () => {
       showCancelButton: true,
       confirmButtonText: 'Sim, Revogar',
       cancelButtonText: 'Cancelar',
+      background: '#080b18',
+      color: '#cbd5e1',
+      iconColor: '#f43f5e',
       customClass: {
         popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
         title: 'text-slate-100 font-extrabold text-base',
@@ -212,6 +215,9 @@ export const ProfilePage: React.FC = () => {
       showCancelButton: true,
       confirmButtonText: 'Sim, Rotacionar',
       cancelButtonText: 'Cancelar',
+      background: '#080b18',
+      color: '#cbd5e1',
+      iconColor: '#f59e0b',
       customClass: {
         popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
         title: 'text-slate-100 font-extrabold text-base',
@@ -424,6 +430,9 @@ export const ProfilePage: React.FC = () => {
       showCancelButton: true,
       confirmButtonText: 'Sim, Excluir Definitivamente',
       cancelButtonText: 'Cancelar',
+      background: '#080b18',
+      color: '#cbd5e1',
+      iconColor: '#f43f5e',
       customClass: {
         popup: 'swal2-dark-custom rounded-3xl border border-rose-950/60 bg-[#090c15] text-slate-100 p-6',
         title: 'text-rose-400 font-extrabold text-base',
@@ -442,10 +451,13 @@ export const ProfilePage: React.FC = () => {
           title: 'Conta Excluída com Sucesso',
           text: 'Sua conta e todos os dados associados foram completamente removidos de nossa base de dados.',
           icon: 'success',
+          background: '#080b18',
+          color: '#cbd5e1',
+          iconColor: '#10b981',
           customClass: {
             popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
             title: 'text-slate-100 font-extrabold text-base',
-            confirmButton: 'px-4 py-2 text-xs font-bold text-white bg-indigo-600 rounded-xl cursor-pointer',
+            confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 border border-cyan-300 rounded-xl cursor-pointer',
           },
           buttonsStyling: false,
         });
@@ -513,6 +525,9 @@ export const ProfilePage: React.FC = () => {
       showCancelButton: true,
       confirmButtonText: 'Sim, Excluir',
       cancelButtonText: 'Cancelar',
+      background: '#080b18',
+      color: '#cbd5e1',
+      iconColor: '#f43f5e',
       customClass: {
         popup: 'swal2-dark-custom rounded-3xl border border-indigo-950/60 bg-[#090c15] text-slate-100 p-6',
         title: 'text-slate-100 font-extrabold text-base',

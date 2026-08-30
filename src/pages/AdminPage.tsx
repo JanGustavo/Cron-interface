@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { useUiStore } from '../store/uiStore';
+import Swal from 'sweetalert2';
 
 interface AdminUser {
   id: string;
@@ -139,9 +140,28 @@ export const AdminPage: React.FC = () => {
   };
 
   const handleDeleteUser = async (user: AdminUser) => {
-    if (!window.confirm(`⚠️ Tem certeza absoluta que deseja excluir a conta de "${user.email}"?\n\nEsta ação é irreversível e excluirá permanentemente todos os jobs e dados vinculados.`)) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Excluir Usuário Permanentemente?',
+      html: `Tem certeza que deseja excluir a conta de <b>${user.email}</b>?<br/><span style="color:#f43f5e;font-size:11.5px;margin-top:6px;display:block;">⚠️ Esta ação é irreversível e excluirá permanentemente todos os jobs e dados vinculados.</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, Excluir Usuário',
+      cancelButtonText: 'Cancelar',
+      background: '#080b18',
+      color: '#cbd5e1',
+      iconColor: '#f43f5e',
+      customClass: {
+        popup: 'swal2-dark-custom rounded-3xl border border-rose-950/60 bg-[#090c15] text-slate-100 p-6',
+        title: 'text-rose-400 font-extrabold text-base',
+        htmlContainer: 'text-slate-400 text-xs leading-relaxed mt-2',
+        confirmButton: 'px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 border border-rose-500 rounded-xl transition-all shadow-[0_0_20px_rgba(244,63,94,0.35)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-500/50',
+        cancelButton: 'px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-indigo-950/80 rounded-xl transition-all cursor-pointer focus:outline-none ml-2',
+      },
+      buttonsStyling: false,
+    });
+
+    if (!result.isConfirmed) return;
+
     setUpdatingUserId(user.id);
     try {
       await api.delete(`/v1/admin/users/${user.id}`);
