@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { soundFx } from '../../utils/soundFx';
@@ -14,97 +14,112 @@ interface LogStep {
 }
 
 export const LiveExecutionModal: React.FC = () => {
-  const { jobs, fetchJobs, triggerJob } = useJobsStore();
+  const { jobs } = useJobsStore();
   const { isLiveExecutionModalOpen, liveExecutionJobId, closeLiveExecutionModal, showToast } = useUiStore();
   
   const [activeTab, setActiveTab] = useState<'stream' | 'response' | 'headers' | 'payload'>('stream');
-  const [isExecuting, setIsExecuting] = useState(true);
+  const [isExecuting, setIsExecuting] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [steps, setSteps] = useState<LogStep[]>([]);
   const [latestLog, setLatestLog] = useState<JobLog | null>(null);
   const [copied, setCopied] = useState(false);
+
   const startTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isRunningRef = useRef<boolean>(false);
+  const executedJobIdRef = useRef<string | null>(null);
   const streamBottomRef = useRef<HTMLDivElement | null>(null);
 
   const job = jobs.find((j) => j.id === liveExecutionJobId);
 
-  const nowFormatted = () => {
+  const formatNow = () => {
     const d = new Date();
     return d.toTimeString().split(' ')[0] + '.' + String(d.getMilliseconds()).padStart(3, '0');
   };
 
-  const runExecution = useCallback(async () => {
-    if (!job) return;
-    
+  const handleClose = () => {
+    isRunningRef.current = false;
+    executedJobIdRef.current = null;
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    soundFx.playClick();
+    closeLiveExecutionModal();
+  };
+
+  const execute = async () => {
+    if (!liveExecutionJobId || isRunningRef.current) return;
+
+    const currentJobs = useJobsStore.getState().jobs;
+    const targetJob = currentJobs.find((j) => j.id === liveExecutionJobId);
+    if (!targetJob) return;
+
+    isRunningRef.current = true;
     setIsExecuting(true);
     setElapsedMs(0);
     setLatestLog(null);
     startTimeRef.current = Date.now();
 
-    // Inicia som de disparo
+    // Som de disparo futurista
     soundFx.playTrigger();
 
-    // Prepara os passos de streaming
-    const initialSteps: LogStep[] = [
+    setSteps([
       {
         id: '1',
-        time: nowFormatted(),
+        time: formatNow(),
         type: 'info',
-        text: `📡 [Scheduler/API] Enfileirando tarefa para "${job.name}" (ID: ${job.id.slice(0, 8)}...)`,
-        details: `Queue: asynq:default • Schedule: ${job.schedule} • Timezone: ${job.timezone}`,
+        text: `📡 [Scheduler/API] Enfileirando tarefa para "${targetJob.name}" (ID: ${targetJob.id.slice(0, 8)}...)`,
+        details: `Queue: asynq:default • Schedule: ${targetJob.schedule} • Timezone: ${targetJob.timezone}`,
       },
-    ];
-    setSteps(initialSteps);
+    ]);
 
-    // Inicia cronômetro de milissegundos
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setElapsedMs(Date.now() - startTimeRef.current);
     }, 30);
 
-    // Simula passos rápidos do pipeline em goroutines
     setTimeout(() => {
+      if (!isRunningRef.current) return;
       setSteps((prev) => [
         ...prev,
         {
           id: '2',
-          time: nowFormatted(),
+          time: formatNow(),
           type: 'worker',
           text: `⚡ [Worker Engine] Lock distribuído adquirido no Redis (ttl: 40s)`,
-          details: `Goroutine alocada no pool de concorrência (50 threads)`,
+          details: `Goroutine alocada no pool de concorrência distribuído`,
         },
       ]);
     }, 60);
 
     setTimeout(() => {
+      if (!isRunningRef.current) return;
       setSteps((prev) => [
         ...prev,
         {
           id: '3',
-          time: nowFormatted(),
+          time: formatNow(),
           type: 'dispatch',
-          text: `🌐 [HTTP Client] Disparando requisição ${job.httpMethod} para ${job.url}`,
+          text: `🌐 [HTTP Client] Disparando requisição ${targetJob.httpMethod} para ${targetJob.url}`,
           details: `User-Agent: CronFlow/1.0 • Timeout: 30s • SSRF Filter: ACTIVE (Public IP Only)`,
         },
       ]);
     }, 140);
 
     try {
-      // Dispara a chamada na API
-      await triggerJob(job.id);
+      await useJobsStore.getState().triggerJob(targetJob.id);
 
-      // Poll de 800ms para pegar o log persistido da execução
-      setTimeout(async () => {
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(async () => {
         try {
-          const res = await api.get(`/v1/jobs/${job.id}/executions?limit=1`);
+          const res = await api.get(`/v1/jobs/${targetJob.id}/executions?limit=1`);
           const logs = (res.data || []) as JobLog[];
           if (logs.length > 0) {
             const execLog = logs[0];
             setLatestLog(execLog);
-            const duration = execLog.durationMs || Date.now() - startTimeRef.current;
+            const duration = execLog.durationMs || (Date.now() - startTimeRef.current);
             setElapsedMs(duration);
-            
+
             const isOk = execLog.status === 'success' && (!execLog.httpStatus || execLog.httpStatus < 400);
 
             if (isOk) {
@@ -113,7 +128,7 @@ export const LiveExecutionModal: React.FC = () => {
                 ...prev,
                 {
                   id: '4',
-                  time: nowFormatted(),
+                  time: formatNow(),
                   type: 'success',
                   text: `🎉 [HTTP Resposta] Status ${execLog.httpStatus || 200} OK recebido em ${duration}ms`,
                   details: `Payload salvo no histórico de auditoria (Truncamento seguro 2KB)`,
@@ -125,7 +140,7 @@ export const LiveExecutionModal: React.FC = () => {
                 ...prev,
                 {
                   id: '4',
-                  time: nowFormatted(),
+                  time: formatNow(),
                   type: 'failed',
                   text: `⚠️ [HTTP Erro] Status ${execLog.httpStatus || 'ERR'} recebido (${execLog.responseBody || 'Falha de conexão/timeout'})`,
                   details: `Tentativa ${execLog.attemptNumber || 1} de 3 • Agendando Retry com Backoff Exponencial`,
@@ -137,8 +152,9 @@ export const LiveExecutionModal: React.FC = () => {
           console.error('Falha ao obter log de execução em tempo real', e);
         } finally {
           setIsExecuting(false);
+          isRunningRef.current = false;
           if (timerRef.current) clearInterval(timerRef.current);
-          fetchJobs();
+          useJobsStore.getState().fetchJobs();
         }
       }, 1000);
     } catch (err: unknown) {
@@ -148,24 +164,31 @@ export const LiveExecutionModal: React.FC = () => {
         ...prev,
         {
           id: 'error',
-          time: nowFormatted(),
+          time: formatNow(),
           type: 'failed',
           text: `❌ [Falha no Disparo] ${errObj.message || 'Erro de comunicação com o servidor'}`,
         },
       ]);
       setIsExecuting(false);
+      isRunningRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
     }
-  }, [job, triggerJob, fetchJobs]);
+  };
 
   useEffect(() => {
     if (isLiveExecutionModalOpen && liveExecutionJobId) {
-      runExecution();
-    }
-    return () => {
+      if (executedJobIdRef.current !== liveExecutionJobId) {
+        executedJobIdRef.current = liveExecutionJobId;
+        execute();
+      }
+    } else {
+      executedJobIdRef.current = null;
+      isRunningRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isLiveExecutionModalOpen, liveExecutionJobId, runExecution]);
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLiveExecutionModalOpen, liveExecutionJobId]);
 
   // Auto scroll para o final do terminal
   useEffect(() => {
@@ -226,10 +249,7 @@ export const LiveExecutionModal: React.FC = () => {
 
             {/* Close Button */}
             <button
-              onClick={() => {
-                soundFx.playClick();
-                closeLiveExecutionModal();
-              }}
+              onClick={handleClose}
               className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 border border-indigo-950/40 transition-colors cursor-pointer"
               aria-label="Fechar modal de execução ao vivo"
             >
@@ -453,17 +473,14 @@ export const LiveExecutionModal: React.FC = () => {
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
-              onClick={() => {
-                soundFx.playClick();
-                closeLiveExecutionModal();
-              }}
+              onClick={handleClose}
               className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-900/60 border border-slate-800 rounded-xl transition-all cursor-pointer"
             >
               Fechar
             </button>
 
             <button
-              onClick={runExecution}
+              onClick={execute}
               disabled={isExecuting}
               className="px-5 py-2 text-xs font-black uppercase tracking-wider text-slate-950 bg-cyan-400 hover:bg-cyan-300 rounded-xl shadow-[0_0_20px_rgba(34,211,238,0.35)] transition-all cursor-pointer hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             >

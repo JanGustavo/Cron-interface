@@ -5,6 +5,7 @@
 class SoundEffectsEngine {
   private ctx: AudioContext | null = null;
   private soundEnabled: boolean = true;
+  private lastPlayTime: Record<string, number> = {};
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -31,6 +32,17 @@ class SoundEffectsEngine {
     }
   }
 
+  private canPlay(soundName: string, minIntervalMs: number = 250): boolean {
+    if (!this.soundEnabled) return false;
+    const now = Date.now();
+    const last = this.lastPlayTime[soundName] || 0;
+    if (now - last < minIntervalMs) {
+      return false;
+    }
+    this.lastPlayTime[soundName] = now;
+    return true;
+  }
+
   public isEnabled(): boolean {
     return this.soundEnabled;
   }
@@ -53,7 +65,7 @@ class SoundEffectsEngine {
 
   // 🚀 Disparo de Job (Trigger / Executar Agora) — Tom ascendente cyber futurista
   public playTrigger(): void {
-    if (!this.soundEnabled) return;
+    if (!this.canPlay('trigger', 400)) return;
     const ctx = this.initContext();
     if (!ctx) return;
 
@@ -66,7 +78,7 @@ class SoundEffectsEngine {
       osc.frequency.setValueAtTime(320, now);
       osc.frequency.exponentialRampToValueAtTime(880, now + 0.18);
 
-      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.setValueAtTime(0.06, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
       osc.connect(gain);
@@ -81,7 +93,7 @@ class SoundEffectsEngine {
 
   // ✨ Sucesso de Execução (HTTP 200 OK) — Acorde maior harmônico suave
   public playSuccess(): void {
-    if (!this.soundEnabled) return;
+    if (!this.canPlay('success', 500)) return;
     const ctx = this.initContext();
     if (!ctx) return;
 
@@ -97,14 +109,14 @@ class SoundEffectsEngine {
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(freq, now + i * 0.04);
 
-        gain.gain.setValueAtTime(0.06, now + i * 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.3);
+        gain.gain.setValueAtTime(0.05, now + i * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.25);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
 
         osc.start(now + i * 0.04);
-        osc.stop(now + i * 0.04 + 0.3);
+        osc.stop(now + i * 0.04 + 0.25);
       });
     } catch {
       // Audio autoplay policy fallback
@@ -113,7 +125,7 @@ class SoundEffectsEngine {
 
   // 🔴 Falha de Execução / Timeout — Tom descendente suave de advertência
   public playError(): void {
-    if (!this.soundEnabled) return;
+    if (!this.canPlay('error', 500)) return;
     const ctx = this.initContext();
     if (!ctx) return;
 
@@ -123,17 +135,17 @@ class SoundEffectsEngine {
       const gain = ctx.createGain();
 
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(360, now);
-      osc.frequency.exponentialRampToValueAtTime(140, now + 0.25);
+      osc.frequency.setValueAtTime(340, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
 
-      gain.gain.setValueAtTime(0.07, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.28);
+      osc.stop(now + 0.25);
     } catch {
       // Audio autoplay policy fallback
     }
@@ -141,7 +153,7 @@ class SoundEffectsEngine {
 
   // 🔘 Clique sutil de UI / Troca de Abas
   public playClick(): void {
-    if (!this.soundEnabled) return;
+    if (!this.canPlay('click', 100)) return;
     const ctx = this.initContext();
     if (!ctx) return;
 
@@ -152,16 +164,16 @@ class SoundEffectsEngine {
 
       osc.type = 'sine';
       osc.frequency.setValueAtTime(600, now);
-      osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.03);
 
-      gain.gain.setValueAtTime(0.03, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      gain.gain.setValueAtTime(0.02, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.05);
+      osc.stop(now + 0.04);
     } catch {
       // Audio autoplay policy fallback
     }
@@ -169,7 +181,7 @@ class SoundEffectsEngine {
 
   // 🗑️ Exclusão de Tarefa / Ação Crítica
   public playDelete(): void {
-    if (!this.soundEnabled) return;
+    if (!this.canPlay('delete', 300)) return;
     const ctx = this.initContext();
     if (!ctx) return;
 
@@ -180,16 +192,16 @@ class SoundEffectsEngine {
 
       osc.type = 'sine';
       osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(90, now + 0.2);
+      osc.frequency.exponentialRampToValueAtTime(90, now + 0.18);
 
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.22);
+      osc.stop(now + 0.2);
     } catch {
       // Audio autoplay policy fallback
     }
@@ -197,7 +209,7 @@ class SoundEffectsEngine {
 
   // ⚡ Ação concluída (Criação de Job / Salvamento)
   public playAction(): void {
-    if (!this.soundEnabled) return;
+    if (!this.canPlay('action', 200)) return;
     const ctx = this.initContext();
     if (!ctx) return;
 
@@ -208,16 +220,16 @@ class SoundEffectsEngine {
 
       osc.type = 'sine';
       osc.frequency.setValueAtTime(440, now);
-      osc.frequency.exponentialRampToValueAtTime(660, now + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(660, now + 0.08);
 
-      gain.gain.setValueAtTime(0.05, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.12);
+      osc.stop(now + 0.1);
     } catch {
       // Audio autoplay policy fallback
     }
