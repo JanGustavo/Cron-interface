@@ -6,9 +6,10 @@ import { useUiStore } from '../../store/uiStore';
 interface RecentActivityProps {
   activities?: LogEntry[];
   isLoading?: boolean;
+  filterBadge?: React.ReactNode;
 }
 
-export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [], isLoading }) => {
+export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [], isLoading, filterBadge }) => {
   const { setLogModalOpen } = useUiStore();
 
   const items = activities;
@@ -46,16 +47,19 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [],
   return (
     <div className="rounded-2xl glass-panel border border-indigo-950/40 overflow-hidden select-none">
       {/* Header Panel */}
-      <div className="px-5 py-4 border-b border-indigo-950/30 flex justify-between items-center bg-indigo-950/10">
+      <div className="px-5 py-4 border-b border-indigo-950/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-indigo-950/10">
         <div>
-          <h3 className="text-sm font-extrabold text-slate-100 tracking-wide">
-            Atividade Recente
-          </h3>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h3 className="text-sm font-extrabold text-slate-100 tracking-wide">
+              Atividade Recente
+            </h3>
+            {filterBadge}
+          </div>
           <p className="text-[10px] text-slate-400 mt-0.5">
             Últimas execuções de webhooks disparadas em tempo real.
           </p>
         </div>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1 shrink-0">
           <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
           <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
             Live Feed

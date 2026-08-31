@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { StatCard } from '../components/Dashboard/StatCard';
 import { RecentActivity } from '../components/Dashboard/RecentActivity';
 import { useUiStore } from '../store/uiStore';
@@ -17,82 +17,127 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Brush,
+  Cell,
+  ReferenceLine,
 } from 'recharts';
 import type { LogEntry } from '../types/logs';
+
+export type TimeRangeFilter = '1h' | '6h' | '24h' | '3d' | '7d' | '30d';
+export type GranularityFilter = 'auto' | '5m' | '15m' | '1h' | '3h' | '6h' | '1d';
+export type ChartStyleType = 'bar' | 'area' | 'line';
+export type MetricViewType = 'overview' | 'latency' | 'errors' | 'queue';
+
+export interface ChartBucketData {
+  index: number;
+  time: string;
+  fullRange: string;
+  startTime: number;
+  endTime: number;
+  volume: number;
+  successCount: number;
+  failedCount: number;
+  successRate: number;
+  avgLatency: number;
+  maxLatency: number;
+  failedJobs: string[];
+  logs: LogEntry[];
+}
 
 interface CustomTooltipProps {
   active?: boolean;
   payload?: Array<{
-    payload: {
-      time: string;
-      volume: number;
-      successRate: number;
-      successCount: number;
-      failedCount: number;
-      failedJobs?: string[];
-      avgLatency?: number;
-      maxLatency?: number;
-    };
+    payload: ChartBucketData;
   }>;
 }
 
-const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="p-4 rounded-xl border border-indigo-950/60 bg-slate-950/90 backdrop-blur-md shadow-2xl space-y-2 text-xs select-none">
-        <div className="font-bold text-slate-200 border-b border-indigo-950/40 pb-1.5 mb-1.5 flex justify-between items-center gap-6">
-          <span>Intervalo: {data.time}</span>
-          <span className="text-[10px] text-slate-500 font-normal">Histórico</span>
+      <div className="p-4 rounded-2xl border border-indigo-950/80 bg-[#070918]/95 backdrop-blur-md shadow-2xl space-y-2.5 text-xs select-none min-w-64 max-w-sm">
+        <div className="font-bold text-slate-100 border-b border-indigo-950/60 pb-2 flex justify-between items-center gap-4">
+          <span className="font-mono text-cyan-300 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            {data.fullRange || data.time}
+          </span>
+          <span className="text-[9px] text-slate-400 font-mono bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-500/20">
+            Bucket #{data.index + 1}
+          </span>
         </div>
-        <div className="space-y-1.5">
+
+        <div className="space-y-1.5 font-sans">
           <div className="flex items-center justify-between gap-4">
             <span className="text-slate-400 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded bg-indigo-500" />
-              Execuções (Volume):
+              Volume Total:
             </span>
-            <span className="font-semibold text-indigo-300">{data.volume} reqs</span>
+            <span className="font-mono font-bold text-indigo-200">{data.volume} reqs</span>
           </div>
+
           <div className="flex items-center justify-between gap-4">
             <span className="text-slate-400 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              Sucessos (HTTP &lt; 400):
+            </span>
+            <span className="font-mono font-bold text-emerald-400">{data.successCount} reqs</span>
+          </div>
+
+          {data.failedCount > 0 && (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                Falhas:
+              </span>
+              <span className="font-mono font-bold text-rose-400">{data.failedCount} reqs</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-slate-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-teal-400" />
               Taxa de Sucesso:
             </span>
-            <span className="font-semibold text-emerald-400">{data.volume > 0 ? `${data.successRate}%` : '-'}</span>
+            <span className="font-mono font-bold text-teal-300">
+              {data.volume > 0 ? `${data.successRate}%` : '-'}
+            </span>
           </div>
-          {data.avgLatency !== undefined && data.avgLatency > 0 && (
-            <div className="flex items-center justify-between gap-4">
+
+          {data.avgLatency > 0 && (
+            <div className="flex items-center justify-between gap-4 border-t border-indigo-950/30 pt-1.5 mt-1">
               <span className="text-slate-400 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded bg-purple-500" />
                 Latência Média:
               </span>
-              <span className="font-semibold text-purple-300">{data.avgLatency}ms</span>
+              <span className="font-mono font-bold text-purple-300">{data.avgLatency}ms</span>
             </div>
           )}
-          {data.maxLatency !== undefined && data.maxLatency > 0 && (
+
+          {data.maxLatency > 0 && (
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded bg-cyan-500" />
-                Latência Máxima:
+                <span className="w-2 h-2 rounded bg-cyan-400" />
+                Pico Máximo:
               </span>
-              <span className="font-semibold text-cyan-300">{data.maxLatency}ms</span>
+              <span className="font-mono font-bold text-cyan-300">{data.maxLatency}ms</span>
             </div>
           )}
-          <div className="flex items-center justify-between gap-4 border-t border-indigo-950/20 pt-1.5 mt-1 text-[10px] text-slate-500">
-            <span>Sucessos: {data.successCount}</span>
-            <span>Falhas: {data.failedCount}</span>
-          </div>
+
           {data.failedJobs && data.failedJobs.length > 0 && (
-            <div className="flex flex-col gap-1 border-t border-rose-950/30 pt-1.5 mt-1 text-[10px] text-rose-400">
+            <div className="flex flex-col gap-1 border-t border-rose-950/40 pt-2 mt-1 text-[10px] text-rose-400 bg-rose-950/10 p-2 rounded-lg">
               <span className="font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                Jobs com Falha:
+                Tarefas com Falha no Período:
               </span>
-              <span className="text-slate-400 font-mono pl-2.5 truncate max-w-60">
+              <span className="text-slate-300 font-mono pl-2 truncate">
                 {data.failedJobs.join(', ')}
               </span>
             </div>
           )}
+        </div>
+
+        <div className="border-t border-indigo-950/40 pt-2 mt-1 text-[10px] text-indigo-400 flex items-center justify-center gap-1 italic">
+          <span>💡 Clique na coluna para filtrar execuções</span>
         </div>
       </div>
     );
@@ -107,12 +152,31 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const isPageLoading = isLoadingJobs || (jobs.length > 0 && loading && allRecentLogs.length === 0);
-  const [chartFilter, setChartFilter] = useState<'1h' | '24h' | '3d' | '7d' | '30d'>('24h');
+
+  // Filter & View State
+  const [chartFilter, setChartFilter] = useState<TimeRangeFilter>('24h');
+  const [granularity, setGranularity] = useState<GranularityFilter>('auto');
+  const [chartStyle, setChartStyle] = useState<ChartStyleType>('bar');
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [isJobFilterOpen, setIsJobFilterOpen] = useState(false);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [selectedErrorCategory, setSelectedErrorCategory] = useState<string | null>(null);
-  const [activeMetric, setActiveMetric] = useState<'overview' | 'latency' | 'errors' | 'queue'>('overview');
+  const [activeMetric, setActiveMetric] = useState<MetricViewType>('overview');
+  
+  // Interactive Drill-down & Series Controls
+  const [selectedBucketIndex, setSelectedBucketIndex] = useState<number | null>(null);
+  const [isBrushEnabled, setIsBrushEnabled] = useState(false);
+  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Series visibility toggles (Legend)
+  const [seriesVisible, setSeriesVisible] = useState({
+    success: true,
+    failed: true,
+    rate: true,
+    avgLatency: true,
+    maxLatency: true,
+  });
 
   interface QueueMetrics {
     queues: {
@@ -163,12 +227,11 @@ export const DashboardPage: React.FC = () => {
     setLoading(true);
     setHasError(false);
     try {
-      // Calculate start date for last 30 days to optimize database scan and minimize payload size
+      // Calculate start date for last 30 days
       const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const res = await api.get(`/v1/executions?limit=1000&start_date=${startDate}`, { timeout: 15000 });
+      const res = await api.get(`/v1/executions?limit=5000&start_date=${startDate}`, { timeout: 15000 });
       const rawLogs = (res.data?.data || []) as LogEntry[];
       
-      // Map jobName and jobUrl using the local jobs list
       const mappedLogs = rawLogs.map((log) => {
         const job = jobs.find((j) => j.id === log.jobId);
         return {
@@ -187,9 +250,20 @@ export const DashboardPage: React.FC = () => {
         setHasError(true);
       }
     } finally {
-      if (active) setLoading(false);
+      if (active) {
+        setLoading(false);
+        setIsRefreshing(false);
+      }
     }
   }, [jobs]);
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    fetchRecentLogs(true);
+    if (activeMetric === 'queue') {
+      fetchQueueMetrics();
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -202,20 +276,30 @@ export const DashboardPage: React.FC = () => {
     };
   }, [fetchRecentLogs]);
 
+  // Periodic Auto-refresh
+  useEffect(() => {
+    if (!isAutoRefresh) return;
+    const interval = setInterval(() => {
+      fetchRecentLogs(true);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [isAutoRefresh, fetchRecentLogs]);
+
+  // Overall Global Stat Cards Metrics
   const totalExecutions = allRecentLogs.length;
   const successExecutions = allRecentLogs.filter((log) => log.status === 'success').length;
   const successRate = totalExecutions > 0 ? ((successExecutions / totalExecutions) * 100).toFixed(2) : '-';
 
-  const avgResponseTime = (() => {
+  const avgResponseTime = useMemo(() => {
     const logsWithDuration = allRecentLogs.filter(
       (log) => log.durationMs !== null && log.durationMs !== undefined
     );
     if (logsWithDuration.length === 0) return '-';
     const sum = logsWithDuration.reduce((acc, log) => acc + (log.durationMs || 0), 0);
     return `${Math.round(sum / logsWithDuration.length)}ms`;
-  })();
+  }, [allRecentLogs]);
 
-  const errorBreakdown = (() => {
+  const errorBreakdown = useMemo(() => {
     const categories = {
       ssrf: [] as LogEntry[],
       timeout: [] as LogEntry[],
@@ -236,7 +320,7 @@ export const DashboardPage: React.FC = () => {
       }
     });
     return categories;
-  })();
+  }, [allRecentLogs]);
 
   const { maxJobs, isPro, currentJobsCount } = useEntitlements();
   const isProPlan = isPro;
@@ -244,159 +328,226 @@ export const DashboardPage: React.FC = () => {
   const createdJobsCount = currentJobsCount;
   const isLimitReached = createdJobsCount >= globalMaxLimit;
 
-  // Prepare chart data chronologically (oldest to newest)
-  const chartData = (() => {
+  // =========================================================================
+  // MULTI-RESOLUTION TIME BUCKET ENGINE
+  // =========================================================================
+  const chartData = useMemo<ChartBucketData[]>(() => {
     const now = new Date();
-    
-    // 1. Define configuration based on filter
-    let config: {
-      durationMs: number;
-      intervalMs: number;
-      count: number;
-      labelFormat: (d: Date) => string;
-      mockVolumes: number[];
-      mockRates: number[];
-    };
-    
+    const nowTime = now.getTime();
+
+    // 1. Determine duration in ms
+    let durationMs: number;
     switch (chartFilter) {
       case '1h':
-        config = {
-          durationMs: 60 * 60 * 1000,
-          intervalMs: 10 * 60 * 1000,
-          count: 6,
-          labelFormat: (d) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          mockVolumes: [3, 5, 2, 8, 4, 6],
-          mockRates: [100, 100, 50, 100, 100, 100],
-        };
+        durationMs = 60 * 60 * 1000;
+        break;
+      case '6h':
+        durationMs = 6 * 60 * 60 * 1000;
         break;
       case '3d':
-        config = {
-          durationMs: 3 * 24 * 60 * 60 * 1000,
-          intervalMs: 12 * 60 * 60 * 1000,
-          count: 6,
-          labelFormat: (d) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + d.getHours().toString().padStart(2, '0') + ':00',
-          mockVolumes: [32, 45, 38, 54, 48, 62],
-          mockRates: [98, 100, 95, 96, 100, 97],
-        };
+        durationMs = 3 * 24 * 60 * 60 * 1000;
         break;
       case '7d':
-        config = {
-          durationMs: 7 * 24 * 60 * 60 * 1000,
-          intervalMs: 24 * 60 * 60 * 1000,
-          count: 7,
-          labelFormat: (d) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          mockVolumes: [85, 92, 78, 110, 95, 105, 120],
-          mockRates: [100, 98, 97, 100, 96, 99, 100],
-        };
+        durationMs = 7 * 24 * 60 * 60 * 1000;
         break;
       case '30d':
-        config = {
-          durationMs: 30 * 24 * 60 * 60 * 1000,
-          intervalMs: 5 * 24 * 60 * 60 * 1000,
-          count: 6,
-          labelFormat: (d) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          mockVolumes: [420, 390, 450, 480, 510, 490],
-          mockRates: [99, 98, 99, 97, 99, 100],
-        };
+        durationMs = 30 * 24 * 60 * 60 * 1000;
         break;
       case '24h':
       default:
-        config = {
-          durationMs: 24 * 60 * 60 * 1000,
-          intervalMs: 4 * 60 * 60 * 1000,
-          count: 6,
-          labelFormat: (d) => d.getHours().toString().padStart(2, '0') + ':00',
-          mockVolumes: [12, 19, 15, 24, 30, 28],
-          mockRates: [100, 95, 100, 92, 96, 100],
-        };
+        durationMs = 24 * 60 * 60 * 1000;
         break;
     }
 
-    const filteredLogs = allRecentLogs.filter(log => {
+    // 2. Determine bucket interval in ms
+    let intervalMs: number;
+    if (granularity === 'auto') {
+      switch (chartFilter) {
+        case '1h':
+          intervalMs = 5 * 60 * 1000; // 5 min -> 12 buckets
+          break;
+        case '6h':
+          intervalMs = 15 * 60 * 1000; // 15 min -> 24 buckets
+          break;
+        case '24h':
+          intervalMs = 60 * 60 * 1000; // 1 hora -> 24 buckets (elimina coluna unica!)
+          break;
+        case '3d':
+          intervalMs = 3 * 60 * 60 * 1000; // 3 horas -> 24 buckets
+          break;
+        case '7d':
+          intervalMs = 12 * 60 * 60 * 1000; // 12 horas -> 14 buckets
+          break;
+        case '30d':
+          intervalMs = 24 * 60 * 60 * 1000; // 1 dia -> 30 buckets
+          break;
+        default:
+          intervalMs = 60 * 60 * 1000;
+      }
+    } else {
+      switch (granularity) {
+        case '5m':
+          intervalMs = 5 * 60 * 1000;
+          break;
+        case '15m':
+          intervalMs = 15 * 60 * 1000;
+          break;
+        case '1h':
+          intervalMs = 60 * 60 * 1000;
+          break;
+        case '3h':
+          intervalMs = 3 * 60 * 60 * 1000;
+          break;
+        case '6h':
+          intervalMs = 6 * 60 * 60 * 1000;
+          break;
+        case '1d':
+          intervalMs = 24 * 60 * 60 * 1000;
+          break;
+        default:
+          intervalMs = 60 * 60 * 1000;
+      }
+    }
+
+    const startTime = nowTime - durationMs;
+    const bucketCount = Math.max(1, Math.ceil(durationMs / intervalMs));
+
+    // 3. Build gapless, continuous intervals
+    const buckets: ChartBucketData[] = Array.from({ length: bucketCount }).map((_, idx) => {
+      const bStart = startTime + idx * intervalMs;
+      const bEnd = idx === bucketCount - 1 ? nowTime : bStart + intervalMs;
+      const dStart = new Date(bStart);
+      const dEnd = new Date(bEnd);
+
+      // Short X-Axis label
+      let label: string;
+      if (intervalMs <= 15 * 60 * 1000) {
+        label = dEnd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      } else if (intervalMs <= 60 * 60 * 1000) {
+        label = dEnd.getHours().toString().padStart(2, '0') + 'h';
+      } else if (durationMs <= 3 * 24 * 60 * 60 * 1000) {
+        const weekday = dEnd.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+        label = `${weekday} ${dEnd.getHours().toString().padStart(2, '0')}h`;
+      } else if (durationMs <= 7 * 24 * 60 * 60 * 1000) {
+        const weekday = dEnd.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+        const dayMonth = dEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        label = `${weekday} ${dayMonth}`;
+      } else {
+        label = dEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      }
+
+      // Rich Tooltip fullRange label
+      const isSameDay = dStart.toDateString() === dEnd.toDateString();
+      const isToday = dEnd.toDateString() === now.toDateString();
+      const datePrefix = isToday ? 'Hoje' : dStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      let fullRange: string;
+
+      if (isSameDay) {
+        fullRange = `${datePrefix}, ${dStart.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} → ${dEnd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      } else {
+        fullRange = `${dStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${dStart.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} → ${dEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${dEnd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      }
+
+      return {
+        index: idx,
+        time: label,
+        fullRange,
+        startTime: bStart,
+        endTime: bEnd,
+        volume: 0,
+        successCount: 0,
+        failedCount: 0,
+        successRate: 100,
+        avgLatency: 0,
+        maxLatency: 0,
+        failedJobs: [],
+        logs: [],
+      };
+    });
+
+    // 4. Filter logs by time window and job selector
+    const filteredLogs = allRecentLogs.filter((log) => {
       const logTime = new Date(log.triggeredAt).getTime();
-      const matchesTime = now.getTime() - logTime <= config.durationMs;
+      const matchesTime = logTime >= startTime && logTime <= nowTime;
       const matchesJob = selectedJobIds.length === 0 || selectedJobIds.includes(log.jobId);
       return matchesTime && matchesJob;
     });
 
-    const intervals = Array.from({ length: config.count }).map((_, idx) => {
-      // Cria a data correspondente
-      const d = new Date(now.getTime() - (config.count - 1 - idx) * config.intervalMs);
-      
-      // Normaliza a data para evitar acumulo por frações de segundos ou minutos
-      if (chartFilter === '30d' || chartFilter === '7d') {
-        d.setHours(0, 0, 0, 0); // Alinha no começo do dia correspondente
-      } else if (chartFilter === '3d' || chartFilter === '24h') {
-        d.setMinutes(0, 0, 0); // Alinha no começo da hora correspondente
-      }
-      
-      const label = config.labelFormat(d);
-      
-      // Define a janela de tempo de forma contígua
-      let end = d.getTime();
-      if (idx === config.count - 1) {
-        end = Math.max(end, now.getTime());
-      }
-      const start = end - config.intervalMs;
-      
-      return {
-        label,
-        start,
-        end,
-        volume: 0,
-        successCount: 0,
-        failedJobs: [] as string[],
-        durations: [] as number[],
-      };
-    });
-
+    // 5. Assign each log into its exact bucket in O(1) time
     filteredLogs.forEach((log) => {
       const logTime = new Date(log.triggeredAt).getTime();
-      // Mapeia no intervalo correto com limite inclusivo
-      const target = intervals.find((int) => logTime > int.start && logTime <= int.end);
-      if (target) {
-        target.volume += 1;
-        if (log.status === 'success') {
-          target.successCount += 1;
-        } else {
-          const jobName = log.jobName || 'Tarefa';
-          if (!target.failedJobs.includes(jobName)) {
-            target.failedJobs.push(jobName);
+      if (logTime >= startTime && logTime <= nowTime) {
+        const bucketIdx = Math.min(
+          Math.floor((logTime - startTime) / intervalMs),
+          bucketCount - 1
+        );
+        if (bucketIdx >= 0 && bucketIdx < buckets.length) {
+          const bucket = buckets[bucketIdx];
+          bucket.volume += 1;
+          bucket.logs.push(log);
+          if (log.status === 'success') {
+            bucket.successCount += 1;
+          } else {
+            bucket.failedCount += 1;
+            const jobName = log.jobName || 'Tarefa';
+            if (!bucket.failedJobs.includes(jobName)) {
+              bucket.failedJobs.push(jobName);
+            }
           }
-        }
-        if (log.durationMs !== null && log.durationMs !== undefined) {
-          target.durations.push(log.durationMs);
+          if (typeof log.durationMs === 'number' && !isNaN(log.durationMs)) {
+            (bucket as unknown as { durations: number[] }).durations = (bucket as unknown as { durations: number[] }).durations || [];
+            (bucket as unknown as { durations: number[] }).durations.push(log.durationMs);
+          }
         }
       }
     });
 
-    return intervals.map((int) => {
-      const avg = int.durations.length > 0
-        ? Math.round(int.durations.reduce((a, b) => a + b, 0) / int.durations.length)
-        : 0;
-      const max = int.durations.length > 0 ? Math.max(...int.durations) : 0;
-      return {
-        time: int.label,
-        volume: int.volume,
-        successRate: int.volume > 0 ? Math.round((int.successCount / int.volume) * 100) : 100,
-        successCount: int.successCount,
-        failedCount: int.volume - int.successCount,
-        failedJobs: int.failedJobs,
-        avgLatency: avg,
-        maxLatency: max,
-      };
+    // 6. Compute statistics per bucket
+    buckets.forEach((bucket) => {
+      const durations = (bucket as unknown as { durations?: number[] }).durations || [];
+      if (durations.length > 0) {
+        bucket.avgLatency = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
+        bucket.maxLatency = Math.max(...durations);
+      }
+      bucket.successRate = bucket.volume > 0 ? Math.round((bucket.successCount / bucket.volume) * 100) : 100;
     });
-  })();
+
+    return buckets;
+  }, [allRecentLogs, chartFilter, granularity, selectedJobIds]);
 
   const isChartEmpty = chartData.every((d) => d.volume === 0);
 
-  const recentActivities = allRecentLogs.slice(0, 5);
+  // Period Summary KPI Strip
+  const periodSummary = useMemo(() => {
+    const totalVolume = chartData.reduce((acc, b) => acc + b.volume, 0);
+    const totalSuccess = chartData.reduce((acc, b) => acc + b.successCount, 0);
+    const totalFailed = chartData.reduce((acc, b) => acc + b.failedCount, 0);
+    const rate = totalVolume > 0 ? ((totalSuccess / totalVolume) * 100).toFixed(1) : '-';
+    
+    const allDurations = chartData.flatMap((b) => (b as unknown as { durations?: number[] }).durations || []);
+    const avg = allDurations.length > 0 ? Math.round(allDurations.reduce((a, b) => a + b, 0) / allDurations.length) : 0;
+    const max = allDurations.length > 0 ? Math.max(...allDurations) : 0;
+
+    return { totalVolume, totalSuccess, totalFailed, rate, avg, max };
+  }, [chartData]);
+
+  // Selected bucket for Drill-down
+  const activeBucket = selectedBucketIndex !== null && chartData[selectedBucketIndex] ? chartData[selectedBucketIndex] : null;
+
+  // Filtered activities list based on drilldown selection
+  const displayActivities = useMemo(() => {
+    if (activeBucket) {
+      return activeBucket.logs;
+    }
+    return allRecentLogs.slice(0, 10);
+  }, [activeBucket, allRecentLogs]);
 
   return (
     <div className="space-y-6">
+      {/* Welcome Banner */}
       <div className="p-6 rounded-2xl glass-panel relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pulse-slow" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pulse-slow pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
         
         <span className="text-xs uppercase font-extrabold tracking-wider text-indigo-400">
           Status do Sistema
@@ -408,7 +559,7 @@ export const DashboardPage: React.FC = () => {
           Sua plataforma integrada de agendamento e automação serverless. Configure tarefas, receba webhooks e analise o histórico com agendamento previsível.
         </p>
         
-        <div className="flex gap-3 mt-6">
+        <div className="flex flex-wrap gap-3 mt-6">
           <button
             id="tour-btn-create"
             onClick={() => setCreateModalOpen(true)}
@@ -457,45 +608,55 @@ export const DashboardPage: React.FC = () => {
           <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none pulse-slow" />
           
-          {/* Animated Glow Icon */}
           <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.2)]">
             <svg className="w-8 h-8 text-indigo-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
 
-          <div className="space-y-2 max-w-md relative z-10">
-            <h3 className="text-lg font-bold text-slate-100 font-mono">Nenhum Job Cadastrado</h3>
+          <div className="max-w-md space-y-2 relative">
+            <h3 className="text-xl font-bold text-slate-100">
+              Nenhuma tarefa agendada
+            </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Você ainda não possui nenhuma tarefa de agendamento ativa neste workspace. Crie seu primeiro job serverless em segundos para monitorar execuções, disparar webhooks e analisar a telemetria.
+              Você ainda não criou nenhum job. Comece agendando sua primeira rota de webhook com retries exponenciais e monitoramento instantâneo.
             </p>
           </div>
 
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="px-6 py-3 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-lg shadow-indigo-600/35 neon-glow-primary hover:scale-[1.02] active:scale-[0.98] cursor-pointer relative z-10 flex items-center gap-2"
+            className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/30 neon-glow-primary cursor-pointer hover:scale-105"
           >
-            <span>Criar Minha Primeira Tarefa</span>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
+            Criar Primeiro Job Agora 🚀
           </button>
         </div>
       ) : (
         <>
-          {/* Metric Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Global KPI Stat Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             <StatCard
-              id="tour-stat-jobs"
               title="Tarefas Cadastradas"
-              value={`${createdJobsCount} / ${globalMaxLimit}`}
+              value={createdJobsCount}
               color="indigo"
-              isLoading={isPageLoading}
-              description={isProPlan ? 'Plano Pro (50 tarefas máx por workspace)' : 'Plano Gratuito (5 tarefas máx por workspace)'}
-              tooltip="O número de tarefas criadas em relação ao limite total do seu plano de workspace."
+              isLoading={isLoadingJobs}
+              description={isProPlan ? `Até ${globalMaxLimit} jobs permitidos (PRO)` : `${createdJobsCount}/${globalMaxLimit} do plano Free`}
+              tooltip="Quantidade de tarefas atualmente salvas no seu projeto."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              }
+            />
+            <StatCard
+              title="Total de Execuções"
+              value={totalExecutions}
+              color="indigo"
+              isLoading={isPageLoading}
+              description={totalExecutions > 0 ? 'Últimos 30 dias' : 'Nenhuma execução'}
+              tooltip="Total de requisições disparadas pelo worker nos últimos 30 dias."
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               }
             />
@@ -504,8 +665,8 @@ export const DashboardPage: React.FC = () => {
               value={successRate === '-' ? '-' : `${successRate}%`}
               color="emerald"
               isLoading={isPageLoading}
-              description={successRate === '-' ? 'Sem execuções registradas' : 'Últimas 24 horas'}
-              tooltip="O percentual de requisições HTTP disparadas com sucesso (código menor que 500)."
+              description={successRate === '-' ? 'Sem execuções registradas' : 'Média geral do projeto'}
+              tooltip="O percentual de requisições HTTP disparadas com sucesso (código menor que 400)."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -521,110 +682,251 @@ export const DashboardPage: React.FC = () => {
               tooltip="A latência média de resposta dos seus servidores de webhook ao receber o agendamento."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               }
             />
           </div>
 
-          {/* Recharts Performance Composed Chart */}
-          <div className="p-6 rounded-2xl glass-panel border border-indigo-950/30 relative overflow-hidden space-y-5">
-            <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
+          {/* ================================================================= */}
+          {/* ADVANCED INTERACTIVE METRICS & TELEMETRY CHART */}
+          {/* ================================================================= */}
+          <div className="p-6 rounded-2xl glass-panel border border-indigo-950/40 relative overflow-hidden space-y-5">
+            <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
             
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between border-b border-indigo-950/20 pb-4 gap-4">
+            {/* Header: Title, Metric Segmented Selector & Controls */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between border-b border-indigo-950/40 pb-4 gap-4">
               <div>
                 <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <span>Métricas & Telemetria</span>
-                  <span className="text-[10px] text-cyan-400 font-mono bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20 font-bold uppercase">
-                    Gráfico Interativo
+                  <span>Métricas & Telemetria Dinâmica</span>
+                  <span className="text-[10px] text-cyan-400 font-mono bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20 font-bold uppercase tracking-wider">
+                    Interativo v2
                   </span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Acompanhe a quantidade de requisições enviadas, o tempo de resposta do seu servidor e a taxa de sucesso.
+                  Distribuição temporal de execuções com agrupamento contínuo em 24h, latência em tempo real e taxa de entrega.
                 </p>
               </div>
 
-              {/* Segmented Metric Selector */}
-              <div className="flex bg-[#04060f]/60 p-1 rounded-xl border border-indigo-950/80 self-start select-none">
-                <button
-                  type="button"
-                  onClick={() => setActiveMetric('overview')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    activeMetric === 'overview'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Volume
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveMetric('latency')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    activeMetric === 'latency'
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Latência
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveMetric('errors')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    activeMetric === 'errors'
-                      ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Erros
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveMetric('queue')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    activeMetric === 'queue'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Fila Redis
-                </button>
+              {/* Top Controls: Metrics Switcher & Live Refresh Button */}
+              <div className="flex flex-wrap items-center gap-2.5 select-none">
+                {/* Metric Mode Selector */}
+                <div className="flex bg-[#04060f]/80 p-1 rounded-xl border border-indigo-950/80">
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetric('overview')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      activeMetric === 'overview'
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Volume
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetric('latency')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      activeMetric === 'latency'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Latência
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetric('errors')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      activeMetric === 'errors'
+                        ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Erros
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetric('queue')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      activeMetric === 'queue'
+                        ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Fila Redis
+                  </button>
+                </div>
+
+                {/* Auto Refresh Toggle & Manual Refresh Button */}
+                <div className="flex items-center gap-1.5 bg-[#04060f]/80 p-1 rounded-xl border border-indigo-950/80">
+                  <button
+                    type="button"
+                    onClick={() => setIsAutoRefresh(!isAutoRefresh)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      isAutoRefresh
+                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                    title={isAutoRefresh ? 'Auto-refresh ativo a cada 10s' : 'Auto-refresh pausado'}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${isAutoRefresh ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'}`} />
+                    {isAutoRefresh ? 'Ao Vivo' : 'Pausado'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleManualRefresh}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all cursor-pointer"
+                    title="Atualizar dados agora"
+                  >
+                    <svg className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Quick Metrics Guide Banner */}
-            <div className="p-3 rounded-xl bg-indigo-950/20 border border-indigo-500/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs select-none">
-              <div className="flex items-center gap-2 text-slate-300">
-                <span className="text-indigo-400 font-bold">💡 Entendendo as Métricas:</span>
-                <span className="text-[11px] text-slate-400">
-                  {activeMetric === 'overview' && 'As barras roxas/azuis mostram o total de requisições. A linha verde indica a % de sucesso dos disparos.'}
-                  {activeMetric === 'latency' && 'A área roxa indica a latência média de resposta da sua API. A linha ciano pontilhada indica os picos máximos.'}
-                  {activeMetric === 'errors' && 'As barras vermelhas registram disparos que retornaram erro (HTTP 4xx/5xx ou falha de rede).'}
-                  {activeMetric === 'queue' && 'Status das filas Redis de processamento assíncrono de tarefas em tempo real.'}
-                </span>
+            {/* Quick KPI Strip inside the chart header */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 select-none font-mono">
+              <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 text-left">
+                <span className="text-[9px] uppercase font-bold text-slate-400 block">Volume no Filtro</span>
+                <span className="text-sm font-black text-indigo-300">{periodSummary.totalVolume} reqs</span>
               </div>
-              <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                Total: <strong className="text-indigo-300 font-mono">{totalExecutions} reqs</strong>
-              </span>
+              <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 text-left">
+                <span className="text-[9px] uppercase font-bold text-slate-400 block">Sucessos</span>
+                <span className="text-sm font-black text-emerald-400">{periodSummary.totalSuccess}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 text-left">
+                <span className="text-[9px] uppercase font-bold text-slate-400 block">Falhas</span>
+                <span className="text-sm font-black text-rose-400">{periodSummary.totalFailed}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 text-left">
+                <span className="text-[9px] uppercase font-bold text-slate-400 block">Taxa de Sucesso</span>
+                <span className="text-sm font-black text-teal-300">{periodSummary.rate}%</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 text-left">
+                <span className="text-[9px] uppercase font-bold text-slate-400 block">Latência Média</span>
+                <span className="text-sm font-black text-purple-300">{periodSummary.avg > 0 ? `${periodSummary.avg}ms` : '-'}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[#04060f]/60 border border-indigo-950/40 text-left">
+                <span className="text-[9px] uppercase font-bold text-slate-400 block">Pico Máximo</span>
+                <span className="text-sm font-black text-cyan-300">{periodSummary.max > 0 ? `${periodSummary.max}ms` : '-'}</span>
+              </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-3">
+            {/* Controls Bar: Time Range, Granularity, Chart Style, Job Filter, Series Legend */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 bg-[#04060f]/40 p-3 rounded-xl border border-indigo-950/30">
+              <div className="flex flex-wrap items-center gap-2 select-none">
+                {/* Time Range Filter Buttons */}
+                <div className="flex bg-slate-900/80 border border-indigo-950/60 p-1 rounded-xl gap-0.5">
+                  {[
+                    { id: '1h', label: '1h' },
+                    { id: '6h', label: '6h' },
+                    { id: '24h', label: '24h' },
+                    { id: '3d', label: '3d' },
+                    { id: '7d', label: '7d' },
+                    { id: '30d', label: '30d' },
+                  ].map((filter) => {
+                    const active = chartFilter === filter.id;
+                    return (
+                      <button
+                        key={filter.id}
+                        onClick={() => {
+                          setChartFilter(filter.id as TimeRangeFilter);
+                          setSelectedBucketIndex(null);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                          active
+                            ? 'bg-indigo-600 text-white shadow-sm border border-indigo-400/30'
+                            : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Granularity Selector */}
+                <div className="flex items-center gap-1.5 bg-slate-900/80 border border-indigo-950/60 px-2 py-1 rounded-xl text-[10px]">
+                  <span className="text-slate-400 font-bold">Resolução:</span>
+                  <select
+                    value={granularity}
+                    onChange={(e) => {
+                      setGranularity(e.target.value as GranularityFilter);
+                      setSelectedBucketIndex(null);
+                    }}
+                    className="bg-transparent text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer"
+                  >
+                    <option value="auto" className="bg-[#0a0d1d] text-slate-200">Auto (Ideal)</option>
+                    <option value="5m" className="bg-[#0a0d1d] text-slate-200">5 Minutos</option>
+                    <option value="15m" className="bg-[#0a0d1d] text-slate-200">15 Minutos</option>
+                    <option value="1h" className="bg-[#0a0d1d] text-slate-200">1 Hora</option>
+                    <option value="3h" className="bg-[#0a0d1d] text-slate-200">3 Horas</option>
+                    <option value="6h" className="bg-[#0a0d1d] text-slate-200">6 Horas</option>
+                    <option value="1d" className="bg-[#0a0d1d] text-slate-200">1 Dia</option>
+                  </select>
+                </div>
+
+                {/* Chart Style Switcher (Bar / Area / Line) */}
+                <div className="flex bg-slate-900/80 border border-indigo-950/60 p-1 rounded-xl gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setChartStyle('bar')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      chartStyle === 'bar'
+                        ? 'bg-indigo-600/40 text-indigo-300 border border-indigo-500/30'
+                        : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                    }`}
+                    title="Visualização em Barras Empilhadas"
+                  >
+                    <span>📊</span>
+                    <span className="hidden sm:inline">Barras</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartStyle('area')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      chartStyle === 'area'
+                        ? 'bg-indigo-600/40 text-indigo-300 border border-indigo-500/30'
+                        : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                    }`}
+                    title="Visualização em Área Fluida"
+                  >
+                    <span>🌊</span>
+                    <span className="hidden sm:inline">Área</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartStyle('line')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      chartStyle === 'line'
+                        ? 'bg-indigo-600/40 text-indigo-300 border border-indigo-500/30'
+                        : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                    }`}
+                    title="Visualização em Linhas"
+                  >
+                    <span>📈</span>
+                    <span className="hidden sm:inline">Linhas</span>
+                  </button>
+                </div>
+
                 {/* Job Selector Dropdown Filter */}
                 <div className="relative select-none">
                   <button
                     type="button"
                     onClick={() => setIsJobFilterOpen(!isJobFilterOpen)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-900/80 border border-indigo-950/40 hover:border-indigo-500/20 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-900 border border-indigo-950/60 hover:border-indigo-500/30 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
                   >
-                    <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                     </svg>
                     <span>
                       Jobs: {selectedJobIds.length === 0 ? 'Todos' : `${selectedJobIds.length} selecionados`}
                     </span>
-                    <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isJobFilterOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className={`w-3 h-3 text-slate-400 transition-transform ${isJobFilterOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
@@ -632,7 +934,7 @@ export const DashboardPage: React.FC = () => {
                   {isJobFilterOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setIsJobFilterOpen(false)} />
-                      <div className="absolute left-0 mt-2 w-64 rounded-xl border border-indigo-900/50 bg-[#070913]/95 backdrop-blur-md shadow-2xl p-3 space-y-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="absolute left-0 mt-2 w-64 rounded-2xl border border-indigo-900/60 bg-[#070913]/98 backdrop-blur-xl shadow-2xl p-3 space-y-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="flex justify-between items-center border-b border-indigo-950/40 pb-2">
                           <span className="text-[10px] uppercase font-bold text-slate-400">Filtrar por Job</span>
                           <button
@@ -650,7 +952,7 @@ export const DashboardPage: React.FC = () => {
                             return (
                               <label
                                 key={job.id}
-                                className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-indigo-950/20 cursor-pointer select-none text-[11px] font-medium text-slate-300 transition-colors"
+                                className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-indigo-950/30 cursor-pointer select-none text-[11px] font-medium text-slate-300 transition-colors"
                               >
                                 <input
                                   type="checkbox"
@@ -674,73 +976,119 @@ export const DashboardPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Filter Toggle Buttons Group */}
-                <div className="flex bg-slate-900/60 border border-indigo-950/40 p-1 rounded-xl gap-0.5 select-none">
-                  {[
-                    { id: '1h', label: '1 Hora' },
-                    { id: '24h', label: '24 Horas' },
-                    { id: '3d', label: '3 Dias' },
-                    { id: '7d', label: '7 Dias' },
-                    { id: '30d', label: '30 Dias' },
-                  ].map((filter) => {
-                    const active = chartFilter === filter.id;
-                    return (
-                      <button
-                        key={filter.id}
-                        onClick={() => setChartFilter(filter.id as typeof chartFilter)}
-                        className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                          active
-                            ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/20 shadow-md'
-                            : 'text-slate-400 hover:text-slate-200 border border-transparent'
-                        }`}
-                      >
-                        {filter.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                {/* Timeline Scrubber / Brush Toggle */}
+                {chartData.length > 8 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsBrushEnabled(!isBrushEnabled)}
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-bold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isBrushEnabled
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-indigo-950/60'
+                    }`}
+                    title="Habilitar barra deslizante de zoom / timeline"
+                  >
+                    <span>🔍</span>
+                    <span>Zoom Scrubber</span>
+                  </button>
+                )}
               </div>
 
-              {/* Dynamic Chart Legends */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 bg-slate-900/40 border border-indigo-950/20 px-3 py-1.5 rounded-xl text-[10px] font-semibold text-slate-400 select-none">
+              {/* Interactive Legend (Click to Toggle Series) */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-slate-900/60 border border-indigo-950/30 px-3 py-1.5 rounded-xl text-[10px] font-semibold text-slate-400 select-none">
+                <span className="text-[9px] uppercase font-bold text-slate-400 mr-1">Séries:</span>
                 {activeMetric === 'overview' && (
                   <>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-                      Volume (Barra)
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      Taxa de Sucesso (Linha)
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSeriesVisible((prev) => ({ ...prev, success: !prev.success }))}
+                      className={`flex items-center gap-1.5 cursor-pointer transition-opacity ${seriesVisible.success ? 'opacity-100' : 'opacity-35 line-through'}`}
+                      title="Clique para ocultar/exibir Sucessos"
+                    >
+                      <span className="w-2.5 h-2.5 rounded bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      <span>Sucesso</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSeriesVisible((prev) => ({ ...prev, failed: !prev.failed }))}
+                      className={`flex items-center gap-1.5 cursor-pointer transition-opacity ${seriesVisible.failed ? 'opacity-100' : 'opacity-35 line-through'}`}
+                      title="Clique para ocultar/exibir Falhas"
+                    >
+                      <span className="w-2.5 h-2.5 rounded bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                      <span>Falhas</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSeriesVisible((prev) => ({ ...prev, rate: !prev.rate }))}
+                      className={`flex items-center gap-1.5 cursor-pointer transition-opacity ${seriesVisible.rate ? 'opacity-100' : 'opacity-35 line-through'}`}
+                      title="Clique para ocultar/exibir Linha de Taxa %"
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
+                      <span>Taxa %</span>
+                    </button>
                   </>
                 )}
+
                 {activeMetric === 'latency' && (
                   <>
-                    <span className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setSeriesVisible((prev) => ({ ...prev, avgLatency: !prev.avgLatency }))}
+                      className={`flex items-center gap-1.5 cursor-pointer transition-opacity ${seriesVisible.avgLatency ? 'opacity-100' : 'opacity-35 line-through'}`}
+                    >
                       <span className="w-2.5 h-2.5 rounded bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-                      Média (Área)
-                    </span>
-                    <span className="flex items-center gap-1.5">
+                      <span>Média (ms)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSeriesVisible((prev) => ({ ...prev, maxLatency: !prev.maxLatency }))}
+                      className={`flex items-center gap-1.5 cursor-pointer transition-opacity ${seriesVisible.maxLatency ? 'opacity-100' : 'opacity-35 line-through'}`}
+                    >
                       <span className="w-2.5 h-0.5 bg-cyan-400 border border-dashed border-cyan-400" />
-                      Pico Máximo (Linha)
-                    </span>
+                      <span>Pico Máx</span>
+                    </button>
                   </>
                 )}
+
                 {activeMetric === 'errors' && (
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 text-rose-400">
                     <span className="w-2.5 h-2.5 rounded bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
-                    Requisições Falhas (Barra)
+                    <span>Requisições com Erro</span>
                   </span>
                 )}
+
                 {activeMetric === 'queue' && (
                   <span className="flex items-center gap-1.5 text-amber-400">
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    Monitoramento da Fila (Redis)
+                    <span>Monitoramento Redis Live</span>
                   </span>
                 )}
               </div>
             </div>
+
+            {/* Active Drilldown Banner */}
+            {activeBucket && (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-200 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-2 flex-wrap font-mono">
+                  <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold uppercase text-[9px]">
+                    Filtro Ativo
+                  </span>
+                  <span>
+                    Intervalo: <strong>{activeBucket.fullRange}</strong>
+                  </span>
+                  <span className="text-slate-400">
+                    ({activeBucket.volume} reqs • {activeBucket.successCount} sucessos, {activeBucket.failedCount} falhas)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBucketIndex(null)}
+                  className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-200 hover:text-white bg-slate-900/60 hover:bg-slate-800 rounded-lg border border-cyan-500/20 transition-all cursor-pointer"
+                >
+                  Limpar Seleção ✕
+                </button>
+              </div>
+            )}
 
             {/* Dynamic Charts Container */}
             <div className="pt-2">
@@ -759,10 +1107,9 @@ export const DashboardPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
                       {queueMetrics.queues.map((q) => (
                         <div key={q.name} className="p-4 rounded-xl border border-indigo-950/40 bg-[#04060f]/60 hover:bg-[#04060f]/90 transition-all space-y-3 relative group overflow-hidden">
-                          {/* Top row */}
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fila: {q.name}</span>
-                            <span className={`text-[8px] font-bold uppercase px-2 py-0.5 rounded border ${
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Fila: {q.name}</span>
+                            <span className={`text-[8px] font-bold uppercase px-2 py-0.5 rounded border font-mono ${
                               q.paused
                                 ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
                                 : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
@@ -771,30 +1118,28 @@ export const DashboardPage: React.FC = () => {
                             </span>
                           </div>
 
-                          {/* Stat Grid */}
-                          <div className="grid grid-cols-2 gap-2 text-left">
+                          <div className="grid grid-cols-2 gap-2 text-left font-mono">
                             <div className="bg-slate-950/40 p-2 rounded-lg border border-indigo-950/25">
-                              <p className="text-[9px] text-slate-500 uppercase font-semibold">Pendentes</p>
-                              <p className="text-sm font-bold text-indigo-300 font-mono">{q.pending}</p>
+                              <p className="text-[9px] text-slate-400 uppercase font-semibold">Pendentes</p>
+                              <p className="text-sm font-bold text-indigo-300">{q.pending}</p>
                             </div>
                             <div className="bg-slate-950/40 p-2 rounded-lg border border-indigo-950/25">
-                              <p className="text-[9px] text-slate-500 uppercase font-semibold">Ativas</p>
-                              <p className="text-sm font-bold text-emerald-400 font-mono">{q.active}</p>
+                              <p className="text-[9px] text-slate-400 uppercase font-semibold">Ativas</p>
+                              <p className="text-sm font-bold text-emerald-400">{q.active}</p>
                             </div>
                             <div className="bg-slate-950/40 p-2 rounded-lg border border-indigo-950/25">
-                              <p className="text-[9px] text-slate-500 uppercase font-semibold">Agendadas</p>
-                              <p className="text-sm font-bold text-purple-400 font-mono">{q.scheduled}</p>
+                              <p className="text-[9px] text-slate-400 uppercase font-semibold">Agendadas</p>
+                              <p className="text-sm font-bold text-purple-400">{q.scheduled}</p>
                             </div>
                             <div className="bg-slate-950/40 p-2 rounded-lg border border-indigo-950/25">
-                              <p className="text-[9px] text-slate-500 uppercase font-semibold">Retentativas</p>
-                              <p className="text-sm font-bold text-rose-400 font-mono">{q.retry}</p>
+                              <p className="text-[9px] text-slate-400 uppercase font-semibold">Retentativas</p>
+                              <p className="text-sm font-bold text-rose-400">{q.retry}</p>
                             </div>
                           </div>
 
-                          {/* Total count */}
-                          <div className="flex items-center justify-between border-t border-indigo-950/20 pt-2.5 mt-1 text-[9px] text-slate-500">
+                          <div className="flex items-center justify-between border-t border-indigo-950/20 pt-2.5 mt-1 text-[9px] text-slate-400 font-mono">
                             <span>Total de Tarefas</span>
-                            <span className="font-bold text-slate-350 font-mono">{q.size}</span> 
+                            <span className="font-bold text-slate-200">{q.size}</span> 
                           </div>
                         </div>
                       ))}
@@ -809,9 +1154,9 @@ export const DashboardPage: React.FC = () => {
                     </svg>
                   </div>
                   <div className="space-y-1.5 max-w-sm">
-                    <h4 className="text-xs font-bold text-slate-250 font-mono">Erro ao carregar telemetria</h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
-                      Não foi possível carregar os dados de telemetria (timeout ou erro de conexão). Reduzimos a amostragem inicial para otimizar o carregamento.
+                    <h4 className="text-xs font-bold text-slate-200 font-mono">Erro ao carregar telemetria</h4>
+                    <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                      Não foi possível carregar os dados de telemetria (timeout ou erro de conexão).
                     </p>
                     <button
                       onClick={() => fetchRecentLogs(true)}
@@ -827,9 +1172,9 @@ export const DashboardPage: React.FC = () => {
                     <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
                   </div>
                   <div className="space-y-1.5 max-w-sm">
-                    <h4 className="text-xs font-bold text-slate-350 font-mono">Processando telemetria...</h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
-                      Carregando logs de execução e preparando gráficos de telemetria.
+                    <h4 className="text-xs font-bold text-slate-300 font-mono">Processando telemetria...</h4>
+                    <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                      Carregando logs de execução e preparando gráficos de telemetria contínuos.
                     </p>
                   </div>
                 </div>
@@ -841,78 +1186,297 @@ export const DashboardPage: React.FC = () => {
                     </svg>
                   </div>
                   <div className="space-y-1.5 max-w-sm">
-                    <h4 className="text-xs font-bold text-slate-350 font-mono">Sem dados no período</h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
-                      Nenhum disparo de webhook foi registrado para as tarefas selecionadas no intervalo de tempo de {chartFilter}. Certifique-se de que os agendamentos estão ativos e aguarde as execuções começarem.
+                    <h4 className="text-xs font-bold text-slate-300 font-mono">Sem execuções no período selecionado ({chartFilter})</h4>
+                    <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                      Nenhum disparo de webhook foi registrado nas últimas {chartFilter}. Seus jobs agendados estão prontos para disparar assim que o cronograma for atingido.
                     </p>
                   </div>
                 </div>
               ) : (
                 <>
+                  {/* OVERVIEW / VOLUME METRIC VIEW */}
                   {activeMetric === 'overview' && (
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height={256}>
-                        <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                    <div className="h-72 w-full">
+                      <ResponsiveContainer width="100%" height={288}>
+                        <ComposedChart
+                          data={chartData}
+                          margin={{ top: 10, right: 10, left: -20, bottom: isBrushEnabled ? 25 : 5 }}
+                          onClick={(e) => {
+                            if (e && e.activeTooltipIndex !== undefined && e.activeTooltipIndex !== null) {
+                              const index = Number(e.activeTooltipIndex);
+                              setSelectedBucketIndex(selectedBucketIndex === index ? null : index);
+                            }
+                          }}
+                        >
                           <defs>
-                            <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#818cf8" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.25}/>
+                            <linearGradient id="successBarGlow" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.9}/>
+                              <stop offset="95%" stopColor="#059669" stopOpacity={0.4}/>
+                            </linearGradient>
+                            <linearGradient id="failedBarGlow" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.9}/>
+                              <stop offset="95%" stopColor="#e11d48" stopOpacity={0.5}/>
+                            </linearGradient>
+                            <linearGradient id="volumeAreaGlow" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.5}/>
+                              <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0}/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="4 4" stroke="#334155" opacity={0.4} />
-                          <XAxis dataKey="time" stroke="#94a3b8" fontSize={11} fontWeight={600} tickLine={false} axisLine={{ stroke: '#334155' }} />
-                          <YAxis yAxisId="left" stroke="#94a3b8" fontSize={11} fontWeight={600} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} req`} />
-                          <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" fontSize={11} fontWeight={600} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.5} />
+                          
+                          <XAxis
+                            dataKey="time"
+                            stroke="#94a3b8"
+                            fontSize={10}
+                            fontWeight={600}
+                            tickLine={false}
+                            axisLine={{ stroke: '#334155' }}
+                          />
+                          <YAxis
+                            yAxisId="left"
+                            stroke="#94a3b8"
+                            fontSize={10}
+                            fontWeight={600}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => `${v}`}
+                          />
+                          <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            stroke="#34d399"
+                            fontSize={10}
+                            fontWeight={600}
+                            tickLine={false}
+                            axisLine={false}
+                            domain={[0, 100]}
+                            tickFormatter={(v) => `${v}%`}
+                          />
+
                           <Tooltip content={<CustomTooltip />} />
-                          <Bar yAxisId="left" dataKey="volume" barSize={32} radius={[6, 6, 0, 0]} fill="url(#volumeGlow)" />
-                          <Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#10b981" strokeWidth={3} dot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#070913' }} activeDot={{ r: 7, stroke: '#34d399', strokeWidth: 3, fill: '#070913' }} />
+
+                          {chartStyle === 'bar' && (
+                            <>
+                              {seriesVisible.success && (
+                                <Bar
+                                  yAxisId="left"
+                                  dataKey="successCount"
+                                  name="Sucessos"
+                                  stackId="volume"
+                                  radius={[0, 0, 0, 0]}
+                                  fill="url(#successBarGlow)"
+                                  cursor="pointer"
+                                >
+                                  {chartData.map((_, index) => (
+                                    <Cell
+                                      key={`cell-s-${index}`}
+                                      stroke={selectedBucketIndex === index ? '#34d399' : 'transparent'}
+                                      strokeWidth={selectedBucketIndex === index ? 2 : 0}
+                                      opacity={selectedBucketIndex === null || selectedBucketIndex === index ? 1 : 0.4}
+                                    />
+                                  ))}
+                                </Bar>
+                              )}
+
+                              {seriesVisible.failed && (
+                                <Bar
+                                  yAxisId="left"
+                                  dataKey="failedCount"
+                                  name="Falhas"
+                                  stackId="volume"
+                                  radius={[4, 4, 0, 0]}
+                                  fill="url(#failedBarGlow)"
+                                  cursor="pointer"
+                                >
+                                  {chartData.map((_, index) => (
+                                    <Cell
+                                      key={`cell-f-${index}`}
+                                      stroke={selectedBucketIndex === index ? '#fda4af' : 'transparent'}
+                                      strokeWidth={selectedBucketIndex === index ? 2 : 0}
+                                      opacity={selectedBucketIndex === null || selectedBucketIndex === index ? 1 : 0.4}
+                                    />
+                                  ))}
+                                </Bar>
+                              )}
+                            </>
+                          )}
+
+                          {chartStyle === 'area' && (
+                            <Area
+                              yAxisId="left"
+                              type="monotone"
+                              dataKey="volume"
+                              name="Volume Total"
+                              stroke="#818cf8"
+                              strokeWidth={2.5}
+                              fill="url(#volumeAreaGlow)"
+                              cursor="pointer"
+                            />
+                          )}
+
+                          {chartStyle === 'line' && (
+                            <Line
+                              yAxisId="left"
+                              type="monotone"
+                              dataKey="volume"
+                              name="Volume Total"
+                              stroke="#818cf8"
+                              strokeWidth={3}
+                              dot={{ r: 3, stroke: '#818cf8', strokeWidth: 2, fill: '#070913' }}
+                              activeDot={{ r: 6, stroke: '#a5b4fc', strokeWidth: 2, fill: '#070913' }}
+                              cursor="pointer"
+                            />
+                          )}
+
+                          {seriesVisible.rate && (
+                            <Line
+                              yAxisId="right"
+                              type="monotone"
+                              dataKey="successRate"
+                              name="Taxa de Sucesso"
+                              stroke="#06b6d4"
+                              strokeWidth={2.5}
+                              dot={{ r: 3, stroke: '#06b6d4', strokeWidth: 2, fill: '#070913' }}
+                              activeDot={{ r: 6, stroke: '#67e8f9', strokeWidth: 3, fill: '#070913' }}
+                            />
+                          )}
+
+                          {isBrushEnabled && chartData.length > 8 && (
+                            <Brush
+                              dataKey="time"
+                              height={20}
+                              stroke="#6366f1"
+                              fill="#090d24"
+                              travellerWidth={8}
+                            />
+                          )}
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
                   )}
 
+                  {/* LATENCY METRIC VIEW */}
                   {activeMetric === 'latency' && (
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height={256}>
-                        <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
+                    <div className="h-72 w-full">
+                      <ResponsiveContainer width="100%" height={288}>
+                        <ComposedChart
+                          data={chartData}
+                          margin={{ top: 10, right: 10, left: -15, bottom: isBrushEnabled ? 25 : 5 }}
+                          onClick={(e) => {
+                            if (e && e.activeTooltipIndex !== undefined && e.activeTooltipIndex !== null) {
+                              const index = Number(e.activeTooltipIndex);
+                              setSelectedBucketIndex(selectedBucketIndex === index ? null : index);
+                            }
+                          }}
+                        >
                           <defs>
-                            <linearGradient id="latencyGlow" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4}/>
+                            <linearGradient id="latencyAreaGlow" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#a855f7" stopOpacity={0.5}/>
                               <stop offset="95%" stopColor="#a855f7" stopOpacity={0.0}/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
-                          <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}ms`} />
+
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.4} />
+                          <XAxis dataKey="time" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={{ stroke: '#334155' }} />
+                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}ms`} />
+                          
                           <Tooltip content={<CustomTooltip />} />
-                          <Area type="monotone" dataKey="avgLatency" stroke="#a855f7" strokeWidth={3} fill="url(#latencyGlow)" />
-                          <Line type="monotone" dataKey="maxLatency" stroke="#06b6d4" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                          
+                          <ReferenceLine y={200} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'SLA Rápido (200ms)', fill: '#10b981', fontSize: 9 }} />
+                          <ReferenceLine y={500} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Atenção (500ms)', fill: '#f59e0b', fontSize: 9 }} />
+
+                          {seriesVisible.avgLatency && (
+                            <Area
+                              type="monotone"
+                              dataKey="avgLatency"
+                              name="Latência Média"
+                              stroke="#a855f7"
+                              strokeWidth={3}
+                              fill="url(#latencyAreaGlow)"
+                              cursor="pointer"
+                            />
+                          )}
+
+                          {seriesVisible.maxLatency && (
+                            <Line
+                              type="monotone"
+                              dataKey="maxLatency"
+                              name="Pico Máximo"
+                              stroke="#06b6d4"
+                              strokeWidth={2}
+                              strokeDasharray="4 4"
+                              dot={false}
+                            />
+                          )}
+
+                          {isBrushEnabled && chartData.length > 8 && (
+                            <Brush
+                              dataKey="time"
+                              height={20}
+                              stroke="#a855f7"
+                              fill="#090d24"
+                              travellerWidth={8}
+                            />
+                          )}
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
                   )}
 
+                  {/* ERRORS METRIC VIEW */}
                   {activeMetric === 'errors' && (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-                      <div className="lg:col-span-2 h-64">
-                        <ResponsiveContainer width="100%" height={256}>
-                          <ComposedChart data={chartData} margin={{ top: 10, right: -5, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#1e1b4b" opacity={0.25} />
-                            <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} err`} />
+                      <div className="lg:col-span-2 h-72">
+                        <ResponsiveContainer width="100%" height={288}>
+                          <ComposedChart
+                            data={chartData}
+                            margin={{ top: 10, right: 10, left: -15, bottom: isBrushEnabled ? 25 : 5 }}
+                            onClick={(e) => {
+                              if (e && e.activeTooltipIndex !== undefined && e.activeTooltipIndex !== null) {
+                                const index = Number(e.activeTooltipIndex);
+                                setSelectedBucketIndex(selectedBucketIndex === index ? null : index);
+                              }
+                            }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.4} />
+                            <XAxis dataKey="time" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={{ stroke: '#334155' }} />
+                            <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} err`} />
+                            
                             <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="failedCount" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={24} />
+                            
+                            <Bar dataKey="failedCount" name="Erros" fill="#f43f5e" radius={[4, 4, 0, 0]} cursor="pointer">
+                              {chartData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-err-${index}`}
+                                  stroke={selectedBucketIndex === index ? '#ffffff' : 'transparent'}
+                                  strokeWidth={selectedBucketIndex === index ? 2 : 0}
+                                  fill={entry.failedCount > 0 ? '#f43f5e' : '#334155'}
+                                  opacity={entry.failedCount > 0 ? (selectedBucketIndex === null || selectedBucketIndex === index ? 1 : 0.4) : 0.2}
+                                />
+                              ))}
+                            </Bar>
+
+                            {isBrushEnabled && chartData.length > 8 && (
+                              <Brush
+                                dataKey="time"
+                                height={20}
+                                stroke="#f43f5e"
+                                fill="#090d24"
+                                travellerWidth={8}
+                              />
+                            )}
                           </ComposedChart>
                         </ResponsiveContainer>
                       </div>
                       
-                      <div className="space-y-2.5 bg-[#050716]/65 p-4 rounded-2xl border border-indigo-950/40 select-none text-left">
-                        <div className="flex justify-between items-center">
+                      <div className="space-y-2.5 bg-[#050716]/80 p-4 rounded-2xl border border-indigo-950/60 select-none text-left">
+                        <div className="flex justify-between items-center border-b border-indigo-950/40 pb-2">
                           <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400">Classificação dos Erros</h4>
                           {selectedErrorCategory && (
                             <button
                               onClick={() => setSelectedErrorCategory(null)}
-                              className="text-[9px] text-slate-500 hover:text-slate-300 font-mono font-semibold cursor-pointer"
+                              className="text-[9px] text-slate-400 hover:text-slate-200 font-mono font-semibold cursor-pointer"
                             >
                               Limpar filtro
                             </button>
@@ -939,9 +1503,9 @@ export const DashboardPage: React.FC = () => {
                                 >
                                   <span className="flex items-center gap-1.5">
                                     <span>{item.icon}</span>
-                                    <span className={isExpanded ? 'text-rose-450 font-bold' : 'text-slate-350'}>{item.label}</span>
+                                    <span className={isExpanded ? 'text-rose-400 font-bold' : 'text-slate-300'}>{item.label}</span>
                                   </span>
-                                  <span className="font-mono text-slate-450 flex items-center gap-1.5">
+                                  <span className="font-mono text-slate-400 flex items-center gap-1.5">
                                     <span>{item.count} ({pct}%)</span>
                                     <span className="text-[8px] text-slate-500">{isExpanded ? '▼' : '▶'}</span>
                                   </span>
@@ -950,11 +1514,10 @@ export const DashboardPage: React.FC = () => {
                                   <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
                                 </div>
 
-                                {/* Collapsible execution list */}
                                 {isExpanded && (
                                   <div className="mt-2 pl-3 py-1.5 border-l border-indigo-950/60 max-h-40 overflow-y-auto space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
                                     {item.logs.length === 0 ? (
-                                      <p className="text-[9px] text-slate-600 italic">Nenhuma falha neste grupo.</p>
+                                      <p className="text-[9px] text-slate-500 italic">Nenhuma falha neste grupo.</p>
                                     ) : (
                                       item.logs.map((log) => (
                                         <div
@@ -964,15 +1527,8 @@ export const DashboardPage: React.FC = () => {
                                         >
                                           <div className="flex justify-between items-center text-[9px] font-bold text-slate-200">
                                             <span className="truncate max-w-30">{log.jobName || 'Tarefa'}</span>
-                                            <span className="text-slate-500 font-mono">
-                                              {(() => {
-                                                const d = new Date(log.triggeredAt);
-                                                const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                                                const offset = d.getTimezoneOffset();
-                                                const hours = Math.floor(Math.abs(offset) / 60);
-                                                const sign = offset <= 0 ? '+' : '-';
-                                                return `${time} (GMT${sign}${hours})`;
-                                              })()}
+                                            <span className="text-slate-400 font-mono">
+                                              {new Date(log.triggeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                           </div>
                                           <p className="text-[8px] text-rose-400 font-mono truncate max-w-48 mt-0.5">
@@ -995,10 +1551,28 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Recent Activity list */}
-          <RecentActivity activities={recentActivities} isLoading={isPageLoading} />
+          {/* Recent Activity List with drilldown connection */}
+          <RecentActivity
+            activities={displayActivities}
+            isLoading={isPageLoading}
+            filterBadge={
+              activeBucket ? (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 px-2.5 py-0.5 rounded-full">
+                  <span>Filtrado: {activeBucket.time} ({activeBucket.volume} execuções)</span>
+                  <button
+                    onClick={() => setSelectedBucketIndex(null)}
+                    className="hover:text-white cursor-pointer ml-1"
+                    title="Limpar filtro"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ) : undefined
+            }
+          />
         </>
       )}
+
       <PixModal isOpen={isPixModalOpen} onClose={() => setIsPixModalOpen(false)} />
       <LogDetail logs={allRecentLogs} />
     </div>
