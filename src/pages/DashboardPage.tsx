@@ -44,6 +44,40 @@ export interface ChartBucketData {
   logs: LogEntry[];
 }
 
+interface BackendBucket {
+  bucket_time: string;
+  volume: number;
+  success_count: number;
+  failed_count: number;
+  avg_latency: number;
+  max_latency: number;
+  failed_jobs: string[];
+}
+
+interface BackendSummary {
+  total_volume: number;
+  success_count: number;
+  failed_count: number;
+  success_rate: number;
+  avg_latency: number;
+  max_latency: number;
+}
+
+interface BackendErrors {
+  ssrf: number;
+  timeout: number;
+  dns: number;
+  http5xx: number;
+  http4xx: number;
+  others: number;
+}
+
+interface TelemetryApiResponse {
+  buckets: BackendBucket[];
+  summary: BackendSummary;
+  errors: BackendErrors;
+}
+
 interface CustomTooltipProps {
   active?: boolean;
   payload?: Array<{
@@ -146,15 +180,20 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
 };
 
 export const DashboardPage: React.FC = () => {
-  const { setCreateModalOpen, setDocsOpen, showToast, setLogModalOpen } = useUiStore();
+  const { setCreateModalOpen, setDocsOpen, showToast } = useUiStore();
   const { jobs, isLoading: isLoadingJobs } = useJobsStore();
-  const [allRecentLogs, setAllRecentLogs] = useState<LogEntry[]>([]);
+  
+  // Telemetry & Activity States
+  const [telemetryData, setTelemetryData] = useState<TelemetryApiResponse | null>(null);
+  const [recentLogs, setRecentLogs] = useState<LogEntry[]>([]);
+  const [drilldownLogs, setDrilldownLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingDrilldown, setLoadingDrilldown] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const isPageLoading = isLoadingJobs || (jobs.length > 0 && loading && allRecentLogs.length === 0);
+  const isPageLoading = isLoadingJobs || (jobs.length > 0 && loading && !telemetryData);
 
   // Filter & View State
-  const [chartFilter, setChartFilter] = useState<TimeRangeFilter>('24h');
+  const [chartFilter, setChartFilter] = useState<TimeRangeFilter>('7d');
   const [granularity, setGranularity] = useState<GranularityFilter>('auto');
   const [chartStyle, setChartStyle] = useState<ChartStyleType>('bar');
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
@@ -219,7 +258,8 @@ export const DashboardPage: React.FC = () => {
     }
   }, [activeMetric, fetchQueueMetrics]);
 
-  const fetchRecentLogs = useCallback(async (active = true) => {
+  // Fetch telemetry aggregated data directly from backend SQL engine
+  const fetchTelemetry = useCallback(async (active = true) => {
     if (jobs.length === 0) {
       setLoading(false);
       return;
@@ -227,11 +267,33 @@ export const DashboardPage: React.FC = () => {
     setLoading(true);
     setHasError(false);
     try {
-      // Calculate start date for last 30 days
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const res = await api.get(`/v1/executions?limit=5000&start_date=${startDate}`, { timeout: 15000 });
+      const jobIdsParam = selectedJobIds.length > 0 ? `&job_ids=${selectedJobIds.join(',')}` : '';
+      const res = await api.get<TelemetryApiResponse>(
+        `/v1/executions/telemetry?time_range=${chartFilter}&granularity=${granularity}${jobIdsParam}`,
+        { timeout: 15000 }
+      );
+      if (active && res.data) {
+        setTelemetryData(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch telemetry for dashboard', err);
+      if (active) {
+        setHasError(true);
+      }
+    } finally {
+      if (active) {
+        setLoading(false);
+        setIsRefreshing(false);
+      }
+    }
+  }, [jobs, chartFilter, granularity, selectedJobIds]);
+
+  // Fetch recent executions for live feed & modal logs
+  const fetchRecentLogs = useCallback(async (active = true) => {
+    if (jobs.length === 0) return;
+    try {
+      const res = await api.get('/v1/executions?limit=50', { timeout: 10000 });
       const rawLogs = (res.data?.data || []) as LogEntry[];
-      
       const mappedLogs = rawLogs.map((log) => {
         const job = jobs.find((j) => j.id === log.jobId);
         return {
@@ -242,23 +304,16 @@ export const DashboardPage: React.FC = () => {
       });
 
       if (active) {
-        setAllRecentLogs(mappedLogs);
+        setRecentLogs(mappedLogs);
       }
     } catch (err) {
-      console.error('Failed to fetch global executions for dashboard', err);
-      if (active) {
-        setHasError(true);
-      }
-    } finally {
-      if (active) {
-        setLoading(false);
-        setIsRefreshing(false);
-      }
+      console.error('Failed to fetch recent executions', err);
     }
   }, [jobs]);
 
   const handleManualRefresh = () => {
     setIsRefreshing(true);
+    fetchTelemetry(true);
     fetchRecentLogs(true);
     if (activeMetric === 'queue') {
       fetchQueueMetrics();
@@ -268,60 +323,26 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     let active = true;
     const timer = setTimeout(() => {
+      fetchTelemetry(active);
       fetchRecentLogs(active);
     }, 0);
     return () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [fetchRecentLogs]);
+  }, [fetchTelemetry, fetchRecentLogs]);
 
   // Periodic Auto-refresh
   useEffect(() => {
     if (!isAutoRefresh) return;
     const interval = setInterval(() => {
+      fetchTelemetry(true);
       fetchRecentLogs(true);
     }, 10000);
     return () => clearInterval(interval);
-  }, [isAutoRefresh, fetchRecentLogs]);
+  }, [isAutoRefresh, fetchTelemetry, fetchRecentLogs]);
 
-  // Overall Global Stat Cards Metrics
-  const totalExecutions = allRecentLogs.length;
-  const successExecutions = allRecentLogs.filter((log) => log.status === 'success').length;
-  const successRate = totalExecutions > 0 ? ((successExecutions / totalExecutions) * 100).toFixed(2) : '-';
-
-  const avgResponseTime = useMemo(() => {
-    const logsWithDuration = allRecentLogs.filter(
-      (log) => log.durationMs !== null && log.durationMs !== undefined
-    );
-    if (logsWithDuration.length === 0) return '-';
-    const sum = logsWithDuration.reduce((acc, log) => acc + (log.durationMs || 0), 0);
-    return `${Math.round(sum / logsWithDuration.length)}ms`;
-  }, [allRecentLogs]);
-
-  const errorBreakdown = useMemo(() => {
-    const categories = {
-      ssrf: [] as LogEntry[],
-      timeout: [] as LogEntry[],
-      dns: [] as LogEntry[],
-      http5xx: [] as LogEntry[],
-      http4xx: [] as LogEntry[],
-      others: [] as LogEntry[],
-    };
-    allRecentLogs.forEach((log) => {
-      if (log.status === 'failed') {
-        const msg = (log.responseBody || '').toLowerCase();
-        if (msg.includes('ssrf')) categories.ssrf.push(log);
-        else if (msg.includes('timeout') || msg.includes('deadline')) categories.timeout.push(log);
-        else if (msg.includes('lookup') || msg.includes('dns') || msg.includes('no such host')) categories.dns.push(log);
-        else if (log.httpStatus && log.httpStatus >= 500) categories.http5xx.push(log);
-        else if (log.httpStatus && log.httpStatus >= 400) categories.http4xx.push(log);
-        else categories.others.push(log);
-      }
-    });
-    return categories;
-  }, [allRecentLogs]);
-
+  // Entitlements
   const { maxJobs, isPro, currentJobsCount } = useEntitlements();
   const isProPlan = isPro;
   const globalMaxLimit = maxJobs;
@@ -329,7 +350,7 @@ export const DashboardPage: React.FC = () => {
   const isLimitReached = createdJobsCount >= globalMaxLimit;
 
   // =========================================================================
-  // MULTI-RESOLUTION TIME BUCKET ENGINE
+  // CONTINUOUS MULTI-RESOLUTION TIME BUCKET ENGINE
   // =========================================================================
   const chartData = useMemo<ChartBucketData[]>(() => {
     const now = new Date();
@@ -370,16 +391,16 @@ export const DashboardPage: React.FC = () => {
           intervalMs = 15 * 60 * 1000; // 15 min -> 24 buckets
           break;
         case '24h':
-          intervalMs = 60 * 60 * 1000; // 1 hora -> 24 buckets (elimina coluna unica!)
+          intervalMs = 60 * 60 * 1000; // 1 hora -> 24 buckets
           break;
         case '3d':
           intervalMs = 3 * 60 * 60 * 1000; // 3 horas -> 24 buckets
           break;
         case '7d':
-          intervalMs = 12 * 60 * 60 * 1000; // 12 horas -> 14 buckets
+          intervalMs = 24 * 60 * 60 * 1000; // 1 dia -> 7 buckets diários
           break;
         case '30d':
-          intervalMs = 24 * 60 * 60 * 1000; // 1 dia -> 30 buckets
+          intervalMs = 24 * 60 * 60 * 1000; // 1 dia -> 30 buckets diários
           break;
         default:
           intervalMs = 60 * 60 * 1000;
@@ -429,11 +450,11 @@ export const DashboardPage: React.FC = () => {
         const weekday = dEnd.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
         label = `${weekday} ${dEnd.getHours().toString().padStart(2, '0')}h`;
       } else if (durationMs <= 7 * 24 * 60 * 60 * 1000) {
-        const weekday = dEnd.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-        const dayMonth = dEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        const weekday = dStart.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+        const dayMonth = dStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         label = `${weekday} ${dayMonth}`;
       } else {
-        label = dEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        label = dStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
       }
 
       // Rich Tooltip fullRange label
@@ -445,7 +466,7 @@ export const DashboardPage: React.FC = () => {
       if (isSameDay) {
         fullRange = `${datePrefix}, ${dStart.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} → ${dEnd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
       } else {
-        fullRange = `${dStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${dStart.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} → ${dEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${dEnd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+        fullRange = `${dStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} → ${dEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`;
       }
 
       return {
@@ -465,82 +486,124 @@ export const DashboardPage: React.FC = () => {
       };
     });
 
-    // 4. Filter logs by time window and job selector
-    const filteredLogs = allRecentLogs.filter((log) => {
-      const logTime = new Date(log.triggeredAt).getTime();
-      const matchesTime = logTime >= startTime && logTime <= nowTime;
-      const matchesJob = selectedJobIds.length === 0 || selectedJobIds.includes(log.jobId);
-      return matchesTime && matchesJob;
-    });
-
-    // 5. Assign each log into its exact bucket in O(1) time
-    filteredLogs.forEach((log) => {
-      const logTime = new Date(log.triggeredAt).getTime();
-      if (logTime >= startTime && logTime <= nowTime) {
-        const bucketIdx = Math.min(
-          Math.floor((logTime - startTime) / intervalMs),
+    // 4. Map backend buckets accurately into the time slots
+    const backendBuckets = telemetryData?.buckets || [];
+    backendBuckets.forEach((bb) => {
+      const bbTime = new Date(bb.bucket_time).getTime();
+      if (bbTime >= startTime && bbTime <= nowTime) {
+        const slotIdx = Math.min(
+          Math.floor((bbTime - startTime) / intervalMs),
           bucketCount - 1
         );
-        if (bucketIdx >= 0 && bucketIdx < buckets.length) {
-          const bucket = buckets[bucketIdx];
-          bucket.volume += 1;
-          bucket.logs.push(log);
-          if (log.status === 'success') {
-            bucket.successCount += 1;
-          } else {
-            bucket.failedCount += 1;
-            const jobName = log.jobName || 'Tarefa';
-            if (!bucket.failedJobs.includes(jobName)) {
-              bucket.failedJobs.push(jobName);
-            }
+        if (slotIdx >= 0 && slotIdx < buckets.length) {
+          const slot = buckets[slotIdx];
+          slot.volume += bb.volume;
+          slot.successCount += bb.success_count;
+          slot.failedCount += bb.failed_count;
+          if (bb.avg_latency > 0) {
+            slot.avgLatency = slot.avgLatency === 0 ? bb.avg_latency : Math.round((slot.avgLatency + bb.avg_latency) / 2);
           }
-          if (typeof log.durationMs === 'number' && !isNaN(log.durationMs)) {
-            (bucket as unknown as { durations: number[] }).durations = (bucket as unknown as { durations: number[] }).durations || [];
-            (bucket as unknown as { durations: number[] }).durations.push(log.durationMs);
+          if (bb.max_latency > slot.maxLatency) {
+            slot.maxLatency = bb.max_latency;
+          }
+          if (bb.failed_jobs) {
+            bb.failed_jobs.forEach((fj) => {
+              if (!slot.failedJobs.includes(fj)) slot.failedJobs.push(fj);
+            });
           }
         }
       }
     });
 
-    // 6. Compute statistics per bucket
-    buckets.forEach((bucket) => {
-      const durations = (bucket as unknown as { durations?: number[] }).durations || [];
-      if (durations.length > 0) {
-        bucket.avgLatency = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
-        bucket.maxLatency = Math.max(...durations);
-      }
-      bucket.successRate = bucket.volume > 0 ? Math.round((bucket.successCount / bucket.volume) * 100) : 100;
+    // 5. Calculate success rate per slot
+    buckets.forEach((slot) => {
+      slot.successRate = slot.volume > 0 ? Math.round((slot.successCount / slot.volume) * 100) : 100;
     });
 
     return buckets;
-  }, [allRecentLogs, chartFilter, granularity, selectedJobIds]);
+  }, [telemetryData, chartFilter, granularity]);
 
   const isChartEmpty = chartData.every((d) => d.volume === 0);
 
-  // Period Summary KPI Strip
+  // Period Summary KPI Strip (Directly from backend calculation or fallback to bucket sum)
   const periodSummary = useMemo(() => {
+    if (telemetryData?.summary) {
+      return {
+        totalVolume: telemetryData.summary.total_volume,
+        totalSuccess: telemetryData.summary.success_count,
+        totalFailed: telemetryData.summary.failed_count,
+        rate: telemetryData.summary.total_volume > 0 ? telemetryData.summary.success_rate.toFixed(1) : '-',
+        avg: telemetryData.summary.avg_latency,
+        max: telemetryData.summary.max_latency,
+      };
+    }
     const totalVolume = chartData.reduce((acc, b) => acc + b.volume, 0);
     const totalSuccess = chartData.reduce((acc, b) => acc + b.successCount, 0);
     const totalFailed = chartData.reduce((acc, b) => acc + b.failedCount, 0);
     const rate = totalVolume > 0 ? ((totalSuccess / totalVolume) * 100).toFixed(1) : '-';
-    
-    const allDurations = chartData.flatMap((b) => (b as unknown as { durations?: number[] }).durations || []);
+    const allDurations = chartData.map((b) => b.avgLatency).filter((v) => v > 0);
     const avg = allDurations.length > 0 ? Math.round(allDurations.reduce((a, b) => a + b, 0) / allDurations.length) : 0;
-    const max = allDurations.length > 0 ? Math.max(...allDurations) : 0;
+    const max = Math.max(0, ...chartData.map((b) => b.maxLatency));
 
     return { totalVolume, totalSuccess, totalFailed, rate, avg, max };
-  }, [chartData]);
+  }, [telemetryData, chartData]);
 
   // Selected bucket for Drill-down
   const activeBucket = selectedBucketIndex !== null && chartData[selectedBucketIndex] ? chartData[selectedBucketIndex] : null;
 
+  // Drilldown log fetch when clicking a bucket
+  useEffect(() => {
+    if (!activeBucket) return;
+    let active = true;
+    const fetchBucketLogs = async () => {
+      setLoadingDrilldown(true);
+      try {
+        const start = new Date(activeBucket.startTime).toISOString();
+        const end = new Date(activeBucket.endTime).toISOString();
+        const res = await api.get(`/v1/executions?limit=50&start_date=${start}&end_date=${end}`);
+        const raw = (res.data?.data || []) as LogEntry[];
+        const mapped = raw.map((log) => {
+          const job = jobs.find((j) => j.id === log.jobId);
+          return {
+            ...log,
+            jobName: job ? job.name : 'Job Removido',
+            jobUrl: job ? job.url : '',
+          };
+        });
+        if (active) setDrilldownLogs(mapped);
+      } catch (err) {
+        console.error('Failed to fetch bucket logs', err);
+      } finally {
+        if (active) setLoadingDrilldown(false);
+      }
+    };
+    fetchBucketLogs();
+    return () => {
+      active = false;
+    };
+  }, [activeBucket, jobs]);
+
   // Filtered activities list based on drilldown selection
   const displayActivities = useMemo(() => {
     if (activeBucket) {
-      return activeBucket.logs;
+      return drilldownLogs;
     }
-    return allRecentLogs.slice(0, 10);
-  }, [activeBucket, allRecentLogs]);
+    return recentLogs.slice(0, 10);
+  }, [activeBucket, drilldownLogs, recentLogs]);
+
+  // Error breakdown from backend
+  const errorCounts = useMemo(() => {
+    return (
+      telemetryData?.errors || {
+        ssrf: 0,
+        timeout: 0,
+        dns: 0,
+        http5xx: 0,
+        http4xx: 0,
+        others: 0,
+      }
+    );
+  }, [telemetryData]);
 
   return (
     <div className="space-y-6">
@@ -649,11 +712,11 @@ export const DashboardPage: React.FC = () => {
             />
             <StatCard
               title="Total de Execuções"
-              value={totalExecutions}
+              value={periodSummary.totalVolume}
               color="indigo"
               isLoading={isPageLoading}
-              description={totalExecutions > 0 ? 'Últimos 30 dias' : 'Nenhuma execução'}
-              tooltip="Total de requisições disparadas pelo worker nos últimos 30 dias."
+              description={periodSummary.totalVolume > 0 ? `Filtrado por: ${chartFilter}` : 'Nenhuma execução'}
+              tooltip="Total de requisições disparadas pelo worker no período selecionado."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -662,10 +725,10 @@ export const DashboardPage: React.FC = () => {
             />
             <StatCard
               title="Taxa de Sucesso"
-              value={successRate === '-' ? '-' : `${successRate}%`}
+              value={periodSummary.rate === '-' ? '-' : `${periodSummary.rate}%`}
               color="emerald"
               isLoading={isPageLoading}
-              description={successRate === '-' ? 'Sem execuções registradas' : 'Média geral do projeto'}
+              description={periodSummary.rate === '-' ? 'Sem execuções registradas' : `Média do período (${chartFilter})`}
               tooltip="O percentual de requisições HTTP disparadas com sucesso (código menor que 400)."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -675,10 +738,10 @@ export const DashboardPage: React.FC = () => {
             />
             <StatCard
               title="Tempo de Resposta Médio"
-              value={avgResponseTime}
+              value={periodSummary.avg > 0 ? `${periodSummary.avg}ms` : '-'}
               color="purple"
               isLoading={isPageLoading}
-              description={avgResponseTime === '-' ? 'Sem execuções registradas' : 'Média geral de webhooks'}
+              description={periodSummary.avg === 0 ? 'Sem execuções registradas' : `Média do período (${chartFilter})`}
               tooltip="A latência média de resposta dos seus servidores de webhook ao receber o agendamento."
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -704,7 +767,7 @@ export const DashboardPage: React.FC = () => {
                   </span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Distribuição temporal de execuções com agrupamento contínuo em 24h, latência em tempo real e taxa de entrega.
+                  Distribuição temporal contínua por agregação SQL em tempo real, sem limites de linhas ou cortes de histórico.
                 </p>
               </div>
 
@@ -1079,6 +1142,9 @@ export const DashboardPage: React.FC = () => {
                   <span className="text-slate-400">
                     ({activeBucket.volume} reqs • {activeBucket.successCount} sucessos, {activeBucket.failedCount} falhas)
                   </span>
+                  {loadingDrilldown && (
+                    <span className="text-cyan-400 animate-pulse">Carregando logs do período...</span>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1159,7 +1225,7 @@ export const DashboardPage: React.FC = () => {
                       Não foi possível carregar os dados de telemetria (timeout ou erro de conexão).
                     </p>
                     <button
-                      onClick={() => fetchRecentLogs(true)}
+                      onClick={() => fetchTelemetry(true)}
                       className="mt-3 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-lg hover:bg-cyan-500/20 transition-all cursor-pointer"
                     >
                       Tentar Novamente 🔄
@@ -1174,7 +1240,7 @@ export const DashboardPage: React.FC = () => {
                   <div className="space-y-1.5 max-w-sm">
                     <h4 className="text-xs font-bold text-slate-300 font-mono">Processando telemetria...</h4>
                     <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-                      Carregando logs de execução e preparando gráficos de telemetria contínuos.
+                      Calculando métricas agregadas diretamente do banco de dados em tempo real.
                     </p>
                   </div>
                 </div>
@@ -1188,7 +1254,7 @@ export const DashboardPage: React.FC = () => {
                   <div className="space-y-1.5 max-w-sm">
                     <h4 className="text-xs font-bold text-slate-300 font-mono">Sem execuções no período selecionado ({chartFilter})</h4>
                     <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-                      Nenhum disparo de webhook foi registrado nas últimas {chartFilter}. Seus jobs agendados estão prontos para disparar assim que o cronograma for atingido.
+                      Nenhum disparo de webhook foi registrado no período selecionado. Seus jobs agendados estão prontos para disparar assim que o cronograma for atingido.
                     </p>
                   </div>
                 </div>
@@ -1484,14 +1550,14 @@ export const DashboardPage: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                           {[
-                            { label: 'SSRF Bloqueado', count: errorBreakdown.ssrf.length, logs: errorBreakdown.ssrf, color: 'bg-rose-500', icon: '🛡️', key: 'ssrf' },
-                            { label: 'Timeouts / Deadlines', count: errorBreakdown.timeout.length, logs: errorBreakdown.timeout, color: 'bg-amber-500', icon: '⏱️', key: 'timeout' },
-                            { label: 'Resolução DNS / Host', count: errorBreakdown.dns.length, logs: errorBreakdown.dns, color: 'bg-cyan-500', icon: '🌐', key: 'dns' },
-                            { label: 'Erros do Servidor (5xx)', count: errorBreakdown.http5xx.length, logs: errorBreakdown.http5xx, color: 'bg-purple-500', icon: '🔥', key: 'http5xx' },
-                            { label: 'Erros do Cliente (4xx)', count: errorBreakdown.http4xx.length, logs: errorBreakdown.http4xx, color: 'bg-yellow-500', icon: '⚠️', key: 'http4xx' },
-                            { label: 'Outros Erros', count: errorBreakdown.others.length, logs: errorBreakdown.others, color: 'bg-slate-500', icon: '⚙️', key: 'others' },
+                            { label: 'SSRF Bloqueado', count: errorCounts.ssrf, color: 'bg-rose-500', icon: '🛡️', key: 'ssrf' },
+                            { label: 'Timeouts / Deadlines', count: errorCounts.timeout, color: 'bg-amber-500', icon: '⏱️', key: 'timeout' },
+                            { label: 'Resolução DNS / Host', count: errorCounts.dns, color: 'bg-cyan-500', icon: '🌐', key: 'dns' },
+                            { label: 'Erros do Servidor (5xx)', count: errorCounts.http5xx, color: 'bg-purple-500', icon: '🔥', key: 'http5xx' },
+                            { label: 'Erros do Cliente (4xx)', count: errorCounts.http4xx, color: 'bg-yellow-500', icon: '⚠️', key: 'http4xx' },
+                            { label: 'Outros Erros', count: errorCounts.others, color: 'bg-slate-500', icon: '⚙️', key: 'others' },
                           ].map((item, idx) => {
-                            const totalFailed = Object.values(errorBreakdown).reduce((sum, list) => sum + list.length, 0);
+                            const totalFailed = periodSummary.totalFailed;
                             const pct = totalFailed > 0 ? Math.round((item.count / totalFailed) * 100) : 0;
                             const isExpanded = selectedErrorCategory === item.key;
                             return (
@@ -1513,32 +1579,6 @@ export const DashboardPage: React.FC = () => {
                                 <div className="w-full h-1 bg-slate-950 rounded-full overflow-hidden border border-indigo-950/20">
                                   <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
                                 </div>
-
-                                {isExpanded && (
-                                  <div className="mt-2 pl-3 py-1.5 border-l border-indigo-950/60 max-h-40 overflow-y-auto space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                                    {item.logs.length === 0 ? (
-                                      <p className="text-[9px] text-slate-500 italic">Nenhuma falha neste grupo.</p>
-                                    ) : (
-                                      item.logs.map((log) => (
-                                        <div
-                                          key={log.id}
-                                          onClick={() => setLogModalOpen(true, log.id)}
-                                          className="p-1.5 bg-indigo-950/20 border border-indigo-950/50 hover:border-cyan-500/30 rounded-lg cursor-pointer hover:bg-indigo-950/40 transition-all text-left"
-                                        >
-                                          <div className="flex justify-between items-center text-[9px] font-bold text-slate-200">
-                                            <span className="truncate max-w-30">{log.jobName || 'Tarefa'}</span>
-                                            <span className="text-slate-400 font-mono">
-                                              {new Date(log.triggeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                          </div>
-                                          <p className="text-[8px] text-rose-400 font-mono truncate max-w-48 mt-0.5">
-                                            {log.responseBody || 'Sem resposta'}
-                                          </p>
-                                        </div>
-                                      ))
-                                    )}
-                                  </div>
-                                )}
                               </div>
                             );
                           })}
@@ -1554,7 +1594,7 @@ export const DashboardPage: React.FC = () => {
           {/* Recent Activity List with drilldown connection */}
           <RecentActivity
             activities={displayActivities}
-            isLoading={isPageLoading}
+            isLoading={isPageLoading || loadingDrilldown}
             filterBadge={
               activeBucket ? (
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 px-2.5 py-0.5 rounded-full">
@@ -1574,7 +1614,7 @@ export const DashboardPage: React.FC = () => {
       )}
 
       <PixModal isOpen={isPixModalOpen} onClose={() => setIsPixModalOpen(false)} />
-      <LogDetail logs={allRecentLogs} />
+      <LogDetail logs={recentLogs} />
     </div>
   );
 };
