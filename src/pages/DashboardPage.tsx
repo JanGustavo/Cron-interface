@@ -45,22 +45,22 @@ export interface ChartBucketData {
 }
 
 interface BackendBucket {
-  bucket_time: string;
+  bucketTime: string;
   volume: number;
-  success_count: number;
-  failed_count: number;
-  avg_latency: number;
-  max_latency: number;
-  failed_jobs: string[];
+  successCount: number;
+  failedCount: number;
+  avgLatency: number;
+  maxLatency: number;
+  failedJobs: string[];
 }
 
 interface BackendSummary {
-  total_volume: number;
-  success_count: number;
-  failed_count: number;
-  success_rate: number;
-  avg_latency: number;
-  max_latency: number;
+  totalVolume: number;
+  successCount: number;
+  failedCount: number;
+  successRate: number;
+  avgLatency: number;
+  maxLatency: number;
 }
 
 interface BackendErrors {
@@ -489,7 +489,7 @@ export const DashboardPage: React.FC = () => {
     // 4. Map backend buckets accurately into the time slots
     const backendBuckets = telemetryData?.buckets || [];
     backendBuckets.forEach((bb) => {
-      const bbTime = new Date(bb.bucket_time).getTime();
+      const bbTime = new Date(bb.bucketTime).getTime();
       if (bbTime >= startTime && bbTime <= nowTime) {
         const slotIdx = Math.min(
           Math.floor((bbTime - startTime) / intervalMs),
@@ -498,16 +498,16 @@ export const DashboardPage: React.FC = () => {
         if (slotIdx >= 0 && slotIdx < buckets.length) {
           const slot = buckets[slotIdx];
           slot.volume += bb.volume;
-          slot.successCount += bb.success_count;
-          slot.failedCount += bb.failed_count;
-          if (bb.avg_latency > 0) {
-            slot.avgLatency = slot.avgLatency === 0 ? bb.avg_latency : Math.round((slot.avgLatency + bb.avg_latency) / 2);
+          slot.successCount += bb.successCount;
+          slot.failedCount += bb.failedCount;
+          if (bb.avgLatency > 0) {
+            slot.avgLatency = slot.avgLatency === 0 ? bb.avgLatency : Math.round((slot.avgLatency + bb.avgLatency) / 2);
           }
-          if (bb.max_latency > slot.maxLatency) {
-            slot.maxLatency = bb.max_latency;
+          if (bb.maxLatency > slot.maxLatency) {
+            slot.maxLatency = bb.maxLatency;
           }
-          if (bb.failed_jobs) {
-            bb.failed_jobs.forEach((fj) => {
+          if (bb.failedJobs) {
+            bb.failedJobs.forEach((fj) => {
               if (!slot.failedJobs.includes(fj)) slot.failedJobs.push(fj);
             });
           }
@@ -529,12 +529,12 @@ export const DashboardPage: React.FC = () => {
   const periodSummary = useMemo(() => {
     if (telemetryData?.summary) {
       return {
-        totalVolume: telemetryData.summary.total_volume,
-        totalSuccess: telemetryData.summary.success_count,
-        totalFailed: telemetryData.summary.failed_count,
-        rate: telemetryData.summary.total_volume > 0 ? telemetryData.summary.success_rate.toFixed(1) : '-',
-        avg: telemetryData.summary.avg_latency,
-        max: telemetryData.summary.max_latency,
+        totalVolume: telemetryData.summary.totalVolume,
+        totalSuccess: telemetryData.summary.successCount,
+        totalFailed: telemetryData.summary.failedCount,
+        rate: telemetryData.summary.totalVolume > 0 ? telemetryData.summary.successRate.toFixed(1) : '-',
+        avg: telemetryData.summary.avgLatency,
+        max: telemetryData.summary.maxLatency,
       };
     }
     const totalVolume = chartData.reduce((acc, b) => acc + b.volume, 0);
