@@ -777,7 +777,17 @@ export const JobModal: React.FC = () => {
                 jobLogs.map((log, idx) => (
                   <div
                     key={log.id}
-                    className={`p-3.5 border-b border-indigo-950/25 last:border-0 flex flex-col gap-2 transition-colors ${
+                    onClick={(e) => {
+                      if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        openLiveExecutionModal(activeJob.id);
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      openLiveExecutionModal(activeJob.id);
+                    }}
+                    className={`p-3.5 border-b border-indigo-950/25 last:border-0 flex flex-col gap-2 transition-colors cursor-pointer ${
                       idx % 2 === 0
                         ? 'bg-[#070a1a]/60 hover:bg-indigo-950/40'
                         : 'bg-[#0e132e]/70 hover:bg-indigo-950/50'
