@@ -3,6 +3,7 @@ import { useJobsStore } from '../../store/jobsStore';
 import { useUiStore } from '../../store/uiStore';
 import { StatusBadge } from '../Dashboard/StatusBadge';
 import { translateSchedule } from '../Shared/cronTranslator';
+import { LogDetail } from '../Logs/LogDetail';
 import api from '../../services/api';
 import type { Job, JobLog } from '../../types/jobs';
 import Swal from 'sweetalert2';
@@ -405,7 +406,8 @@ export const JobModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Dark Overlay backdrop */}
       <div
         className="fixed inset-0 bg-[#04060c]/80 backdrop-filter backdrop-blur-sm cursor-pointer"
@@ -892,8 +894,10 @@ export const JobModal: React.FC = () => {
               </div>
             </>
           )}
-        </div>
-      </div>
+</div>
     </div>
+    </div>
+    <LogDetail logs={jobLogs} />
+    </>
   );
 };
