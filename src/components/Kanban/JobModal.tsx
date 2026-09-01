@@ -105,7 +105,7 @@ const getNextRunPreview = (schedule: string, timezone: string): string => {
 
 export const JobModal: React.FC = () => {
   const { activeJob, setActiveJob, updateJob, deleteJob, jobs } = useJobsStore();
-  const { isJobModalOpen, setJobModalOpen, showToast, setPlansModalOpen, openLiveExecutionModal } = useUiStore();
+  const { isJobModalOpen, setJobModalOpen, showToast, setPlansModalOpen, openLiveExecutionModal, setLogModalOpen } = useUiStore();
   const { alertsWebhooksEnabled, workflowsEnabled } = useEntitlements();
   const [jobLogs, setJobLogs] = useState<JobLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -780,12 +780,14 @@ export const JobModal: React.FC = () => {
                     onClick={(e) => {
                       if (e.ctrlKey || e.metaKey) {
                         e.preventDefault();
-                        openLiveExecutionModal(activeJob.id);
+                        setLogModalOpen(true, log.id);
+                      } else {
+                        setLogModalOpen(true, log.id);
                       }
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault();
-                      openLiveExecutionModal(activeJob.id);
+                      setLogModalOpen(true, log.id);
                     }}
                     className={`p-3.5 border-b border-indigo-950/25 last:border-0 flex flex-col gap-2 transition-colors cursor-pointer ${
                       idx % 2 === 0
