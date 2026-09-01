@@ -10,7 +10,7 @@ interface RecentActivityProps {
 }
 
 export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [], isLoading, filterBadge }) => {
-  const { setLogModalOpen } = useUiStore();
+  const { setLogModalOpen, openLiveExecutionModal } = useUiStore();
 
   const items = activities;
 
@@ -119,7 +119,18 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [],
               items.map((log, index) => (
                 <tr
                   key={log.id}
-                  onClick={() => setLogModalOpen(true, log.id)}
+                  onClick={(e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                      e.preventDefault();
+                      openLiveExecutionModal(log.jobId);
+                    } else {
+                      setLogModalOpen(true, log.id);
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    openLiveExecutionModal(log.jobId);
+                  }}
                   className={`cursor-pointer transition-colors group ${
                     index % 2 === 0
                       ? 'bg-[#070a1a]/40 hover:bg-indigo-900/30'

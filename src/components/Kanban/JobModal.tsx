@@ -142,6 +142,13 @@ export const JobModal: React.FC = () => {
   const [editNextJobId, setEditNextJobId] = useState('');
   const [editTagsInput, setEditTagsInput] = useState('');
 
+  const copyUrl = () => {
+    if (!activeJob) return;
+    navigator.clipboard.writeText(activeJob.url);
+    soundFx.playAction();
+    showToast('URL copiada!', 'success');
+  };
+
   const fetchJobLogs = useCallback(() => {
     if (!activeJob) return;
     setLoadingLogs(true);
@@ -557,7 +564,21 @@ export const JobModal: React.FC = () => {
 
           {/* Webhook Destination URL */}
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Destino (Webhook URL)</label>
+            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center justify-between">
+              Destino (Webhook URL)
+              {!isEditing && (
+                <button
+                  onClick={copyUrl}
+                  className="p-1 rounded bg-indigo-950/30 hover:bg-indigo-950/60 text-slate-500 hover:text-indigo-400 transition-colors"
+                  title="Copiar URL"
+                  aria-label="Copiar URL"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                </button>
+              )}
+            </label>
             {isEditing ? (
               <input
                 type="text"
@@ -567,7 +588,11 @@ export const JobModal: React.FC = () => {
                 placeholder="https://api.exemplo.com/webhook"
               />
             ) : (
-              <div className="px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-xs font-mono text-slate-300 break-all select-all select-none">
+              <div
+                className="px-4 py-3 bg-slate-900/60 border border-indigo-950/40 rounded-xl text-xs font-mono text-slate-300 break-all select-all cursor-pointer hover:bg-slate-800/50 transition-colors"
+                onClick={copyUrl}
+                title="Clique para copiar"
+              >
                 {activeJob.url}
               </div>
             )}
