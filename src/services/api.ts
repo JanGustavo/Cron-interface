@@ -147,9 +147,19 @@ api.interceptors.request.use(
 );
 
 // Interceptor de respostas
+const shouldTransformResponseData = (data: unknown): boolean => {
+  if (data === null || data === undefined) return false;
+  if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') return false;
+  if (typeof Blob !== 'undefined' && data instanceof Blob) return false;
+  if (typeof FormData !== 'undefined' && data instanceof FormData) return false;
+  if (typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer) return false;
+  if (ArrayBuffer.isView(data)) return false;
+  return typeof data === 'object';
+};
+
 api.interceptors.response.use(
   (response) => {
-    if (response.data) {
+    if (shouldTransformResponseData(response.data)) {
       response.data = keysToCamel(response.data);
     }
     return response;
@@ -182,7 +192,7 @@ api.interceptors.response.use(
         }
       }
 
-      if (error.response && error.response.data) {
+      if (error.response && shouldTransformResponseData(error.response.data)) {
         error.response.data = keysToCamel(error.response.data);
       }
     }

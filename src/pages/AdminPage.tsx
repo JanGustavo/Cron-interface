@@ -160,6 +160,7 @@ export const AdminPage: React.FC = () => {
   }, []);
   const [auditLoading, setAuditLoading] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
+  const [showTopUsersModal, setShowTopUsersModal] = useState(true);
   const [showUserModal, setShowUserModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
@@ -1247,7 +1248,7 @@ export const AdminPage: React.FC = () => {
   )}
 
   {/* Top Users Leaderboard Modal */}
-  {topUsers.length > 0 && (
+  {showTopUsersModal && topUsers.length > 0 && (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#04060c]/90 backdrop-blur-sm">
       <div className="bg-[#070913]/95 border border-amber-500/30 rounded-3xl max-w-md w-full max-h-[80vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="p-5 border-b border-amber-950/40 flex justify-between items-center bg-amber-950/20">
@@ -1258,7 +1259,7 @@ export const AdminPage: React.FC = () => {
               <p className="text-xs text-slate-400">Ranking por volume de jobs</p>
             </div>
           </div>
-          <button onClick={() => setShowAuditModal(false)} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-amber-950/40 transition-colors">
+          <button onClick={() => setShowTopUsersModal(false)} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-amber-950/40 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -1278,7 +1279,7 @@ export const AdminPage: React.FC = () => {
           ))}
         </div>
         <div className="p-4 border-t border-amber-950/40 bg-amber-950/20 flex justify-end">
-          <button onClick={() => setShowAuditModal(false)} className="w-full px-5 py-2.5 text-xs font-bold text-white bg-amber-650/80 hover:bg-amber-200/80 rounded-xl border border-amber-500/60 transition-all">
+          <button onClick={() => setShowTopUsersModal(false)} className="w-full px-5 py-2.5 text-xs font-bold text-white bg-amber-650/80 hover:bg-amber-200/80 rounded-xl border border-amber-500/60 transition-all">
             Fechar
           </button>
         </div>
