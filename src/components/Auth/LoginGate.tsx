@@ -194,7 +194,7 @@ export const LoginGate: React.FC = () => {
 
   const handleCopyPlaygroundCode = () => {
     const code = activeSandboxTab === 'curl'
-      ? `curl -X POST https://cronflow.jangustavo.me/v1/jobs \\\n  -H "Authorization: Bearer cf_live_suaAPIKey" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name": "Sync Vendas", "schedule": "0 8 * * *", "url": "https://api.vendas.com/sync"}'`
+      ? `curl -X POST https://cronflow.app/v1/jobs \\\n  -H "Authorization: Bearer cf_live_suaAPIKey" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name": "Sync Vendas", "schedule": "0 8 * * *", "url": "https://api.vendas.com/sync"}'`
       : activeSandboxTab === 'json'
       ? `{\n  "name": "Sincronizador Diário",\n  "schedule": "every:24h",\n  "url": "https://meu-endpoint.com/webhook",\n  "http_method": "POST",\n  "timezone": "America/Sao_Paulo",\n  "tags": ["vendas", "faturamento"]\n}`
       : `👤 Você: crie um job chamado Monitor de Dolar para rodar toda segunda-feira às 12h batendo na URL https://economia.com/api usando o método GET\n🤖 Agente: Executando Tool createJob... Job criado com ID 4a82-f38b com sucesso! 🚀`;
@@ -1282,7 +1282,7 @@ export const LoginGate: React.FC = () => {
                 <code>
 <span className="text-slate-500"># Dispara uma rota de sync todo dia às 8h da manhã</span>
 <br />
-curl -X POST https://cronflow.jangustavo.me/v1/jobs \
+curl -X POST https://cronflow.app/v1/jobs \
   -H <span className="text-emerald-400">"Authorization: Bearer cf_live_suaAPIKey"</span> \
   -H <span className="text-emerald-400">"Content-Type: application/json"</span> \
   -d <span className="text-cyan-400">'{'{'}"name": "Sync Vendas", "schedule": "0 8 * * *", "url": "https://api.vendas.com/sync"{'}'}'</span>
