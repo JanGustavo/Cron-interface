@@ -1683,22 +1683,40 @@ export const ProfilePage: React.FC = () => {
                       )}
                     </h4>
                     <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                      Para times e produtos em produção que não podem se dar ao luxo de falhas silenciosas.
+                      Para desenvolvedores, SaaS e produtos em produção que não podem se dar ao luxo de falhas silenciosas.
                     </p>
 
                     {/* Benefits List */}
                     <ul className="mt-6 space-y-3 text-xs text-slate-200">
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2.5 font-medium">
                         <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Até <strong>50 jobs</strong> ativos — disparo a cada 30s</span>
+                        <span>Até <strong>50 jobs</strong> ativos — execuções a partir de 30s</span>
+                      </li>
+                      <li className="flex items-start gap-2.5 font-medium">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>🔗 <strong>Workflows encadeados</strong> — pipelines de jobs (DAG)</span>
+                      </li>
+                      <li className="flex items-start gap-2.5 font-medium">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>🚨 <strong>Alertas imediatos</strong> via Webhooks (Discord, Slack, Custom)</span>
+                      </li>
+                      <li className="flex items-start gap-2.5 font-medium">
+                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>🤖 <strong>Flow AI Copilot</strong> — criação de pipelines por linguagem natural</span>
                       </li>
                       <li className="flex items-start gap-2.5">
                         <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Múltiplos projetos <strong>(workspaces)</strong> ativos</span>
+                        <span>Múltiplos projetos <strong>(workspaces)</strong> isolados</span>
                       </li>
                       <li className="flex items-start gap-2.5">
                         <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -1710,25 +1728,7 @@ export const ProfilePage: React.FC = () => {
                         <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Alertas imediatos por e-mail na 3ª falha consecutiva</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>Webhooks de alerta — <strong>Slack, Discord, ntfy</strong> e genérico</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>Workflows encadeados — <strong>pipeline de jobs</strong></span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span><strong>Flow AI Copilot</strong> — crie jobs por linguagem natural</span>
+                        <span>Notificação por e-mail na 3ª falha consecutiva</span>
                       </li>
                       <li className="flex items-start gap-2.5">
                         <svg className="w-4 h-4 text-cyan-400 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>

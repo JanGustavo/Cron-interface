@@ -82,7 +82,7 @@ const HARDCODED_README = `🚀 CronFlow — Plataforma de Agendamento e Automaç
 
 Bem-vindo ao **CronFlow**! Este guia detalha o funcionamento interno de nosso sistema, desde a arquitetura de múltiplos binários até os fluxos de dados mais complexos.
 
-O CronFlow é uma plataforma SaaS de agendamento de tarefas e disparo de webhooks (um "CronTab em escala como serviço"). O sistema permite que nossos usuários cadastrem requisições HTTP agendadas (via expressões cron) que devem ser executadas com alta precisão, tolerância a falhas e total rastreabilidade.
+O **CronFlow** é uma plataforma SaaS de agendamento, execução e orquestração de tarefas HTTP ("Do cron à pipeline"). O sistema permite que desenvolvedores e produtos em produção cadastrem requisições HTTP agendadas e encadeadas (via expressões cron ou intervalos) executadas com alta precisão, retentativas automatizadas, tolerância a falhas, alertas imediatos e total rastreabilidade.
 
 ---
 
