@@ -8,21 +8,29 @@ interface MonitorRule {
   name: string;
   key: string;
   operator: string;
-  threshold_value: string;
-  alert_email: boolean;
+  thresholdValue?: string;
+  threshold_value?: string;
+  alertEmail?: boolean;
+  alert_email?: boolean;
+  webhookUrl?: string;
   webhook_url?: string;
-  is_enabled: boolean;
-  created_at: string;
+  isEnabled?: boolean;
+  is_enabled?: boolean;
+  createdAt?: string;
+  created_at?: string;
 }
 
 interface CheckResult {
   key: string;
-  current_value: string;
+  currentValue?: string;
+  current_value?: string;
   evaluated: boolean;
   violated: boolean;
   rules: {
-    rule_id: string;
-    rule_name: string;
+    ruleId?: string;
+    rule_id?: string;
+    ruleName?: string;
+    rule_name?: string;
     passed: boolean;
     message?: string;
   }[];
@@ -226,7 +234,7 @@ export const MonitorPage: React.FC = () => {
             <div className={`p-4 rounded-xl border ${checkResult.violated ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/10 border-emerald-500/30'} space-y-3 animate-in fade-in duration-200`}>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-200">
-                  Chave: <code className="text-cyan-400">{checkResult.key}</code> = <span className="text-white font-mono">{checkResult.current_value}</span>
+                  Chave: <code className="text-cyan-400">{checkResult.key}</code> = <span className="text-white font-mono">{checkResult.currentValue ?? checkResult.current_value}</span>
                 </span>
                 <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md ${checkResult.violated ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                   {checkResult.violated ? '⚠️ Regra Violada' : '✓ OK (Passou)'}
@@ -240,7 +248,7 @@ export const MonitorPage: React.FC = () => {
                   {checkResult.rules.map((r, i) => (
                     <div key={i} className="text-xs p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between">
                       <div>
-                        <span className="font-semibold text-slate-200">{r.rule_name}</span>
+                        <span className="font-semibold text-slate-200">{r.ruleName ?? r.rule_name}</span>
                         {r.message && <p className="text-[11px] text-red-400 mt-0.5">{r.message}</p>}
                       </div>
                       <span className={r.passed ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
@@ -388,49 +396,55 @@ export const MonitorPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {rules.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-white">{r.name}</td>
-                    <td className="py-3 px-4 font-mono text-cyan-400">{r.key}</td>
-                    <td className="py-3 px-4 font-mono text-slate-200">
-                      <span className="px-2 py-0.5 text-xs font-bold rounded bg-slate-900 border border-slate-800 text-amber-400">
-                        {r.operator === 'gte' && `>= ${r.threshold_value}`}
-                        {r.operator === 'gt' && `> ${r.threshold_value}`}
-                        {r.operator === 'lte' && `<= ${r.threshold_value}`}
-                        {r.operator === 'lt' && `< ${r.threshold_value}`}
-                        {r.operator === 'eq' && `== ${r.threshold_value}`}
-                        {r.operator === 'ne' && `!= ${r.threshold_value}`}
-                        {r.operator === 'contains' && `contém "${r.threshold_value}"`}
-                        {!['gte','gt','lte','lt','eq','ne','contains'].includes(r.operator) && `${r.operator} ${r.threshold_value}`}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {r.alert_email && (
-                          <span className="px-2 py-0.5 text-[10px] rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                            E-mail
-                          </span>
-                        )}
-                        {r.webhook_url && (
-                          <span className="px-2 py-0.5 text-[10px] rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                            Webhook
-                          </span>
-                        )}
-                        {!r.alert_email && !r.webhook_url && (
-                          <span className="text-slate-500 text-xs">-</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => handleDeleteRule(r.id)}
-                        className="text-red-400 hover:text-red-300 font-semibold cursor-pointer transition-colors"
-                      >
-                        Excluir
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {rules.map((r) => {
+                  const threshold = r.thresholdValue ?? r.threshold_value ?? '';
+                  const hasEmail = r.alertEmail ?? r.alert_email ?? false;
+                  const webhook = r.webhookUrl ?? r.webhook_url;
+
+                  return (
+                    <tr key={r.id} className="hover:bg-slate-900/40 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-white">{r.name}</td>
+                      <td className="py-3 px-4 font-mono text-cyan-400">{r.key}</td>
+                      <td className="py-3 px-4 font-mono text-slate-200">
+                        <span className="px-2 py-0.5 text-xs font-bold rounded bg-slate-900 border border-slate-800 text-amber-400">
+                          {r.operator === 'gte' && `>= ${threshold}`}
+                          {r.operator === 'gt' && `> ${threshold}`}
+                          {r.operator === 'lte' && `<= ${threshold}`}
+                          {r.operator === 'lt' && `< ${threshold}`}
+                          {r.operator === 'eq' && `== ${threshold}`}
+                          {r.operator === 'ne' && `!= ${threshold}`}
+                          {r.operator === 'contains' && `contém "${threshold}"`}
+                          {!['gte','gt','lte','lt','eq','ne','contains'].includes(r.operator) && `${r.operator} ${threshold}`}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          {hasEmail && (
+                            <span className="px-2 py-0.5 text-[10px] rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                              E-mail
+                            </span>
+                          )}
+                          {webhook && (
+                            <span className="px-2 py-0.5 text-[10px] rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                              Webhook
+                            </span>
+                          )}
+                          {!hasEmail && !webhook && (
+                            <span className="text-slate-500 text-xs">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => handleDeleteRule(r.id)}
+                          className="text-red-400 hover:text-red-300 font-semibold cursor-pointer transition-colors"
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
