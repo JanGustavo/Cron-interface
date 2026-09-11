@@ -2,6 +2,7 @@ import React from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import type { Job, KanbanStatus } from '../../types/jobs';
 import { JobCard } from './JobCard';
+import { JobMonitorRulesPanel } from './JobMonitorRulesPanel';
 
 interface KanbanColumnProps {
   id: KanbanStatus;
@@ -91,6 +92,9 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, jobs, has
           </div>
         )}
       </Droppable>
+
+      {/* Render once per board and portal into the JobModal content. */}
+      {id === 'draft' && <JobMonitorRulesPanel />}
     </div>
   );
 };
