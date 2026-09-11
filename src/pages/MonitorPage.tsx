@@ -393,7 +393,16 @@ export const MonitorPage: React.FC = () => {
                     <td className="py-3 px-4 font-semibold text-white">{r.name}</td>
                     <td className="py-3 px-4 font-mono text-cyan-400">{r.key}</td>
                     <td className="py-3 px-4 font-mono text-slate-200">
-                      esperado <span className="text-amber-400 font-bold">{r.operator}</span> {r.threshold_value}
+                      <span className="px-2 py-0.5 text-xs font-bold rounded bg-slate-900 border border-slate-800 text-amber-400">
+                        {r.operator === 'gte' && `>= ${r.threshold_value}`}
+                        {r.operator === 'gt' && `> ${r.threshold_value}`}
+                        {r.operator === 'lte' && `<= ${r.threshold_value}`}
+                        {r.operator === 'lt' && `< ${r.threshold_value}`}
+                        {r.operator === 'eq' && `== ${r.threshold_value}`}
+                        {r.operator === 'ne' && `!= ${r.threshold_value}`}
+                        {r.operator === 'contains' && `contém "${r.threshold_value}"`}
+                        {!['gte','gt','lte','lt','eq','ne','contains'].includes(r.operator) && `${r.operator} ${r.threshold_value}`}
+                      </span>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
@@ -406,6 +415,9 @@ export const MonitorPage: React.FC = () => {
                           <span className="px-2 py-0.5 text-[10px] rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                             Webhook
                           </span>
+                        )}
+                        {!r.alert_email && !r.webhook_url && (
+                          <span className="text-slate-500 text-xs">-</span>
                         )}
                       </div>
                     </td>
