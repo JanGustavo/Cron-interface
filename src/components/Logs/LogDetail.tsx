@@ -11,7 +11,7 @@ interface LogDetailProps {
 
 export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
   const { jobs } = useJobsStore();
-  const { isLogModalOpen, selectedLogId, setLogModalOpen, showToast, openLiveExecutionModal } = useUiStore();
+  const { isLogModalOpen, selectedLogId, setLogModalOpen, showToast, openLiveExecutionModal, setActiveTab } = useUiStore();
 
   const [terminalLines, setTerminalLines] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -217,6 +217,40 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
     }
     
     handleCopyText(curl, 'Comando cURL copiado para o clipboard! 📋');
+  };
+
+  const handleCreateMonitorRuleFromLog = () => {
+    if (!log) return;
+    let extractedKey = 'status';
+    let extractedValue = '200';
+
+    if (log.responseBody) {
+      try {
+        const parsed = JSON.parse(log.responseBody);
+        if (typeof parsed === 'object' && parsed !== null) {
+          const keys = Object.keys(parsed);
+          if (keys.length > 0) {
+            extractedKey = keys[0];
+            extractedValue = String(parsed[keys[0]]);
+          }
+        }
+      } catch {
+        // text body fallback
+      }
+    }
+
+    const prefill = {
+      jobId: log.jobId || '',
+      key: extractedKey,
+      value: extractedValue,
+      name: `Alerta Payload (${log.jobName || 'Job'})`
+    };
+
+    localStorage.setItem('cf_prefill_rule', JSON.stringify(prefill));
+    window.dispatchEvent(new CustomEvent('cf_open_monitor_page', { detail: prefill }));
+    setLogModalOpen(false);
+    setActiveTab('monitor');
+    showToast('Navegando para o Monitor de Regras com os dados deste payload!', 'info');
   };
 
   // Mock attempts timeline depending on the current attemptNumber

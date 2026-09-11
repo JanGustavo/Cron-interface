@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useUiStore } from '../store/uiStore';
 import { useEntitlements } from '../hooks/useEntitlements';
+import { useJobsStore } from '../store/jobsStore';
 
 interface MonitorRule {
   id: string;
   name: string;
   key: string;
   operator: string;
+  jobId?: string;
+  job_id?: string;
   thresholdValue?: string;
   threshold_value?: string;
   alertEmail?: boolean;
@@ -39,6 +42,7 @@ interface CheckResult {
 export const MonitorPage: React.FC = () => {
   const { showToast, setPlansModalOpen } = useUiStore();
   const { isPro, alertsWebhooksEnabled } = useEntitlements();
+  const { jobs, fetchJobs } = useJobsStore();
 
   const [rules, setRules] = useState<MonitorRule[]>([]);
   const [loadingRules, setLoadingRules] = useState(true);
@@ -51,6 +55,7 @@ export const MonitorPage: React.FC = () => {
 
   // Form de criação de regra
   const [name, setName] = useState('');
+  const [targetJobId, setTargetJobId] = useState('global');
   const [ruleKey, setRuleKey] = useState('accountsOnline');
   const [operator, setOperator] = useState('gte');
   const [thresholdValue, setThresholdValue] = useState('1000');
@@ -72,7 +77,41 @@ export const MonitorPage: React.FC = () => {
 
   useEffect(() => {
     fetchRules();
-  }, []);
+    fetchJobs();
+
+    // Tenta carregar valores pré-preenchidos se vieram de um log ou do modal de job
+    try {
+      const stored = localStorage.getItem('cf_prefill_rule');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.key) setRuleKey(parsed.key);
+        if (parsed.value) setCheckValue(parsed.value);
+        if (parsed.value) setThresholdValue(parsed.value);
+        if (parsed.jobId) setTargetJobId(parsed.jobId);
+        if (parsed.name) setName(parsed.name);
+        localStorage.removeItem('cf_prefill_rule');
+      }
+    } catch {
+      // ignore
+    }
+
+    const handlePrefillEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        const d = customEvent.detail;
+        if (d.key) setRuleKey(d.key);
+        if (d.value) setCheckValue(d.value);
+        if (d.value) setThresholdValue(d.value);
+        if (d.jobId) setTargetJobId(d.jobId);
+        if (d.name) setName(d.name);
+      }
+    };
+
+    window.addEventListener('cf_open_monitor_page', handlePrefillEvent);
+    return () => {
+      window.removeEventListener('cf_open_monitor_page', handlePrefillEvent);
+    };
+  }, [fetchJobs]);
 
   const handleCheckPayload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +146,14 @@ export const MonitorPage: React.FC = () => {
       return;
     }
 
-    // Se tentar adicionar Webhook sem ser PRO, redireciona para o modal de planos PRO
+    // Regra do Plano Free: Máximo 1 regra ativa no plano Free
+    if (!isPro && rules.length >= 1) {
+      setPlansModalOpen(true);
+      showToast('O Plano Free permite apenas 1 regra ativa. Faça upgrade para o PRO para criar regras ilimitadas!', 'warning');
+      return;
+    }
+
+    // Se tentar adicionar Webhook sem ser PRO
     if (webhookUrl.trim() && !alertsWebhooksEnabled) {
       setPlansModalOpen(true);
       showToast('Alertas por Webhook exigem o Plano PRO!', 'warning');
@@ -121,10 +167,11 @@ export const MonitorPage: React.FC = () => {
         key: ruleKey.trim(),
         operator,
         threshold_value: thresholdValue.trim(),
+        job_id: targetJobId === 'global' ? undefined : targetJobId,
         alert_email: alertEmail,
         webhook_url: webhookUrl.trim() || undefined,
       });
-      showToast('Regra de monitoramento criada!', 'success');
+      showToast('Regra de monitoramento criada com sucesso!', 'success');
       setName('');
       setWebhookUrl('');
       fetchRules();
@@ -156,12 +203,12 @@ export const MonitorPage: React.FC = () => {
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
                 Regras de Negócio & Monitoramento
               </h1>
-              <span className="px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider rounded-full bg-linear-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-md">
-                PRO Engine
+              <span className={`px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider rounded-full ${isPro ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-linear-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-md'}`}>
+                {isPro ? 'PRO Active' : 'Plano Free (1/1 Regra)'}
               </span>
             </div>
-            <p className="mt-2 text-sm text-slate-400 max-w-2xl leading-relaxed">
-              Ingira métricas via API (ex: <code className="text-cyan-400 font-mono">accountsOnline</code>), consulte o estado atual e avalie regras automáticas. Alertas são disparados por **Webhook (HMAC-SHA256)** e **E-mail HTML**.
+            <p className="mt-2 text-sm text-slate-400 max-w-3xl leading-relaxed">
+              Monitore métricas por <strong>Ingestão de API</strong> ou <strong>Avaliação Automática de Payloads HTTP</strong> de Jobs. Regras podem ser <em>Globais</em> (aplicadas a todas as métricas) ou <em>Vinculadas a um Job Específico</em>. Alertas são disparados via **Webhook (HMAC-SHA256)** e **E-mail HTML**.
             </p>
           </div>
 
@@ -169,7 +216,7 @@ export const MonitorPage: React.FC = () => {
             <div className="w-full md:w-auto p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-bold text-amber-300">Recurso PRO Exclusivo</p>
-                <p className="text-[11px] text-amber-200/80">Desbloqueie regras ilimitadas e alertas Webhook!</p>
+                <p className="text-[11px] text-amber-200/80">Regras ilimitadas, Webhooks HMAC e Avaliação por Job!</p>
               </div>
               <button
                 onClick={() => setPlansModalOpen(true)}
@@ -182,7 +229,28 @@ export const MonitorPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-[#111827] grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Explicação Mercado / Guia Prático */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 rounded-2xl border border-indigo-950/60 bg-slate-950/40 space-y-1">
+          <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
+            <span>🌐 Regras Globais & Ingestão API</span>
+          </div>
+          <p className="text-xs text-slate-400 leading-normal">
+            Aplique regras para métricas gerais do sistema (ex: <code className="text-cyan-300">accountsOnline</code>, <code className="text-cyan-300 font-mono">error_count</code>). Qualquer envio via <code className="text-cyan-400">POST /v1/monitor/check</code> ou qualquer job com essa chave ativará os alertas.
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl border border-indigo-950/60 bg-slate-950/40 space-y-1">
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-400">
+            <span>📌 Regras Vinculadas a um Job</span>
+          </div>
+          <p className="text-xs text-slate-400 leading-normal">
+            Conecte o monitoramento ao retorno HTTP de um job específico (ex: validar se <code className="text-indigo-300">data.synced == true</code> no Job de Vendas). Avaliado automaticamente a cada execução do Worker!
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Painel 1: Testar Ingestão & Verificar Payload (POST /v1/monitor/check) */}
         <div className="rounded-2xl border border-indigo-500/20 bg-[#0d1222]/90 p-6 space-y-6 shadow-xl">
           <div className="flex items-center gap-3 border-b border-indigo-950/60 pb-4">
@@ -193,7 +261,7 @@ export const MonitorPage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Verificar Payload & Consultar Chave</h2>
-              <p className="text-xs text-slate-400">Simule o envio de uma métrica (<code className="text-cyan-400">POST /v1/monitor/check</code>)</p>
+              <p className="text-xs text-slate-400">Simule o envio de uma métrica (<code className="text-cyan-400 font-mono">POST /v1/monitor/check</code>)</p>
             </div>
           </div>
 
@@ -283,9 +351,27 @@ export const MonitorPage: React.FC = () => {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Mínimo de Contas Online"
+                placeholder="Ex: Mínimo de Contas Online ou Status Vendas OK"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Alvo do Monitoramento (Escopo)
+              </label>
+              <select
+                value={targetJobId}
+                onChange={(e) => setTargetJobId(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer"
+              >
+                <option value="global">🌐 Global (API Ingestão & Todos os Jobs)</option>
+                {jobs.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    📌 Job: {j.name} ({j.url})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -295,7 +381,7 @@ export const MonitorPage: React.FC = () => {
                   type="text"
                   value={ruleKey}
                   onChange={(e) => setRuleKey(e.target.value)}
-                  placeholder="accountsOnline"
+                  placeholder="accountsOnline ou data.synced"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono transition-colors"
                 />
               </div>
@@ -324,7 +410,7 @@ export const MonitorPage: React.FC = () => {
                 type="text"
                 value={thresholdValue}
                 onChange={(e) => setThresholdValue(e.target.value)}
-                placeholder="Ex: 1000"
+                placeholder="Ex: 1000, true, success"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono transition-colors"
               />
             </div>
@@ -373,7 +459,12 @@ export const MonitorPage: React.FC = () => {
       {/* Lista de Regras Cadastradas */}
       <div className="rounded-2xl border border-indigo-500/20 bg-[#0d1222]/90 p-6 space-y-4 shadow-xl">
         <div className="flex items-center justify-between border-b border-indigo-950/60 pb-4">
-          <h3 className="text-base font-bold text-white">Regras de Monitoramento Ativas</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-bold text-white">Regras de Monitoramento Ativas</h3>
+            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+              {!isPro ? `${rules.length}/1 Ativa (Free)` : `${rules.length} Regra(s) (PRO)`}
+            </span>
+          </div>
           <span className="text-xs text-slate-400">{rules.length} regra(s) configurada(s)</span>
         </div>
 
@@ -389,6 +480,7 @@ export const MonitorPage: React.FC = () => {
               <thead className="bg-slate-950/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
                 <tr>
                   <th className="py-3 px-4">Nome da Regra</th>
+                  <th className="py-3 px-4">Alvo / Escopo</th>
                   <th className="py-3 px-4">Chave</th>
                   <th className="py-3 px-4">Condição</th>
                   <th className="py-3 px-4">Canais</th>
@@ -400,10 +492,23 @@ export const MonitorPage: React.FC = () => {
                   const threshold = r.thresholdValue ?? r.threshold_value ?? '';
                   const hasEmail = r.alertEmail ?? r.alert_email ?? false;
                   const webhook = r.webhookUrl ?? r.webhook_url;
+                  const targetId = r.jobId ?? r.job_id;
+                  const linkedJob = targetId ? jobs.find(j => j.id === targetId) : null;
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-900/40 transition-colors">
                       <td className="py-3 px-4 font-semibold text-white">{r.name}</td>
+                      <td className="py-3 px-4">
+                        {linkedJob ? (
+                          <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 flex items-center gap-1 w-fit" title={linkedJob.name}>
+                            📌 Job: {linkedJob.name}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 flex items-center gap-1 w-fit">
+                            🌐 Global / Ingestão API
+                          </span>
+                        )}
+                      </td>
                       <td className="py-3 px-4 font-mono text-cyan-400">{r.key}</td>
                       <td className="py-3 px-4 font-mono text-slate-200">
                         <span className="px-2 py-0.5 text-xs font-bold rounded bg-slate-900 border border-slate-800 text-amber-400">
