@@ -45,6 +45,7 @@ function lazyWithRetry<T extends React.ComponentType<any>>(
 const DashboardPage = lazyWithRetry(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const AdminPage = lazyWithRetry(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
+const MonitorPage = lazyWithRetry(() => import('./pages/MonitorPage').then(m => ({ default: m.MonitorPage })));
 
 const PageLoader: React.FC = () => (
   <div className="flex flex-col justify-center items-center py-20 min-h-[50vh] select-none font-mono">
@@ -56,6 +57,8 @@ const PageLoader: React.FC = () => (
     <p className="text-[10px] text-slate-500 tracking-widest uppercase z-10 animate-pulse">Carregando...</p>
   </div>
 );
+
+
 
 
 
@@ -496,6 +499,8 @@ const App: React.FC = () => {
         return <JobsPage />;
       case 'logs':
         return <LogsPage />;
+      case 'monitor':
+        return <MonitorPage />;
       case 'profile':
         return <ProfilePage />;
       case 'settings':
