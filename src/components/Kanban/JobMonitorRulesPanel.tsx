@@ -25,6 +25,7 @@ interface MonitorRule {
 const getJobId = (rule: MonitorRule) => rule.jobId ?? rule.job_id ?? null;
 const getThreshold = (rule: MonitorRule) => rule.thresholdValue ?? rule.threshold_value ?? '';
 const isEnabled = (rule: MonitorRule) => rule.isEnabled ?? rule.is_enabled ?? true;
+const hasEmailAlert = (rule: MonitorRule) => rule.alertEmail ?? rule.alert_email ?? false;
 
 const operatorLabel: Record<string, string> = {
   eq: '=',
@@ -85,12 +86,11 @@ export const JobMonitorRulesPanel: React.FC = () => {
     if (!activeJob) return [];
     return rules.filter((rule) => {
       const jobId = getJobId(rule);
-      return jobId === activeJob.id || jobId === null;
+      return isEnabled(rule) && (jobId === activeJob.id || jobId === null);
     });
   }, [rules, activeJob]);
 
   const linkedRules = visibleRules.filter((rule) => getJobId(rule) === activeJob?.id);
-  const globalRules = visibleRules.filter((rule) => getJobId(rule) === null);
 
   const openMonitorForJob = (rule?: MonitorRule) => {
     if (!activeJob) return;
@@ -162,18 +162,17 @@ export const JobMonitorRulesPanel: React.FC = () => {
                     <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase border ${specific ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300'}`}>
                       {specific ? 'Job' : 'Global'}
                     </span>
-                    {!isEnabled(rule) && <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase border border-slate-700 text-slate-500">Desativada</span>}
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-mono text-slate-500">
                     <code className="text-cyan-400">{rule.key}</code>
                     <span>{operatorLabel[rule.operator] || rule.operator}</span>
                     <code className="text-slate-300">{getThreshold(rule)}</code>
-                    {rule.alertEmail && <span className="text-emerald-400">✉ e-mail</span>}
+                    {hasEmailAlert(rule) && <span className="text-emerald-400">✉ e-mail</span>}
                     {webhook && <span className="text-amber-400">⚡ webhook</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <button type="button" onClick={() => openMonitorForJob(rule)} className="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/15 text-[9px] font-bold text-indigo-300 cursor-pointer">Editar</button>
+                  <button type="button" onClick={() => openMonitorForJob(rule)} className="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/15 text-[9px] font-bold text-indigo-300 cursor-pointer">Usar como base</button>
                   <button type="button" onClick={() => handleDelete(rule)} className="px-2.5 py-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/15 text-[9px] font-bold text-rose-300 cursor-pointer">Excluir</button>
                 </div>
               </div>
