@@ -19,65 +19,21 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
   const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getTerminalLogs = useCallback((targetLog: LogEntry) => {
-    const lines = [];
-    const currentJob = jobs.find((j) => j.id === targetLog.jobId);
-    const method = currentJob?.httpMethod || 'POST';
-    const url = targetLog.jobUrl || currentJob?.url || 'https://api.empresa.com/sync';
-    
-    let host = 'api.endpoint.com';
-    try {
-      if (url.startsWith('http')) {
-        host = new URL(url).hostname;
-      }
-    } catch {
-      // safe fallback
-    }
-    
-    const triggeredTime = new Date(targetLog.triggeredAt).toLocaleString('pt-BR');
-
-    lines.push(`[${triggeredTime}] [SYS] Inicializando tarefa agendada: "${currentJob?.name || targetLog.jobName || 'Tarefa'}"`);
-    lines.push(`[${triggeredTime}] [SYS] Configuração: Cron [${currentJob?.schedule || 'every:5m'}], Fuso [${currentJob?.timezone || 'UTC'}]`);
-    lines.push(`[${triggeredTime}] [NET] Resolvendo DNS para: ${host}...`);
-    lines.push(`[${triggeredTime}] [NET] DNS resolvido com sucesso.`);
-    
-    const currentAttempt = targetLog.attemptNumber;
-    for (let i = 1; i <= currentAttempt; i++) {
-      const isLast = i === currentAttempt;
-      const attemptTime = new Date(new Date(targetLog.triggeredAt).getTime() + (i - 1) * 300000).toLocaleString('pt-BR');
-      
-      lines.push(`[${attemptTime}] [HTTP] [TENTATIVA ${i}/${currentAttempt}] Conectando a ${host}...`);
-      lines.push(`[${attemptTime}] [HTTP] [TENTATIVA ${i}/${currentAttempt}] Enviando HTTP ${method} para: ${url}`);
-      
-      if (currentJob?.headers && Object.keys(currentJob.headers).length > 0) {
-        lines.push(`[${attemptTime}] [HTTP] Headers: ${JSON.stringify(currentJob.headers)}`);
-      }
-      if (currentJob?.payload && method !== 'GET') {
-        const payloadStr = typeof currentJob.payload === 'object' ? JSON.stringify(currentJob.payload) : currentJob.payload;
-        lines.push(`[${attemptTime}] [HTTP] Payload: ${payloadStr.slice(0, 100)}${payloadStr.length > 100 ? '...' : ''}`);
-      }
-
-      if (isLast) {
-        if (targetLog.status === 'success') {
-          lines.push(`[${attemptTime}] [HTTP] Resposta recebida. HTTP Status: ${targetLog.httpStatus || 200}`);
-          lines.push(`[${attemptTime}] [HTTP] Duração: ${targetLog.durationMs || 50}ms`);
-          if (targetLog.responseBody) {
-            lines.push(`[${attemptTime}] [HTTP] Resposta do Corpo: ${targetLog.responseBody.slice(0, 150)}${targetLog.responseBody.length > 150 ? '...' : ''}`);
-          }
-          lines.push(`[${attemptTime}] [SYS] ✔ Execução CONCLUÍDA com sucesso.`);
-        } else if (targetLog.status === 'timeout') {
-          lines.push(`[${attemptTime}] [ERR] Falha de Timeout: Sem resposta do servidor após 10000ms.`);
-          lines.push(`[${attemptTime}] [SYS] ❌ Execução INTERROMPIDA por erro.`);
-        } else {
-          lines.push(`[${attemptTime}] [ERR] Falha HTTP: Status ${targetLog.httpStatus || 500} ou erro de conexão.`);
-          lines.push(`[${attemptTime}] [SYS] ❌ Execução INTERROMPIDA por erro.`);
-        }
-      } else {
-        lines.push(`[${attemptTime}] [ERR] Tentativa ${i} falhou: Conexão recusada ou timeout.`);
-        lines.push(`[${attemptTime}] [SYS] Re-enfileirando para Retry com Atraso Exponencial (Backoff)...`);
-      }
+    const recordedTime = new Date(targetLog.triggeredAt).toLocaleString('pt-BR');
+    const lines = [
+      `[${recordedTime}] [SYS] Registro da execução ${targetLog.id}`,
+      `[${recordedTime}] [SYS] Tentativa registrada: ${targetLog.attemptNumber}`,
+      `[${recordedTime}] [HTTP] Status: ${targetLog.httpStatus ?? 'sem resposta HTTP'}`,
+      `[${recordedTime}] [HTTP] Duração registrada: ${targetLog.durationMs ?? 0}ms`,
+      `[${recordedTime}] [SYS] Resultado HTTP: ${targetLog.transportStatus ?? targetLog.status}`,
+    ];
+    if (targetLog.status === 'validation_failed') lines.push(`[${recordedTime}] [MONITOR] Condição de sucesso não atendida; próximo job bloqueado`);
+    if (targetLog.responseBody) lines.push(`[${recordedTime}] [HTTP] Prévia da resposta: ${targetLog.responseBody}`);
+    for (const condition of targetLog.ruleEvaluations ?? []) {
+      lines.push(`[${recordedTime}] [MONITOR] ${condition.ruleName}: ${condition.status ?? (condition.passed ? 'pass' : 'fail')}${condition.message ? ` — ${condition.message}` : ''}`);
     }
     return lines;
-  }, [jobs]);
+  }, []);
 
   useEffect(() => {
     if (!isLogModalOpen || !selectedLogId) {
@@ -221,67 +177,23 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
 
   const handleCreateMonitorRuleFromLog = () => {
     if (!log) return;
-    let extractedKey = 'status';
-    let extractedValue = '200';
-
-    if (log.responseBody) {
-      try {
-        const parsed = JSON.parse(log.responseBody);
-        if (typeof parsed === 'object' && parsed !== null) {
-          const keys = Object.keys(parsed);
-          if (keys.length > 0) {
-            extractedKey = keys[0];
-            extractedValue = String(parsed[keys[0]]);
-          }
-        }
-      } catch {
-        // text body fallback
-      }
-    }
-
-    const prefill = {
-      jobId: log.jobId || '',
-      key: extractedKey,
-      value: extractedValue,
-      name: `Alerta Payload (${log.jobName || 'Job'})`
-    };
+    const prefill = { jobId: log.jobId || '', logId: log.id };
 
     localStorage.setItem('cf_prefill_rule', JSON.stringify(prefill));
     window.dispatchEvent(new CustomEvent('cf_open_monitor_page', { detail: prefill }));
     setLogModalOpen(false);
     setActiveTab('monitor');
-    showToast('Navegando para o Monitor de Regras com os dados deste payload!', 'info');
+    showToast('Resposta selecionada para configurar sua validação.', 'info');
   };
 
-  // Mock attempts timeline depending on the current attemptNumber
-  const getTimelineAttempts = () => {
-    const list = [];
-    const currentAttempt = log.attemptNumber;
-    
-    for (let i = 1; i <= currentAttempt; i++) {
-      const isCurrent = i === currentAttempt;
-      const status: 'success' | 'failed' | 'timeout' = isCurrent
-        ? log.status
-        : (i === 1 && currentAttempt === 3 ? 'timeout' : 'failed');
-      const httpStatus = isCurrent
-        ? (log.httpStatus || 500)
-        : (status === 'timeout' ? 504 : 502);
-      const timeOffset = isCurrent
-        ? 'Agora'
-        : `-${(currentAttempt - i) * 5}m`;
-
-      list.push({
-        attempt: i,
-        status,
-        httpStatus,
-        time: timeOffset,
-        message: status === 'success' ? 'Disparo OK' : status === 'timeout' ? 'Gateway Timeout' : 'Conexão Recusada',
-      });
-    }
-    return list;
-  };
-
-  const timeline = getTimelineAttempts();
+  // Other attempts require a shared run ID; only this recorded attempt is known.
+  const timeline = [{
+    attempt: log.attemptNumber,
+    status: log.status,
+    httpStatus: log.httpStatus ?? 'Sem resposta',
+    time: new Date(log.triggeredAt).toLocaleString('pt-BR'),
+    message: log.status === 'validation_failed' ? 'Resultado inválido; próximo job bloqueado' : log.status === 'success' ? 'Chamada HTTP concluída' : 'Chamada HTTP falhou',
+  }];
 
   const getMethodColor = (method: string) => {
     switch (method) {
@@ -449,14 +361,14 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
                   </div>
                   <div className="flex items-center gap-1.5 font-semibold text-slate-400">
                     <span>Duração:</span>
-                    <span className="font-bold text-slate-200">{log.durationMs ? `${log.durationMs}ms` : '-'}</span>
+                    <span className="font-bold text-slate-200">{log.durationMs != null ? `${log.durationMs}ms` : '-'}</span>
                   </div>
                 </div>
 
                 {/* Body/Payload response */}
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-semibold text-slate-500 uppercase">ResponseBody (Postgres Limit 2KB)</span>
+                    <span className="text-[9px] font-semibold text-slate-500 uppercase">Prévia da resposta (até 2 KB)</span>
                     {log.responseBody && (
                       <button
                         onClick={() => handleCopyText(log.responseBody || '', 'Corpo da resposta copiado!')}
@@ -477,6 +389,22 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
               </div>
             </div>
 
+            <section className="space-y-2" aria-label="Avaliação do monitoramento">
+              <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Condições da resposta</h5>
+              <p className="text-[10px] text-slate-400">O status HTTP e as condições da resposta são avaliados separadamente.</p>
+              {log.ruleEvaluations?.length ? log.ruleEvaluations.map((evaluation, index) => {
+                const state = evaluation.status ?? (evaluation.passed ? 'pass' : 'fail');
+                const label = { pass: 'Atendida', fail: 'Não atendida', error: 'Erro de avaliação', skipped: 'Não avaliada' }[state];
+                return <div key={`${evaluation.ruleId}-${index}`} className="p-3 rounded-xl bg-slate-950/40 border border-indigo-950/40 text-xs space-y-1">
+                  <div className="flex justify-between gap-3"><strong className="text-slate-200">{evaluation.ruleName}</strong><span className={state === 'pass' ? 'text-emerald-400' : state === 'skipped' ? 'text-slate-400' : 'text-amber-400'}>{label}</span></div>
+                  {evaluation.key && <p className="font-mono text-slate-400 break-all">{evaluation.key} {evaluation.operator} {evaluation.expectedValue}</p>}
+                  {evaluation.mode === 'require_success' && <p className="text-amber-300">Obrigatória para considerar sucesso</p>}
+                  {evaluation.observedValue !== undefined && <p className="font-mono text-slate-300 break-all">Observado: {evaluation.observedValueText ?? JSON.stringify(evaluation.observedValue)}</p>}
+                  {evaluation.message && <p className="text-slate-400">{evaluation.message}</p>}
+                </div>;
+              }) : <p className="text-xs text-slate-500">Esta execução não possui avaliações registradas.</p>}
+            </section>
+
             {/* Alert Webhook Status Block */}
             <div className="space-y-2">
               <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
@@ -484,40 +412,19 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
               </h5>
               <div className="p-4 bg-slate-950/40 border border-indigo-950/40 rounded-2xl space-y-2 select-text text-[10px] text-left leading-relaxed">
                 {job?.webhookAlertUrl ? (
-                  log.status === 'success' ? (
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-                      <span>Não enviado (Tarefa concluída com sucesso)</span>
-                    </div>
-                  ) : log.attemptNumber < 4 && (job.consecutiveFailures || 0) < 4 ? (
-                    <div className="flex items-center gap-2 text-amber-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      <span>Abaixo do limite (Falha temporária: {log.attemptNumber === 1 ? 'tentativa inicial' : `retentativa ${log.attemptNumber - 1}/3`}, o alerta dispara se falhar após a tentativa inicial + 3 retentativas)</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-emerald-450 font-bold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                        <span>Alerta Enviado com Sucesso 🚀</span>
-                      </div>
-                      <div className="text-[9px] text-slate-500 font-mono break-all bg-[#05070e]/85 p-2.5 rounded-xl border border-indigo-950/30">
-                        Destino: {job.webhookAlertUrl}
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  <div className="flex items-center gap-2 text-slate-500 italic">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                    <span>Nenhum webhook de alerta configurado para esta tarefa</span>
+                  <div className="space-y-2 text-slate-400">
+                    <p>Webhook configurado. Este registro não informa o estado de entrega da notificação.</p>
+                    <p className="font-mono break-all">Destino atual: {job.webhookAlertUrl}</p>
                   </div>
-                )}
+                ) : <p className="text-slate-500">Nenhum webhook de falha configurado atualmente para esta tarefa.</p>}
+
               </div>
             </div>
 
             {/* Retry Timeline */}
             <div className="space-y-3">
               <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                Linha do Tempo de Tentativas
+                Tentativa registrada
               </h5>
               
               <div className="relative border-l border-indigo-950/60 ml-3.5 pl-5.5 space-y-4">
@@ -558,7 +465,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
             <div className="flex justify-between items-center mb-2 select-none">
               <h5 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                Console de Execução do Job (Shell)
+                Resumo dos dados registrados
               </h5>
               {isTyping && (
                 <button
@@ -589,7 +496,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ logs }) => {
               
               {/* Blinking cursor */}
               <div className="inline-flex items-center gap-1 text-slate-500 select-none">
-                <span>{isTyping ? 'Executando etapa...' : '>'}</span>
+                <span>{isTyping ? 'Exibindo registros...' : '>'}</span>
                 <span className="w-1.5 h-3 bg-cyan-400 animate-pulse" />
               </div>
               <div ref={terminalEndRef} />

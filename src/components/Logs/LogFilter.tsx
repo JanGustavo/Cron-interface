@@ -1,5 +1,5 @@
 import React from 'react';
-import type { LogFilter as LogFilterType } from '../../types/logs';
+import type { ExecutionStatus, LogFilter as LogFilterType } from '../../types/logs';
 
 interface LogFilterProps {
   filter: LogFilterType;
@@ -14,7 +14,7 @@ export const LogFilter: React.FC<LogFilterProps> = ({ filter, onChange, onReset 
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
-    const statusVal = val ? [val as 'success' | 'failed' | 'timeout'] : undefined;
+    const statusVal = val ? [val as ExecutionStatus] : undefined;
     onChange({ ...filter, status: statusVal, page: 1 });
   };
 
@@ -94,7 +94,8 @@ export const LogFilter: React.FC<LogFilterProps> = ({ filter, onChange, onReset 
             }`}
           >
             <option value="">Todos os Status</option>
-            <option value="success">Sucesso (2xx OK)</option>
+            <option value="success">Sucesso</option>
+            <option value="validation_failed">Resultado inválido</option>
             <option value="failed">Erro (5xx / Failed)</option>
             <option value="timeout">Timeout (Excedido)</option>
           </select>

@@ -179,6 +179,8 @@ export const JobCard: React.FC<JobCardProps> = ({ job, index, columnId }) => {
             </div>
           </div>
 
+          {job.lastRunStatus === 'validation_failed' && <p className="mt-2 text-[10px] font-semibold text-amber-300">Resultado inválido · agendamento ativo</p>}
+
           {/* Webhook Endpoint URL */}
           <div className="text-[10px] text-slate-500 font-mono mt-1.5 truncate">
             {job.url}

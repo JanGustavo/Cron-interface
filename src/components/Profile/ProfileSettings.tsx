@@ -1,8 +1,10 @@
+import { UserAvatar } from '../Shared/UserAvatar';
 import React from 'react';
 import { useEntitlements } from '../../hooks/useEntitlements';
 
 interface ProfileSettingsProps {
   avatarLabel: string;
+  avatarUrl?: string;
   isProPlan: boolean;
   userHandle: string;
   profileFullName: string;
@@ -18,6 +20,7 @@ interface ProfileSettingsProps {
 
 export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   avatarLabel,
+  avatarUrl,
   isProPlan,
   userHandle,
   profileFullName,
@@ -42,7 +45,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         {/* Profile Avatar / Title Section */}
         <div className="flex items-center gap-4.5">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/30 bg-linear-to-br from-indigo-500/20 to-cyan-500/10 text-xl font-extrabold text-indigo-200 shadow-[0_0_24px_rgba(99,102,241,0.15)] relative">
-            {avatarLabel}
+            <UserAvatar url={avatarUrl} initials={avatarLabel} className="h-full w-full" />
             <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#090b17]" />
           </div>
           <div className="min-w-0 flex-1">

@@ -62,6 +62,8 @@ const camelToPascal = (str: string): string => {
   if (str === 'durationMs') return 'duration_ms';
   if (str === 'responseBody') return 'response_body';
   if (str === 'attemptNumber') return 'attempt_number';
+  if (str === 'value') return 'value';
+  if (str === 'observedValue') return 'observed_value';
 
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
@@ -78,7 +80,7 @@ export const keysToCamel = (obj: unknown): unknown => {
     return Object.keys(record).reduce<Record<string, unknown>>((result, key) => {
       const camelKey = pascalToCamel(key);
       // Ignora chaves internas de dicionários configurados pelo usuário (como Headers ou Payload JSON)
-      if (key.toLowerCase() === 'headers' || key.toLowerCase() === 'payload') {
+      if (key.toLowerCase() === 'headers' || key.toLowerCase() === 'payload' || key === 'observed_value' || key === 'observedValue') {
         result[camelKey] = record[key];
       } else {
         result[camelKey] = keysToCamel(record[key]);
@@ -96,7 +98,7 @@ export const keysToPascal = (obj: unknown): unknown => {
     const record = obj as Record<string, unknown>;
     return Object.keys(record).reduce<Record<string, unknown>>((result, key) => {
       const pascalKey = camelToPascal(key);
-      if (key === 'headers' || key === 'payload') {
+      if (key === 'headers' || key === 'payload' || key === 'value' || key === 'observedValue') {
         result[pascalKey] = record[key];
       } else {
         result[pascalKey] = keysToPascal(record[key]);

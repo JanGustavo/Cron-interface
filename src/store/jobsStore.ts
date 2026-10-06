@@ -9,7 +9,7 @@ const mapStatusToKanban = (
   lastRunStatus?: string | null
 ): KanbanStatus => {
   if (status === 'paused') return 'draft';
-  if (status === 'failing' || consecutiveFailures > 0 || lastRunStatus === 'failed' || lastRunStatus === 'timeout') {
+  if (status === 'failing' || consecutiveFailures > 0 || lastRunStatus === 'failed' || lastRunStatus === 'timeout' || lastRunStatus === 'validation_failed') {
     return 'failed';
   }
   if (lastRunAt) return 'success';

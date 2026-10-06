@@ -16,7 +16,7 @@ interface UiState {
   isLiveExecutionModalOpen: boolean;
   liveExecutionJobId: string | null;
   selectedLogId: string | null;
-  toast: { message: string; variant: ToastVariant } | null;
+  toast: { message: string; variant: ToastVariant; durationMs?: number } | null;
 
   // Sound Settings
   soundEnabled: boolean;
@@ -45,7 +45,7 @@ interface UiState {
   setDocsOpen: (isOpen: boolean) => void;
   setOnboardingOpen: (isOpen: boolean) => void;
   setPlansModalOpen: (isOpen: boolean) => void;
-  showToast: (message: string, variant?: ToastVariant) => void;
+  showToast: (message: string, variant?: ToastVariant, durationMs?: number) => void;
   clearToast: () => void;
 }
 
@@ -158,8 +158,8 @@ export const useUiStore = create<UiState>((set) => ({
 
   setPlansModalOpen: (isPlansModalOpen) => set({ isPlansModalOpen }),
 
-  showToast: (message, variant = 'info') =>
-    set({ toast: { message, variant } }),
+  showToast: (message, variant = 'info', durationMs) =>
+    set({ toast: { message, variant, durationMs } }),
 
   clearToast: () => set({ toast: null }),
 }));

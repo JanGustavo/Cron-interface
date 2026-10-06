@@ -1,3 +1,4 @@
+import { useExecutionNotifications } from './hooks/useExecutionNotifications';
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from './components/Dashboard/DashboardLayout';
 import { useUiStore } from './store/uiStore';
@@ -350,7 +351,8 @@ const App: React.FC = () => {
               email: email, 
               plan: plan, 
               createdAt: userCreatedAt, 
-              fullName: profile.fullName, 
+              fullName: profile.fullName,
+              avatarUrl: profile.avatarUrl,
               limits: profile.limits,
               totalJobsCreated: profile.totalJobsCreated
             },
@@ -377,6 +379,8 @@ const App: React.FC = () => {
       clearTimeout(fallbackTimer);
     };
   }, [login, logout]);
+
+  useExecutionNotifications(isAuthenticated, activeProject?.id);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -408,9 +412,12 @@ const App: React.FC = () => {
                 user: {
                   ...authStore.user,
                   fullName: res.data.fullName,
+                  avatarUrl: res.data.avatarUrl,
                   plan: res.data.plan,
                   limits: res.data.limits,
-                  totalJobsCreated: res.data.totalJobsCreated
+                  totalJobsCreated: res.data.totalJobsCreated,
+                  jobGrace: res.data.jobGrace,
+                  currentPeriodEnd: res.data.currentPeriodEnd
                 }
               });
             }
@@ -420,7 +427,12 @@ const App: React.FC = () => {
         }
       }
     };
-    syncProfileMetrics();
+    void syncProfileMetrics();
+    if (!isAuthenticated) return;
+    const interval = window.setInterval(() => { void syncProfileMetrics(); }, 15000);
+    const onFocus = () => { void syncProfileMetrics(); };
+    window.addEventListener('focus', onFocus);
+    return () => { window.clearInterval(interval); window.removeEventListener('focus', onFocus); };
   }, [isAuthenticated, activeProject?.id, jobs.length]);
 
   useEffect(() => {

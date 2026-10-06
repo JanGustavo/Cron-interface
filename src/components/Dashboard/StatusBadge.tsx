@@ -1,7 +1,7 @@
 import React from 'react';
 import type { JobStatus, KanbanStatus } from '../../types/jobs';
 
-export type BadgeStatus = JobStatus | KanbanStatus | 'success' | 'failed' | 'timeout';
+export type BadgeStatus = JobStatus | KanbanStatus | 'success' | 'failed' | 'timeout' | 'validation_failed';
 
 interface StatusBadgeProps {
   status: BadgeStatus;
@@ -24,6 +24,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', a
           dot: 'bg-emerald-400',
         };
       
+      case 'validation_failed':
+        return { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', label: 'Resultado inválido', dot: 'bg-amber-400' };
+
       // Failed or critical states
       case 'failing':
       case 'failed':

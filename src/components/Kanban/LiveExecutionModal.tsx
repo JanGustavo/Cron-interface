@@ -142,8 +142,8 @@ export const LiveExecutionModal: React.FC = () => {
                   id: '4',
                   time: formatNow(),
                   type: 'failed',
-                  text: `⚠️ [HTTP Erro] Status ${execLog.httpStatus || 'ERR'} recebido (${execLog.responseBody || 'Falha de conexão/timeout'})`,
-                  details: `Tentativa ${execLog.attemptNumber || 1} de 3 • Agendando Retry com Backoff Exponencial`,
+                  text: execLog.status === 'validation_failed' ? 'Condição de sucesso não atendida. Próximo job bloqueado.' : `⚠️ [HTTP Erro] Status ${execLog.httpStatus || 'ERR'} recebido (${execLog.responseBody || 'Falha de conexão/timeout'})`,
+                  details: execLog.status === 'validation_failed' ? 'Agendamento permanece ativo. Sem repetição automática por validação.' : `Tentativa registrada: ${execLog.attemptNumber || 1}. Consulte o histórico para acompanhar novas tentativas.`,
                 },
               ]);
             }

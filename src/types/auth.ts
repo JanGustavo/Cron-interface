@@ -12,11 +12,20 @@ export interface PlanLimits {
   multiProjectEnabled: boolean;
 }
 
+export interface JobGrace {
+  endsAt?: string;
+  activeJobs: number;
+  maxJobs: number;
+  proEnded: boolean;
+}
+
 export interface User {
+  jobGrace?: JobGrace;
   id: string;
   email: string;
   plan: string;
   fullName?: string;
+  avatarUrl?: string;
   createdAt: string;
   limits?: PlanLimits;
   totalJobsCreated?: number;

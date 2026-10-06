@@ -1,3 +1,4 @@
+import { useAuthStore } from '../../store/authStore';
 import React, { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import api from '../../services/api';
@@ -30,6 +31,7 @@ interface Message {
 
 export const AgentChat: React.FC = () => {
   const { isPro } = useEntitlements();
+ const proEnded = useAuthStore(state => state.user?.jobGrace?.proEnded === true) && !isPro;
   const { setPlansModalOpen, showToast } = useUiStore();
   const [isOpen, setIsOpen] = useState(false);
   const [freeQueriesUsed, setFreeQueriesUsed] = useState<number>(0);
@@ -75,7 +77,7 @@ export const AgentChat: React.FC = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    if (!isPro && freeQueriesUsed >= 3) {
+    if (!isPro && (proEnded || freeQueriesUsed >= 3)) {
       showToast('Você atingiu o limite de 3 mensagens gratuitas da IA no Plano Free. Faça upgrade para o Plano PRO!', 'info');
       setPlansModalOpen(true);
       return;
@@ -432,13 +434,13 @@ export const AgentChat: React.FC = () => {
 
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="p-2.5 border-t border-indigo-950/40 bg-[#0c1026]/90 flex gap-2">
-              {!isPro && freeQueriesUsed >= 3 ? (
+              {!isPro && (proEnded || freeQueriesUsed >= 3) ? (
                 <div
                   className="flex-1 flex items-center justify-between px-3.5 py-2 bg-indigo-950/30 border border-purple-500/30 rounded-xl cursor-pointer hover:bg-purple-950/40 transition-colors"
                   onClick={() => setPlansModalOpen(true)}
                 >
                   <span className="text-[10px] text-purple-300 font-bold font-mono">
-                    🔒 Cota de 3 testes gratuitos consumida. Upgrade para o PRO ✨
+                    {proEnded ? '🔒 Seu Pro encerrou. Renove para continuar usando a IA.' : '🔒 Cota de 3 testes gratuitos consumida. Upgrade para o PRO ✨'}
                   </span>
                 </div>
               ) : (
@@ -453,7 +455,7 @@ export const AgentChat: React.FC = () => {
               )}
               <button
                 type="submit"
-                disabled={isLoading || !input.trim() || (!isPro && freeQueriesUsed >= 3)}
+                disabled={isLoading || !input.trim() || (!isPro && (proEnded || freeQueriesUsed >= 3))}
                 className="px-3 py-1.5 rounded-xl bg-indigo-650 text-slate-100 font-bold hover:bg-indigo-550 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs uppercase tracking-wider"
               >
                 Enviar

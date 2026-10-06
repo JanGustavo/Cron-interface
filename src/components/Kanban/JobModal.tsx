@@ -10,6 +10,7 @@ import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import { useEntitlements } from '../../hooks/useEntitlements';
 import { validateDestinationUrl } from '../../utils/urlValidator';
+import { JobMonitorRulesPanel } from './JobMonitorRulesPanel';
 import { soundFx } from '../../utils/soundFx';
 
 const formatNextRun = (nextRunAt: string): string => {
@@ -115,7 +116,7 @@ export const JobModal: React.FC = () => {
 
   const computedFailures = (() => {
     if (!currentJob) return 0;
-    if (currentJob.status === 'failing' || currentJob.kanbanStatus === 'failed') {
+    if (currentJob.status === 'failing') {
       return 4;
     }
     const baseCount = currentJob.consecutiveFailures || 0;
@@ -172,17 +173,6 @@ export const JobModal: React.FC = () => {
     }, 0);
     return () => clearTimeout(timer);
   }, [activeJob, isJobModalOpen, fetchJobLogs]);
-
-  useEffect(() => {
-    if (computedFailures >= 4 && currentJob && (currentJob.consecutiveFailures < 4 || currentJob.status !== 'failing')) {
-      updateJob({
-        ...currentJob,
-        consecutiveFailures: 4,
-        status: 'failing',
-        kanbanStatus: 'failed',
-      });
-    }
-  }, [computedFailures, currentJob, updateJob]);
 
   useEffect(() => {
     if (activeJob && !isEditing) {
@@ -756,6 +746,8 @@ export const JobModal: React.FC = () => {
             </div>
           </div>
 
+          <JobMonitorRulesPanel key={activeJob.id} job={activeJob} logs={jobLogs} />
+
           {/* Execution History Section */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -804,7 +796,7 @@ export const JobModal: React.FC = () => {
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                         }`}>
-                          {log.httpStatus || 'ERR'} {log.status === 'success' ? 'SUCCESS' : log.status.toUpperCase()}
+                          {log.httpStatus || 'ERR'} {log.status === 'validation_failed' ? 'RESULTADO INVÁLIDO' : log.status === 'success' ? 'SUCCESS' : log.status.toUpperCase()}
                         </span>
                         {log.attemptNumber === 1 ? (
                           <span className="px-2 py-0.5 rounded text-[9px] font-semibold bg-slate-950/60 border border-slate-800 text-slate-400 whitespace-nowrap">

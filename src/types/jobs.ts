@@ -1,3 +1,4 @@
+import type { ExecutionStatus, LogEntry } from './logs';
 /**
  * Types representing jobs, statuses, and execution log information
  * based on the database schema and Kanban board requirements.
@@ -28,7 +29,7 @@ export interface Job {
   nextRunAt: string;
   lastRunAt?: string | null;
   consecutiveFailures: number;
-  lastRunStatus?: 'success' | 'failed' | 'timeout' | null;
+  lastRunStatus?: ExecutionStatus | null;
   createdAt: string;
   webhookAlertUrl?: string;
   nextJobId?: string | null;
@@ -38,15 +39,4 @@ export interface Job {
 /**
  * Single execution log entry associated with a specific job run.
  */
-export interface JobLog {
-  id: string;
-  jobId: string;
-  triggeredAt: string;
-  startedAt?: string | null;
-  finishedAt?: string | null;
-  status: 'success' | 'failed' | 'timeout';
-  httpStatus?: number | null;
-  durationMs?: number | null;
-  responseBody?: string | null; // Truncated to 2KB as per MVP requirements
-  attemptNumber: number;
-}
+export type JobLog = LogEntry;

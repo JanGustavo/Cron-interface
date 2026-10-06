@@ -1,3 +1,4 @@
+import { AvatarUrlField } from '../components/Profile/AvatarUrlField';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { useAuthStore } from '../store/authStore';
@@ -78,6 +79,7 @@ export const ProfilePage: React.FC = () => {
 
   // Load custom profile details saved during onboarding
   const [profileFullName, setProfileFullName] = useState(() => localStorage.getItem('cf_user_name') || user?.fullName || '');
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState(user?.avatarUrl || '');
   const [profileCpf, setProfileCpf] = useState(() => localStorage.getItem('cf_user_cpf') || '');
   const company = localStorage.getItem('cf_user_company') || '';
   const role = localStorage.getItem('cf_user_role') || '';
@@ -299,6 +301,7 @@ export const ProfilePage: React.FC = () => {
       if (res.data) {
         setEmailAlertsEnabled(res.data.emailAlertsEnabled);
         setDailyDigestEnabled(res.data.dailyDigestEnabled);
+        setProfileAvatarUrl(res.data.avatarUrl || "");
         if (res.data.fullName) {
           setProfileFullName(res.data.fullName);
           localStorage.setItem('cf_user_name', res.data.fullName);
@@ -332,6 +335,7 @@ export const ProfilePage: React.FC = () => {
             user: {
               ...authStore.user,
               fullName: res.data.fullName,
+              avatarUrl: res.data.avatarUrl || "",
               plan: res.data.plan,
               limits: res.data.limits,
               currentPeriodEnd: res.data.currentPeriodEnd
@@ -357,6 +361,7 @@ export const ProfilePage: React.FC = () => {
     try {
       await api.put('/v1/users/profile', {
         full_name: profileFullName.trim(),
+        avatar_url: profileAvatarUrl.trim(),
         cpf: profileCpf.trim(),
         timezone: profileTimezone,
         email_alerts_enabled: emailAlertsEnabled,
@@ -750,6 +755,7 @@ export const ProfilePage: React.FC = () => {
           
           <ProfileSettings
             avatarLabel={avatarLabel}
+            avatarUrl={user?.avatarUrl}
             isProPlan={isProPlan}
             userHandle={userHandle}
             profileFullName={profileFullName}
@@ -837,6 +843,7 @@ export const ProfilePage: React.FC = () => {
                     </div>
                   ) : (
                     <form onSubmit={handleSavePersonalData} className="space-y-5">
+                      <AvatarUrlField value={profileAvatarUrl} onChange={setProfileAvatarUrl} initials={avatarLabel} />
                       <div>
                         <h5 className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Dados Cadastrais & Perfil</h5>
                         <p className="text-[11px] text-slate-400 mt-0.5">Edite suas informações pessoais e preferências de recebimento de relatórios.</p>

@@ -53,7 +53,7 @@ export const ToastHost: React.FC = () => {
     }
     timerRef.current = window.setTimeout(() => {
       clearToast();
-    }, 2400);
+    }, toast.durationMs ?? (toast.variant === 'error' || toast.variant === 'warning' ? 7000 : 2400));
     return () => {
       if (timerRef.current) {
         window.clearTimeout(timerRef.current);

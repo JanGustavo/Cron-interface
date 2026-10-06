@@ -1,3 +1,5 @@
+import { JobGraceNotice } from './JobGraceNotice';
+import { UserAvatar } from '../Shared/UserAvatar';
 import React, { useState, useEffect } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
@@ -27,7 +29,7 @@ export const TopNav: React.FC = () => {
 
   const userEmail = user?.email || 'admin@cronflow.sh';
   const userHandle = userEmail.split('@')[0] || 'cronflow';
-  const avatarLabel = userHandle.slice(0, 2).toUpperCase();
+  const avatarLabel = (user?.fullName?.trim().split(/\s+/).map(part => part[0]).join('').slice(0, 2) || userHandle.slice(0, 2)).toUpperCase();
   const isPro = !!(user?.limits?.alertsWebhooksEnabled || user?.limits?.workflowsEnabled);
 
   const getPageTitle = () => {
@@ -52,7 +54,7 @@ export const TopNav: React.FC = () => {
     { id: '3', userId: 'user', name: 'Dev Environment', createdAt: '' },
   ];
 
-  const failedJobsCount = jobs.filter((j) => (j.status as string) === 'failing' || (j.status as string) === 'failed').length;
+  const failedJobsCount = jobs.filter((j) => (j.status as string) === 'failing' || (j.status as string) === 'failed' || j.lastRunStatus === 'validation_failed').length;
   const activeJobsCount = jobs.filter((j) => j.status === 'active' || (j.status as string) === 'running').length;
   const pausedJobsCount = jobs.filter((j) => j.status === 'paused' || (j.status as string) === 'suspended').length;
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
@@ -73,6 +75,7 @@ export const TopNav: React.FC = () => {
   const isSubscriptionExpiringSoon = daysRemaining !== null && daysRemaining <= 3;
 
   return (
+    <>
     <header className="h-16 border-b border-indigo-950/40 glass-panel sticky top-0 z-30 px-4 md:px-6 flex items-center justify-between">
       {/* Page Title & Mobile Sidebar Toggle */}
       <div className="flex items-center gap-2 md:gap-4">
@@ -186,7 +189,7 @@ export const TopNav: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-[11px] leading-relaxed text-slate-300 font-sans">
-                      Sua assinatura encerra em <strong>{daysRemaining} dia(s)</strong>. Ao migrar para o plano Free, apenas os seus <strong>5 agendamentos mais antigos</strong> permanecerão ativos. Os excedentes serão automaticamente pausados.
+                      Sua assinatura encerra em <strong>{daysRemaining} dia(s)</strong>. Se tiver mais de cinco jobs ativos, você terá <strong>48 horas</strong> para renovar ou escolher quais manter. Depois do prazo, os <strong>cinco jobs ativos mais antigos</strong> permanecem ligados e os excedentes são pausados.
                     </p>
                     <button
                       onClick={() => {
@@ -332,24 +335,26 @@ export const TopNav: React.FC = () => {
           {/* Avatar — contorno cyberpunk dourado/roxo para PRO */}
           {isPro ? (
             <div
-              className="rounded-full p-[2px] animate-[spin_4s_linear_infinite]"
+              className="rounded-full p-[2px]"
               style={{
                 background: 'conic-gradient(from 0deg, #facc15, #a855f7, #ec4899, #facc15)',
               }}
               title={user?.currentPeriodEnd ? `Plano PRO ativo ✨ (Válido até ${new Date(user.currentPeriodEnd).toLocaleDateString('pt-BR')})` : 'Plano PRO Ativo ✨'}
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md [animation:none]">
-                {avatarLabel}
+                <UserAvatar url={user?.avatarUrl} initials={avatarLabel} className="h-full w-full" />
               </div>
             </div>
           ) : (
             <div className="w-8.5 h-8.5 rounded-full bg-linear-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-md border border-indigo-400/20">
-              {avatarLabel}
+              <UserAvatar url={user?.avatarUrl} initials={avatarLabel} className="h-full w-full" />
             </div>
           )}
         </div>
 
       </div>
     </header>
+    <JobGraceNotice />
+    </>
   );
 };
