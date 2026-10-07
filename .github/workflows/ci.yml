@@ -28,5 +28,8 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Verify monitoring and downgrade UI
+        run: npm run test:monitoring-ui
+
       - name: Run production build
         run: npm run build
